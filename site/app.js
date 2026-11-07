@@ -1,3 +1,38 @@
+const translations = window.MEMINGO_I18N;
+let currentLanguage = new URLSearchParams(location.search).get("lang");
+if (!translations[currentLanguage]) currentLanguage = localStorage.getItem("memingo-language") || (navigator.language.startsWith("es") ? "es" : "en");
+
+function applyLanguage(language) {
+  currentLanguage = language in translations ? language : "es";
+  localStorage.setItem("memingo-language", currentLanguage);
+  const url = new URL(location.href);
+  url.searchParams.set("lang", currentLanguage);
+  history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  const strings = translations[currentLanguage];
+  document.documentElement.lang = currentLanguage;
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) metaDescription.content = strings.metaDescription;
+
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    const key = element.dataset.i18n;
+    if (strings[key] !== undefined) element.textContent = strings[key];
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
+    const key = element.dataset.i18nAria;
+    if (strings[key] !== undefined) element.setAttribute("aria-label", strings[key]);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+    const key = element.dataset.i18nPlaceholder;
+    if (strings[key] !== undefined) element.setAttribute("placeholder", strings[key]);
+  });
+
+  const toggle = document.querySelector("#language-toggle");
+  toggle?.querySelectorAll("span").forEach((span) => span.classList.toggle("active", span.textContent.toLowerCase() === currentLanguage));
+  toggle?.setAttribute("aria-label", currentLanguage === "es" ? "Cambiar idioma a inglés" : "Switch language to Spanish");
+  renderCommand();
+  if (searchInput) renderSearchResults(searchInput.value);
+}
+
 const menuButton = document.querySelector("#menu-button");
 const mainNav = document.querySelector("#main-nav");
 
@@ -28,10 +63,11 @@ const runButton = document.querySelector("#run-button");
 const terminalOutput = document.querySelector(".terminal-output");
 runButton?.addEventListener("click", () => {
   const original = runButton.innerHTML;
-  runButton.innerHTML = "<span>●</span> Ejecutando";
   terminalOutput.textContent = "";
+  const strings = translations[currentLanguage];
+  runButton.innerHTML = `<span>●</span> ${strings.executing}`;
   setTimeout(() => {
-    terminalOutput.textContent = "Bienvenido a Memingo!";
+    terminalOutput.textContent = strings.welcome;
     runButton.innerHTML = original;
   }, 550);
 });
@@ -56,7 +92,16 @@ function renderCommand() {
   const code = document.querySelector("#command-code");
   const output = document.querySelector("#command-output");
   code.textContent = data.command;
-  output.textContent = data.output;
+  if (currentLanguage === "en") {
+    output.textContent = data.output
+      .replace("Memingo installed successfully", "Memingo installed successfully")
+      .replace("Memingo 0.1.0 listo para usar", "Memingo 0.1.0 ready to use")
+      .replace("Abre una terminal nueva y ejecuta memingo", "Open a new terminal and run memingo")
+      .replace("Created Memingo project: ./memingo.toml", "Created Memingo project: ./memingo.toml")
+      .replace("Welcome to Memingo!", "Welcome to Memingo!");
+  } else {
+    output.textContent = data.output;
+  }
   document.querySelector(".copy-button")?.setAttribute("data-copy", data.command);
 }
 
@@ -83,10 +128,10 @@ document.querySelector(".copy-button")?.addEventListener("click", async (event) 
   try {
     await navigator.clipboard.writeText(button.dataset.copy);
     const original = button.textContent;
-    button.textContent = "Copiado";
+    button.textContent = translations[currentLanguage].copied;
     setTimeout(() => { button.textContent = original; }, 1200);
   } catch {
-    button.textContent = "Selecciona";
+    button.textContent = translations[currentLanguage].select;
   }
 });
 
@@ -114,7 +159,8 @@ function closeSearch() {
 }
 
 function renderSearchResults(query) {
-  const matches = searchPages.filter((page) => page.title.toLowerCase().includes(query.toLowerCase()));
+  const pages = translations[currentLanguage].searchPages.map(([title, target]) => ({ title, target }));
+  const matches = pages.filter((page) => page.title.toLowerCase().includes(query.toLowerCase()));
   searchResults.innerHTML = matches.map((page) => `<a href="${page.target}">${page.title}</a>`).join("");
 }
 
@@ -123,6 +169,12 @@ document.querySelector("#close-search")?.addEventListener("click", closeSearch);
 searchOverlay?.addEventListener("click", (event) => { if (event.target === searchOverlay) closeSearch(); });
 searchInput?.addEventListener("input", () => renderSearchResults(searchInput.value));
 searchResults?.addEventListener("click", closeSearch);
+document.querySelector("#language-toggle")?.addEventListener("click", () => {
+  applyLanguage(currentLanguage === "es" ? "en" : "es");
+});
+
+applyLanguage(currentLanguage);
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeSearch();
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {

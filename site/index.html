@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Memingo: un lenguaje de programación inspirado en la cultura meme.">
+  <meta property="og:title" content="Memingo - Code the bit">
+  <meta property="og:description" content="Memingo, un lenguaje de programación inspirado en memes / An internet-meme-inspired programming language.">
+  <link rel="alternate" hreflang="es" href="./?lang=es">
+  <link rel="alternate" hreflang="en" href="./?lang=en">
   <title>Memingo - Code the bit</title>
   <link rel="icon" href="assets/memingo-mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -14,18 +18,19 @@
       <img src="assets/memingo-mark.svg" alt="">
       <span>memingo</span>
     </a>
-    <nav class="main-nav" id="main-nav" aria-label="Navegación principal">
-      <a class="active" href="#home">Inicio</a>
-      <a href="#docs">Docs</a>
-      <a href="#community">Comunidad</a>
-      <a href="#wiki">Wiki</a>
-      <a href="#downloads">Descargas</a>
+    <nav class="main-nav" id="main-nav" aria-label="Navegación principal" data-i18n-aria="navLabel">
+      <a class="active" href="#home" data-i18n="navHome">Inicio</a>
+      <a href="#docs" data-i18n="navDocs">Docs</a>
+      <a href="#community" data-i18n="navCommunity">Comunidad</a>
+      <a href="#wiki" data-i18n="navWiki">Wiki</a>
+      <a href="#downloads" data-i18n="navDownloads">Descargas</a>
     </nav>
     <div class="header-actions">
-      <button class="icon-button search-button" id="search-button" type="button" aria-label="Buscar">
+      <button class="language-toggle" id="language-toggle" type="button" aria-label="Cambiar idioma" title="Español / English"><span>ES</span><b>/</b><span>EN</span></button>
+      <button class="icon-button search-button" id="search-button" type="button" aria-label="Buscar" data-i18n-aria="searchLabel">
         <span class="search-icon"></span>
       </button>
-      <a class="button button-dark header-download" href="#downloads">Descargar</a>
+      <a class="button button-dark header-download" href="#downloads" data-i18n="download">Descargar</a>
       <button class="icon-button menu-button" id="menu-button" type="button" aria-label="Abrir menú" aria-expanded="false">
         <span></span><span></span>
       </button>
@@ -35,12 +40,12 @@
   <main>
     <section class="hero" id="home">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="live-dot"></span> Memingo 0.1 está vivo</p>
+        <p class="eyebrow"><span class="live-dot"></span> <span data-i18n="live">Memingo 0.1 está vivo</span></p>
         <h1>CODE<br><span>THE BIT.</span></h1>
-        <p class="hero-lead">Un lenguaje inspirado en los memes de internet para crear juegos, apps y servidores web sin perder el ritmo.</p>
+        <p class="hero-lead" data-i18n="heroLead">Un lenguaje inspirado en los memes de internet para crear juegos, apps y servidores web sin perder el ritmo.</p>
         <div class="hero-actions">
-          <a class="button button-yellow" href="#downloads">Instalar Memingo <span aria-hidden="true">↓</span></a>
-          <a class="text-link" href="#docs">Leer la documentación <span aria-hidden="true">↗</span></a>
+          <a class="button button-yellow" href="#downloads"><span data-i18n="installMemingo">Instalar Memingo</span> <span aria-hidden="true">↓</span></a>
+          <a class="text-link" href="#docs"><span data-i18n="readDocs">Leer la documentación</span> <span aria-hidden="true">↗</span></a>
         </div>
       </div>
       <div class="hero-stage" aria-label="Ejemplo interactivo de Memingo">
@@ -49,7 +54,7 @@
           <div class="window-bar">
             <div class="window-dots"><span></span><span></span><span></span></div>
             <span>hello.mgo</span>
-            <button class="run-button" id="run-button" type="button"><span>▶</span> Ejecutar</button>
+            <button class="run-button" id="run-button" type="button"><span>▶</span> <span data-i18n="run">Ejecutar</span></button>
           </div>
           <pre class="code"><code><span class="line"><i>1</i><b class="keyword">vibe</b> app = <em>"Memingo"</em></span>
 <span class="line"><i>2</i><b class="keyword">spill</b> <em>"Bienvenido a "</em> + app + <em>"!"</em></span>
@@ -61,7 +66,7 @@
 <span class="line"><i>8</i>}</span></code></pre>
           <div class="terminal" id="terminal" aria-live="polite">
             <span class="prompt">memingo</span>
-            <span class="terminal-output">Bienvenido a Memingo!</span>
+            <span class="terminal-output" data-i18n="welcome">Bienvenido a Memingo!</span>
           </div>
         </div>
       </div>
@@ -76,42 +81,42 @@
 
     <section class="feature-grid section" id="docs">
       <div class="section-heading">
-        <p class="eyebrow">01 / DOCUMENTACIÓN</p>
-        <h2>Familiar, pero<br><span>más meme.</span></h2>
+        <p class="eyebrow"><span data-i18n="docsLabel">01 / DOCUMENTACIÓN</span></p>
+        <h2><span data-i18n="docsTitleA">Familiar, pero</span><br><span data-i18n="docsTitleB">más meme.</span></h2>
       </div>
       <div class="feature-cards">
         <article class="feature-card yellow-card">
           <span class="card-number">01</span>
           <div class="card-symbol">{ }</div>
-          <h3>Una sintaxis con personalidad</h3>
-          <p>Variables llamadas `vibe`, funciones `ritual` y valores `based`, `cringe` o `ghost`.</p>
-          <a href="#syntax">Ver sintaxis <span>→</span></a>
+          <h3 data-i18n="syntaxCardTitle">Una sintaxis con personalidad</h3>
+          <p data-i18n="syntaxCardBody">Variables llamadas `vibe`, funciones `ritual` y valores `based`, `cringe` o `ghost`.</p>
+          <a href="#syntax"><span data-i18n="viewSyntax">Ver sintaxis</span> <span>→</span></a>
         </article>
         <article class="feature-card white-card">
           <span class="card-number">02</span>
           <div class="card-symbol red-symbol">▶</div>
-          <h3>Ejecuta algo en minutos</h3>
-          <p>Archivos `.mgo`, REPL interactivo, proyecto local, tests y builds desde una sola CLI.</p>
-          <a href="#quickstart">Inicio rápido <span>→</span></a>
+          <h3 data-i18n="executeCardTitle">Ejecuta algo en minutos</h3>
+          <p data-i18n="executeCardBody">Archivos `.mgo`, REPL interactivo, proyecto local, tests y builds desde una sola CLI.</p>
+          <a href="#quickstart"><span data-i18n="quickstartLink">Inicio rápido</span> <span>→</span></a>
         </article>
         <article class="feature-card black-card">
           <span class="card-number">03</span>
           <div class="card-symbol package-symbol">□</div>
-          <h3>Paquetes sin drama</h3>
-          <p>Manifiesto `memingo.toml`, lockfile y comandos para añadir, instalar o quitar dependencias.</p>
-          <a href="#packages">Gestor de paquetes <span>→</span></a>
+          <h3 data-i18n="packagesCardTitle">Paquetes sin drama</h3>
+          <p data-i18n="packagesCardBody">Manifiesto `memingo.toml`, lockfile y comandos para añadir, instalar o quitar dependencias.</p>
+          <a href="#packages"><span data-i18n="packageManagerLink">Gestor de paquetes</span> <span>→</span></a>
         </article>
       </div>
     </section>
 
     <section class="quickstart section" id="quickstart">
       <div class="quickstart-copy">
-        <p class="eyebrow">02 / INICIO RÁPIDO</p>
-        <h2>De cero a<br><span>hola mundo.</span></h2>
+        <p class="eyebrow" data-i18n="quickLabel">02 / INICIO RÁPIDO</p>
+        <h2><span data-i18n="quickTitleA">De cero a</span><br><span data-i18n="quickTitleB">hola mundo.</span></h2>
         <ol>
-          <li><button class="step active" type="button" data-step="install"><b>01</b><span>Instala Memingo</span></button></li>
-          <li><button class="step" type="button" data-step="project"><b>02</b><span>Crea un proyecto</span></button></li>
-          <li><button class="step" type="button" data-step="run"><b>03</b><span>Hazlo existir</span></button></li>
+          <li><button class="step active" type="button" data-step="install"><b>01</b><span data-i18n="stepInstall">Instala Memingo</span></button></li>
+          <li><button class="step" type="button" data-step="project"><b>02</b><span data-i18n="stepProject">Crea un proyecto</span></button></li>
+          <li><button class="step" type="button" data-step="run"><b>03</b><span data-i18n="stepRun">Hazlo existir</span></button></li>
         </ol>
       </div>
       <div class="command-panel">
@@ -120,7 +125,7 @@
           <button type="button" role="tab" data-command="windows">Windows</button>
         </div>
         <div class="command-content">
-          <div class="command-line"><span>$</span><code id="command-code">./scripts/install.sh</code><button class="copy-button" type="button" data-copy="./scripts/install.sh">Copiar</button></div>
+          <div class="command-line"><span>$</span><code id="command-code">./scripts/install.sh</code><button class="copy-button" type="button" data-copy="./scripts/install.sh" data-i18n="copy">Copiar</button></div>
           <pre id="command-output"><span>Memingo installed successfully</span>
 Memingo 0.1.0 listo para usar</pre>
         </div>
@@ -129,23 +134,23 @@ Memingo 0.1.0 listo para usar</pre>
 
     <section class="syntax section" id="syntax">
       <div class="syntax-heading">
-        <p class="eyebrow">03 / LA GRAMÁTICA</p>
-        <h2>Palabras clave.<br><span>Memes reales.</span></h2>
+        <p class="eyebrow" data-i18n="grammarLabel">03 / LA GRAMÁTICA</p>
+        <h2><span data-i18n="grammarTitleA">Palabras clave.</span><br><span data-i18n="grammarTitleB">Memes reales.</span></h2>
       </div>
       <div class="keyword-grid">
-        <article><code>vibe</code><p>Declara una variable</p></article>
-        <article><code>ritual</code><p>Declara una función</p></article>
-        <article><code>when / nah</code><p>Condiciones, alternativas</p></article>
-        <article><code>grind</code><p>Repite mientras sea verdad</p></article>
-        <article><code>spill</code><p>Imprime en la consola</p></article>
-        <article><code>drop</code><p>Devuelve un valor</p></article>
+        <article><code>vibe</code><p data-i18n="keywordVibe">Declara una variable</p></article>
+        <article><code>ritual</code><p data-i18n="keywordRitual">Declara una función</p></article>
+        <article><code>when / nah</code><p data-i18n="keywordWhen">Condiciones, alternativas</p></article>
+        <article><code>grind</code><p data-i18n="keywordGrind">Repite mientras sea verdad</p></article>
+        <article><code>spill</code><p data-i18n="keywordSpill">Imprime en la consola</p></article>
+        <article><code>drop</code><p data-i18n="keywordDrop">Devuelve un valor</p></article>
       </div>
     </section>
 
     <section class="downloads section" id="downloads">
       <div class="downloads-heading">
-        <p class="eyebrow">04 / DESCARGAS</p>
-        <h2>Elige tu plataforma.<br><span>Sin pip.</span></h2>
+        <p class="eyebrow" data-i18n="downloadsLabel">04 / DESCARGAS</p>
+        <h2><span data-i18n="downloadsTitleA">Elige tu plataforma.</span><br><span data-i18n="downloadsTitleB">Sin pip.</span></h2>
       </div>
       <div class="download-grid">
         <article>
@@ -164,27 +169,27 @@ Memingo 0.1.0 listo para usar</pre>
           <a class="button button-black" href="./downloads/install.ps1" download>install.ps1 <span>↓</span></a>
         </article>
       </div>
-      <p class="release-note">Versión actual: <strong>0.1.0 MVP</strong> · Python 3.10+ · BSD 3-Clause</p>
+      <p class="release-note"><span data-i18n="release">Versión actual:</span> <strong>0.1.0 MVP</strong> · Python 3.10+ · BSD 3-Clause</p>
     </section>
 
     <section class="community section" id="community">
       <div class="community-copy">
-        <p class="eyebrow">05 / COMUNIDAD</p>
-        <h2>Construye raro.<br><span>Hazlo juntos.</span></h2>
-        <p>Memingo nace para compartir ideas, juegos, servidores y experimentos sin tomar demasiado en serio la programación.</p>
-        <a class="button button-yellow" href="#discussions">Unirse a la conversación <span>→</span></a>
+        <p class="eyebrow" data-i18n="communityLabel">05 / COMUNIDAD</p>
+        <h2><span data-i18n="communityTitleA">Construye raro.</span><br><span data-i18n="communityTitleB">Hazlo juntos.</span></h2>
+        <p data-i18n="communityBody">Memingo nace para compartir ideas, juegos, servidores y experimentos sin tomar demasiado en serio la programación.</p>
+        <a class="button button-yellow" href="#discussions"><span data-i18n="joinCommunity">Unirse a la conversación</span> <span>→</span></a>
       </div>
       <div class="community-posts" id="discussions">
-        <article><span>12 k</span><div><p>MEMES / CÓDIGO</p><h3>¿Qué ritual usarías para invocar café?</h3></div><b>→</b></article>
-        <article><span>8 k</span><div><p>PROYECTOS</p><h3>Presenta tu primer juego Memingo</h3></div><b>→</b></article>
-        <article><span>6 k</span><div><p>AYUDA</p><h3>Tu pregunta básica ya no es básica aquí</h3></div><b>→</b></article>
+        <article><span>12 k</span><div><p data-i18n="communityMemes">MEMES / CÓDIGO</p><h3 data-i18n="communityPostOne">¿Qué ritual usarías para invocar café?</h3></div><b>→</b></article>
+        <article><span>8 k</span><div><p data-i18n="communityProjects">PROYECTOS</p><h3 data-i18n="communityPostTwo">Presenta tu primer juego Memingo</h3></div><b>→</b></article>
+        <article><span>6 k</span><div><p data-i18n="communityHelp">AYUDA</p><h3 data-i18n="communityPostThree">Tu pregunta básica ya no es básica aquí</h3></div><b>→</b></article>
       </div>
     </section>
 
     <section class="wiki section" id="wiki">
       <div class="wiki-heading">
-        <p class="eyebrow">06 / WIKI</p>
-        <h2>El archivo<br><span>de la leyenda.</span></h2>
+        <p class="eyebrow" data-i18n="wikiLabel">06 / WIKI</p>
+        <h2><span data-i18n="wikiTitleA">El archivo</span><br><span data-i18n="wikiTitleB">de la leyenda.</span></h2>
       </div>
       <div class="wiki-grid">
         <a href="#syntax"><b>01</b><span>Lenguaje</span><strong>→</strong></a>
@@ -195,9 +200,9 @@ Memingo 0.1.0 listo para usar</pre>
     </section>
 
     <section class="packages section" id="packages">
-      <p class="eyebrow">07 / GESTOR DE PAQUETES</p>
+      <p class="eyebrow" data-i18n="packageLabel">07 / GESTOR DE PAQUETES</p>
       <div class="packages-panel">
-        <div><code>memingo.toml</code><h2>Dependencias con nombre propio.</h2></div>
+        <div><code>memingo.toml</code><h2 data-i18n="packageTitle">Dependencias con nombre propio.</h2></div>
         <pre>[package]
 name = "my-memingo-app"
 version = "0.1.0"
@@ -216,15 +221,16 @@ meme-core = "1.2.0"</pre>
     <small>© 2026 AtDev. BSD 3-Clause.</small>
   </footer>
 
-  <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Buscar en Memingo">
+  <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Buscar en Memingo" data-i18n-aria="searchDialogLabel">
     <div class="search-box">
-      <label for="site-search">Buscar</label>
-      <input id="site-search" type="search" placeholder="Variables, rituales, instalar..." autocomplete="off">
+      <label for="site-search" data-i18n="searchTitle">Buscar</label>
+      <input id="site-search" type="search" placeholder="Variables, rituales, instalar..." autocomplete="off" data-i18n-placeholder="searchPlaceholder">
       <div class="search-results" id="search-results"></div>
       <button class="close-search" id="close-search" type="button" aria-label="Cerrar búsqueda">ESC</button>
     </div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
