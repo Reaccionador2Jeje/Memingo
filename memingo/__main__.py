@@ -20,6 +20,7 @@ from .packages import (
 )
 from .parser import ParseError, parse
 from .server import serve
+from .cli import banner, heading, key_value, success, info, error, warning, table, spinner
 
 
 def run_file(path: str) -> int:
@@ -39,8 +40,8 @@ def run_file(path: str) -> int:
 
 
 def repl() -> int:
-    print(f"Memingo {__version__}")
-    print("Escribe codigo Memingo. Usa Ctrl+D para salir.")
+    banner(__version__, "INTERACTIVE MEMINGO REPL")
+    info("Write Memingo code. Press Ctrl+D to exit.")
     interpreter = Interpreter(project_directory=Path.cwd())
     while True:
         try:
@@ -73,7 +74,8 @@ def run_dev(directory=".", interval=0.5) -> int:
     manifest = read_manifest(directory)
     entry = Path(directory) / manifest.get("package", {}).get("entry", "main.mgo")
     last_signature = None
-    print("Memingo dev mode. Press Ctrl+C to stop.")
+    banner(__version__, "MEMINGO DEV MODE")
+    info("Watching for file changes. Press Ctrl+C to stop.")
     try:
         while True:
             signature = entry.stat().st_mtime_ns if entry.exists() else None
@@ -108,20 +110,26 @@ def build_project(directory=".", output="dist") -> int:
             if source != entry:
                 bundle.write(source, source.name)
         bundle.write(Path(directory) / "memingo.toml", "memingo.toml")
-    print(f"Built {archive}")
+    heading("Build complete")
+    success(f"Archive: {archive}")
     return 0
 
 
 def doctor() -> int:
-    print("Memingo Doctor")
-    print(f"  Python: {sys.version.split()[0]}")
-    print(f"  Module: {Path(__file__).resolve().parent}")
+    heading("Memingo Doctor", "installation diagnostics")
     executable = shutil.which("memingo")
-    print(f"  memingo on PATH: {executable or 'not found'}")
+    key_value([
+        ("Python", sys.version.split()[0]),
+        ("Module", str(Path(__file__).resolve().parent)),
+        ("memingo PATH", executable or "not found"),
+    ])
     if sys.version_info < (3, 10):
-        print("  Status: Python 3.10 or newer is required")
+        error("Python 3.10 or newer is required")
         return 1
-    print("  Status: OK" if executable else "  Status: Module works, command is missing from PATH")
+    if executable:
+        success("Memingo installation is ready")
+    else:
+        warning("Memingo works as a module, but the command is missing from PATH")
     return 0
 
 
@@ -143,8 +151,8 @@ def update_self() -> int:
             command = ["sh", str(script_path)]
         result = subprocess.run(command, check=False)
         return result.returncode
-    except Exception as error:
-        print(f"Memingo update failed: {error}", file=sys.stderr)
+    except Exception as exception:
+        error(f"Memingo update failed: {exception}")
         return 1
 
 
@@ -158,7 +166,12 @@ def run_tests(directory=".", pattern="test*.py") -> int:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="memingo", description="Memingo programming language")
+    parser = argparse.ArgumentParser(
+        prog="memingo",
+        description="Memingo programming language",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="Examples:\n  memingo init my-app\n  memingo run\n  memingo doctor\n  mgoa search",
+    )
     parser.add_argument("--version", action="version", version=f"Memingo {__version__}")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -219,7 +232,8 @@ def main(argv=None) -> int:
         return update_self()
     if args.command == "init":
         manifest = init_project(args.directory, args.name)
-        print(f"Created Memingo project: {manifest}")
+        heading("Project created", args.name)
+        success(f"Manifest: {manifest}")
         return 0
     if args.command == "run":
         if args.path:
@@ -240,10 +254,10 @@ def main(argv=None) -> int:
             if not (project_path / "memingo.toml").exists():
                 raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             installed = add_package(project_path, args.spec)
-            print(f"Added approved dependency: {installed['name']}@{installed['version']}")
+            success(f"Added approved dependency {installed['name']}@{installed['version']}")
             return 0
-        except Exception as error:
-            print(f"Memingo add error: {error}", file=sys.stderr)
+        except Exception as exception:
+            error(f"Memingo add error: {exception}")
             return 1
     if args.command == "remove":
         try:
@@ -251,10 +265,10 @@ def main(argv=None) -> int:
             if not (project_path / "memingo.toml").exists():
                 raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             remove_package(project_path, args.name)
-            print(f"Removed dependency: {args.name}")
+            success(f"Removed dependency {args.name}")
             return 0
-        except Exception as error:
-            print(f"Memingo remove error: {error}", file=sys.stderr)
+        except Exception as exception:
+            error(f"Memingo remove error: {exception}")
             return 1
     if args.command == "install":
         try:
@@ -263,13 +277,14 @@ def main(argv=None) -> int:
                 raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             manifest = read_manifest(project_path)
             if not manifest.get("dependencies", {}):
-                print("No dependencies to install.")
+                info("No dependencies to install")
                 return 0
             dependencies = install_project(project_path)
-            print(f"Installed {len(dependencies)} approved package(s)")
+            heading("Dependencies installed", str(len(dependencies)))
+            success(f"{len(dependencies)} approved package(s) ready")
             return 0
-        except Exception as error:
-            print(f"Memingo install error: {error}", file=sys.stderr)
+        except Exception as exception:
+            error(f"Memingo install error: {exception}")
             return 1
     if args.command == "update":
         try:
@@ -278,13 +293,14 @@ def main(argv=None) -> int:
                 raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             manifest = read_manifest(project_path)
             if not manifest.get("dependencies", {}):
-                print("No dependencies to update.")
+                info("No dependencies to update")
                 return 0
             dependencies = install_project(project_path)
-            print(f"Updated {len(dependencies)} approved package(s)")
+            heading("Dependencies updated", str(len(dependencies)))
+            success(f"{len(dependencies)} approved package(s) ready")
             return 0
-        except Exception as error:
-            print(f"Memingo update error: {error}", file=sys.stderr)
+        except Exception as exception:
+            error(f"Memingo update error: {exception}")
             return 1
     if args.command == "fmt":
         changed = 0
@@ -298,11 +314,11 @@ def main(argv=None) -> int:
                 original = source_file.read_text(encoding="utf-8")
                 formatted = format_file(source_file)
                 if args.check and original != formatted:
-                    print(f"Would format: {source_file}", file=sys.stderr)
+                    warning(f"Would format: {source_file}")
                     changed += 1
                 elif not args.check and original != formatted:
                     source_file.write_text(formatted, encoding="utf-8")
-                    print(f"Formatted: {source_file}")
+                    success(f"Formatted: {source_file}")
                     changed += 1
         return 1 if args.check and changed else 0
     parser.print_help()

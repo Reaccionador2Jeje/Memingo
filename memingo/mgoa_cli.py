@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from .cli import banner, heading, success, info, error, warning, table
 from .mgoa import (
     PackageError, add_package, install_project, publish_package,
     remove_package, search_registry,
@@ -8,6 +9,7 @@ from .mgoa import (
 
 
 def main(argv=None):
+    banner("0.1.0", "MEMINGO APPROVED PACKAGES")
     parser = argparse.ArgumentParser(
         prog="mgoa",
         description="Memingo Approved - package manager for Memingo",
@@ -39,34 +41,39 @@ def main(argv=None):
         if args.command == "search":
             matches = search_registry(args.query, args.registry)
             if not matches:
-                print("No approved packages found.")
+                info("No approved packages found")
                 return 0
-            for package in matches:
-                print(f"{package['name']}@{package['latest']}  {package['description']}")
+            table(
+                ["package", "latest", "description"],
+                [[package["name"], package["latest"], package["description"]] for package in matches],
+            )
             return 0
         if args.command == "add":
             installed = add_package(args.project, args.spec, args.registry)
-            print(f"Installed approved package: {installed['name']}@{installed['version']}")
+            heading("Approved package installed")
+            success(f"{installed['name']}@{installed['version']}")
             return 0
         if args.command == "install":
             installed = install_project(args.directory, args.registry)
-            print(f"Installed {len(installed)} approved package(s)")
+            heading("Dependencies installed", str(len(installed)))
+            success(f"{len(installed)} approved package(s) ready")
             return 0
         if args.command == "remove":
             remove_package(args.project, args.name)
-            print(f"Removed package: {args.name}")
+            success(f"Removed package {args.name}")
             return 0
         if args.command == "publish":
             archive = publish_package(args.directory, args.output)
-            print(f"Approved package archive: {archive}")
+            heading("Approved package archive")
+            success(str(archive))
             return 0
         parser.print_help()
         return 2
-    except PackageError as error:
-        print(f"mgoa: {error}", file=sys.stderr)
+    except PackageError as exception:
+        error(f"mgoa: {exception}")
         return 1
-    except Exception as error:
-        print(f"mgoa: unexpected error: {error}", file=sys.stderr)
+    except Exception as exception:
+        error(f"mgoa: unexpected error: {exception}")
         return 1
 
 
