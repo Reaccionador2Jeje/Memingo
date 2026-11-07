@@ -58,13 +58,27 @@ def _safe_extract(zip_path, destination):
         archive.extractall(root)
 
 
-def _find_package_root(directory):
+def _find_package_root(directory, package_name=None):
     directory = Path(directory)
-    candidates = [directory, *[path for path in directory.iterdir() if path.is_dir()]] if directory.exists() else []
+    if not directory.exists():
+        raise PackageError("Package source does not exist")
+
+    candidates = [directory, *directory.rglob("memingo.toml")]
+    candidates.extend(directory.rglob("package.toml"))
     for candidate in candidates:
-        if (candidate / "memingo.toml").exists():
+        if candidate.is_file():
+            candidate = candidate.parent
+        manifest = candidate / "memingo.toml"
+        if not manifest.exists():
+            manifest = candidate / "package.toml"
+        if not manifest.exists():
+            continue
+        if package_name is None:
             return candidate
-        if (candidate / "package.toml").exists():
+        import tomllib
+        with manifest.open("rb") as file:
+            metadata = tomllib.load(file)
+        if metadata.get("package", {}).get("name") == package_name:
             return candidate
     raise PackageError("Package archive does not contain memingo.toml or package.toml")
 
@@ -82,6 +96,10 @@ def _approved_registry(registry_url=None):
 def resolve_package(spec, registry_url=None):
     local = Path(spec)
     if local.exists():
+        if local.is_file() and local.suffix.lower() == ".zip":
+            temporary = Path(tempfile.mkdtemp(prefix="mgoa-"))
+            _safe_extract(local, temporary / "extracted")
+            return _find_package_root(temporary / "extracted")
         return _find_package_root(local)
 
     name, requested = parse_spec(spec)
@@ -104,7 +122,7 @@ def resolve_package(spec, registry_url=None):
     archive = temporary / "package.zip"
     _download(archive_url, archive)
     _safe_extract(archive, temporary / "extracted")
-    return _find_package_root(temporary / "extracted")
+    return _find_package_root(temporary / "extracted", package_name=name)
 
 
 def install_package(project_directory=".", spec="", registry_url=None):

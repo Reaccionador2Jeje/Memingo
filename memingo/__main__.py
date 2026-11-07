@@ -22,8 +22,10 @@ from .server import serve
 
 def run_file(path: str) -> int:
     try:
-        with open(path, "r", encoding="utf-8") as source_file:
-            for line in execute(source_file.read()):
+        source_path = Path(path).resolve()
+        project_directory = source_path.parent
+        with open(source_path, "r", encoding="utf-8") as source_file:
+            for line in execute(source_file.read(), project_directory=project_directory):
                 print(line)
         return 0
     except (LexerError, ParseError, RuntimeErrorMemingo) as error:
@@ -37,7 +39,7 @@ def run_file(path: str) -> int:
 def repl() -> int:
     print(f"Memingo {__version__}")
     print("Escribe codigo Memingo. Usa Ctrl+D para salir.")
-    interpreter = Interpreter()
+    interpreter = Interpreter(project_directory=Path.cwd())
     while True:
         try:
             source = input("memingo> ")
@@ -62,7 +64,7 @@ def run_project(directory=".") -> int:
         print(f"Memingo error: {error}", file=sys.stderr)
         return 1
     entry = manifest.get("package", {}).get("entry", "main.mgo")
-    return run_file(str(Path(directory) / entry))
+    return run_file(str(Path(directory).resolve() / entry))
 
 
 def run_dev(directory=".", interval=0.5) -> int:

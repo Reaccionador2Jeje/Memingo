@@ -1,6 +1,16 @@
 {
   "schema": "memingo-approved/v1",
   "approved": {
-    "packages": {}
+    "packages": {
+      "hello-memes": {
+        "description": "Tiny approved package with a greeting ritual",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://github.com/Reaccionador2Jeje/Memingo/archive/refs/heads/main.zip"
+          }
+        }
+      }
+    }
   }
 }
