@@ -33,6 +33,18 @@ class MemingoLanguageTests(unittest.TestCase):
         with self.assertRaises(ParseError):
             execute('vibe = 4')
 
+    def test_objects_lists_and_json(self):
+        output = execute('vibe user = {name: "Ana", role: "dev"}\nvibe users = [user]\nspill user.name\nspill json_stringify(users)')
+        self.assertEqual(output, ['Ana', '[{"name":"Ana","role":"dev"}]'])
+
+    def test_mutable_collections(self):
+        output = execute('vibe values = []\npush(values, "based")\nset_value(values, 0, "cringe")\nspill values[0]')
+        self.assertEqual(output, ["cringe"])
+
+    def test_json_round_trip(self):
+        output = execute('vibe value = json_parse("{\\\"meme\\\":\\\"based\\\"}")\nspill value["meme"]')
+        self.assertEqual(output, ["based"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from . import __version__
 from .interpreter import Interpreter, RuntimeErrorMemingo, execute
+from .formatter import format_file
 from .lexer import LexerError
 from .packages import (
     add_dependency, init_project, install_dependencies,
@@ -199,6 +200,10 @@ def main(argv=None) -> int:
     install_parser.add_argument("directory", nargs="?", default=".")
 
     update_parser = subparsers.add_parser("update", help="Update installed dependencies")
+
+    format_parser = subparsers.add_parser("fmt", help="Format Memingo source files")
+    format_parser.add_argument("paths", nargs="+", help="Files or directories to format")
+    format_parser.add_argument("--check", action="store_true", help="Check formatting without writing")
     update_parser.add_argument("directory", nargs="?", default=".")
 
     args = parser.parse_args(argv)
@@ -244,6 +249,25 @@ def main(argv=None) -> int:
         dependencies = install_dependencies(args.directory)
         print(f"Updated {len(dependencies)} dependencies")
         return 0
+    if args.command == "fmt":
+        changed = 0
+        for input_path in args.paths:
+            path = Path(input_path)
+            files = list(path.rglob("*.mgo")) if path.is_dir() else [path]
+            for source_file in files:
+                if not source_file.exists():
+                    print(f"Memingo error: File not found: {source_file}", file=sys.stderr)
+                    return 1
+                original = source_file.read_text(encoding="utf-8")
+                formatted = format_file(source_file)
+                if args.check and original != formatted:
+                    print(f"Would format: {source_file}", file=sys.stderr)
+                    changed += 1
+                elif not args.check and original != formatted:
+                    source_file.write_text(formatted, encoding="utf-8")
+                    print(f"Formatted: {source_file}")
+                    changed += 1
+        return 1 if args.check and changed else 0
     parser.print_help()
     return 2
 

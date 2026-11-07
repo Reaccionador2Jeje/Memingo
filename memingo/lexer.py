@@ -53,13 +53,13 @@ class Lexer:
                     tokens.append(Token("OP", pair, self.line, self.column))
                     self._advance()
                     self._advance()
-                elif char in "=+-*/%<>!(){}[],;":
+                elif char in "=+-*/%<>!(){}[],;:.?":
                     kind = {
                         "+": "PLUS", "-": "MINUS", "*": "STAR", "/": "SLASH",
                         "%": "PERCENT", "=": "EQUAL", "<": "OP", ">": "OP",
                         "!": "OP", "(": "LPAREN", ")": "RPAREN", "{": "LBRACE",
                         "}": "RBRACE", "[": "LBRACKET", "]": "RBRACKET",
-                        ",": "COMMA", ";": "SEMICOLON",
+                        ",": "COMMA", ";": "SEMICOLON", ":": "COLON", ".": "DOT",
                     }[char]
                     value = char if kind == "OP" else char
                     tokens.append(Token(kind, value, self.line, self.column))

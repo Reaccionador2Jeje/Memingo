@@ -70,6 +70,17 @@ class ListExpression:
 
 
 @dataclass
+class MapExpression:
+    entries: list
+
+
+@dataclass
+class Get:
+    target: object
+    key: object
+
+
+@dataclass
 class Binary:
     operator: str
     left: object
@@ -217,14 +228,24 @@ class Parser:
 
     def _call(self):
         expr = self._primary()
-        while self._match("LPAREN"):
-            arguments = []
-            if not self._check("RPAREN"):
-                arguments.append(self._expression())
-                while self._match("COMMA"):
+        while True:
+            if self._match("LPAREN"):
+                arguments = []
+                if not self._check("RPAREN"):
                     arguments.append(self._expression())
-            self._consume("RPAREN", "Expected ')' after arguments")
-            expr = Call(expr, arguments)
+                    while self._match("COMMA"):
+                        arguments.append(self._expression())
+                self._consume("RPAREN", "Expected ')' after arguments")
+                expr = Call(expr, arguments)
+            elif self._match("DOT"):
+                key = self._consume("IDENTIFIER", "Expected property name after '.'").value
+                expr = Get(expr, Literal(key))
+            elif self._match("LBRACKET"):
+                key = self._expression()
+                self._consume("RBRACKET", "Expected ']' after index")
+                expr = Get(expr, key)
+            else:
+                break
         return expr
 
     def _primary(self):
@@ -252,6 +273,20 @@ class Parser:
                     items.append(self._expression())
             self._consume("RBRACKET", "Expected ']' after list")
             return ListExpression(items)
+        if self._match("LBRACE"):
+            entries = []
+            self._skip_separators()
+            if not self._check("RBRACE"):
+                while True:
+                    key = self._consume("IDENTIFIER", "Expected object key").value
+                    self._consume("COLON", "Expected ':' after object key")
+                    entries.append((key, self._expression()))
+                    self._skip_separators()
+                    if not self._match("COMMA"):
+                        break
+                    self._skip_separators()
+            self._consume("RBRACE", "Expected '}' after object")
+            return MapExpression(entries)
         raise ParseError(f"Unexpected token {self._peek().value!r} at line {self._peek().line}, column {self._peek().column}")
 
     def _skip_separators(self):

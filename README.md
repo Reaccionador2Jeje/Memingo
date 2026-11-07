@@ -38,6 +38,24 @@ Theme keywords include `vibe`, `ritual`, `drop`, `when`, `nah`, `grind`, and `sp
 Operators include arithmetic, comparison, equality, `&&`, `||`, and `!`.
 Built-ins currently include `headcount()` and `whatkind()`.
 
+## Language reference
+
+See the complete syntax and standard library in [LANGUAGE.md](LANGUAGE.md).
+
+## Core syntax
+
+```mgo
+vibe profile = {name: "Ana", role: "builder"}
+vibe skills = ["Memingo", "web", "games"]
+set_value(profile, "status", "based")
+
+spill profile.name
+spill profile["role"]
+spill json_stringify(profile)
+
+vibe config = json_parse(env("CONFIG_JSON", "{\\\"mode\\\":\\\"dev\\\"}"))
+```
+
 ## Run
 
 ```bash
@@ -110,6 +128,25 @@ memingo install
 memingo remove meme-core
 memingo doctor
 memingo update-self
+memingo fmt examples
+memingo serve public
+```
+
+## Memingo Approved (mgoa)
+
+```bash
+mgoa search
+mgoa add hello-memes
+mgoa install
+mgoa remove hello-memes
+mgoa publish ./mypackage
+```
+
+Packages can export rituals and vibes using `borrow`:
+
+```mgo
+borrow "hello-memes"
+greet("Team")
 ```
 
 ## Next steps
