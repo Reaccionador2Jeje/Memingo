@@ -61,6 +61,16 @@ No `pip` is required. The official installers copy the Memingo runtime and creat
 ```bash
 chmod +x scripts/install.sh scripts/uninstall.sh
 ./scripts/install.sh
+export PATH="$HOME/.local/bin:$PATH"
+memingo --version
+```
+
+After downloading the public Linux/macOS installer from the website, run it with:
+
+```bash
+chmod +x install.sh
+sh ./install.sh
+export PATH="$HOME/.local/bin:$PATH"
 memingo --version
 ```
 
@@ -70,6 +80,7 @@ The default command location is `~/.local/bin`. Add that directory to `PATH` if 
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/install.ps1
+# Open a new terminal, then run:
 memingo --version
 ```
 
@@ -97,6 +108,8 @@ memingo serve public
 memingo add meme-core=1.2.0
 memingo install
 memingo remove meme-core
+memingo doctor
+memingo update-self
 ```
 
 ## Next steps

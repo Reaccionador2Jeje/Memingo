@@ -1,7 +1,11 @@
 import argparse
+import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
+import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -104,6 +108,42 @@ def build_project(directory=".", output="dist") -> int:
     return 0
 
 
+def doctor() -> int:
+    print("Memingo Doctor")
+    print(f"  Python: {sys.version.split()[0]}")
+    print(f"  Module: {Path(__file__).resolve().parent}")
+    executable = shutil.which("memingo")
+    print(f"  memingo on PATH: {executable or 'not found'}")
+    if sys.version_info < (3, 10):
+        print("  Status: Python 3.10 or newer is required")
+        return 1
+    print("  Status: OK" if executable else "  Status: Module works, command is missing from PATH")
+    return 0
+
+
+def update_self() -> int:
+    base_url = "https://github.com/Reaccionador2Jeje/Memingo/raw/refs/heads/main/site/downloads"
+    if os.name == "nt":
+        script_name = "install.ps1"
+    else:
+        script_name = "install.sh"
+
+    temporary = tempfile.TemporaryDirectory(prefix="memingo-update-")
+    script_path = Path(temporary.name) / script_name
+    try:
+        urllib.request.urlretrieve(base_url + "/" + script_name, script_path)
+        if os.name == "nt":
+            command = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script_path)]
+        else:
+            script_path.chmod(0o755)
+            command = ["sh", str(script_path)]
+        result = subprocess.run(command, check=False)
+        return result.returncode
+    except Exception as error:
+        print(f"Memingo update failed: {error}", file=sys.stderr)
+        return 1
+
+
 def run_tests(directory=".", pattern="test*.py") -> int:
     result = subprocess.run(
         [sys.executable, "-m", "unittest", "discover", "-s", str(directory), "-p", pattern],
@@ -119,6 +159,8 @@ def main(argv=None) -> int:
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("repl", help="Open the interactive REPL")
+    subparsers.add_parser("doctor", help="Check the Memingo installation")
+    subparsers.add_parser("update-self", help="Update Memingo from the official installer")
 
     init_parser = subparsers.add_parser("init", help="Create a Memingo project")
     init_parser.add_argument("directory", nargs="?", default=".")
@@ -163,6 +205,10 @@ def main(argv=None) -> int:
         return repl()
     if args.command == "repl":
         return repl()
+    if args.command == "doctor":
+        return doctor()
+    if args.command == "update-self":
+        return update_self()
     if args.command == "init":
         manifest = init_project(args.directory, args.name)
         print(f"Created Memingo project: {manifest}")

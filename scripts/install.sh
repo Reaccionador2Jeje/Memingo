@@ -4,21 +4,25 @@ set -eu
 SOURCE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 INSTALL_DIR=${MEMINGO_INSTALL_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/memingo}
 BIN_DIR=${MEMINGO_BIN_DIR:-$HOME/.local/bin}
-PYTHON=${MEMINGO_PYTHON:-$(command -v python3 || true)}
+PYTHON=${MEMINGO_PYTHON:-}
 
 if [ -z "$PYTHON" ]; then
-    echo "Memingo necesita Python 3.10 o superior." >&2
-    echo "Instala Python desde tu sistema o desde https://www.python.org/" >&2
-    exit 1
+  PYTHON=$(command -v python3 || command -v python || true)
 fi
 
-if ! "$PYTHON" -c 'import sys; raise SystemExit(sys.version_info < (3, 10))'; then
-    echo "Memingo necesita Python 3.10 o superior." >&2
-    exit 1
+if [ -z "$PYTHON" ]; then
+  echo "Memingo necesita Python 3.10 o superior." >&2
+  echo "Instala Python desde tu gestor del sistema y vuelve a ejecutar el instalador." >&2
+  exit 1
+fi
+
+if ! "$PYTHON" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
+  echo "Memingo necesita Python 3.10 o superior." >&2
+  exit 1
 fi
 
 mkdir -p "$INSTALL_DIR" "$BIN_DIR"
-rm -rf "$INSTALL_DIR/memingo"
+rm -rf "$INSTALL_DIR/memingo" "$INSTALL_DIR/launcher.py"
 cp -R "$SOURCE_DIR/memingo" "$INSTALL_DIR/memingo"
 cp "$SOURCE_DIR/scripts/launcher.py" "$INSTALL_DIR/launcher.py"
 
@@ -28,10 +32,33 @@ exec "$PYTHON" -I "$INSTALL_DIR/launcher.py" "\$@"
 EOF
 chmod +x "$BIN_DIR/memingo"
 
-printf 'Memingo installed at %s\n' "$INSTALL_DIR"
-printf 'Command installed at %s\n' "$BIN_DIR/memingo"
+PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
+if [ "$BIN_DIR" != "$HOME/.local/bin" ]; then
+  PATH_LINE="export PATH=\"$BIN_DIR:\$PATH\""
+fi
 
-case ":${PATH:-}:" in
-    *:"$BIN_DIR":*) ;;
-    *) echo "Add $BIN_DIR to PATH to run: memingo" ;;
+add_path_line() {
+  profile=$1
+  [ -n "$profile" ] || return 0
+  touch "$profile"
+  if ! grep -Fq "$BIN_DIR" "$profile" 2>/dev/null; then
+    printf '\n# Memingo\n%s\n' "$PATH_LINE" >> "$profile"
+  fi
+}
+
+add_path_line "$HOME/.profile"
+add_path_line "$HOME/.bashrc"
+case "${SHELL:-}" in
+  */zsh) add_path_line "$HOME/.zprofile" ;;
+  */fish)
+    mkdir -p "$HOME/.config/fish"
+    if ! grep -Fq "$BIN_DIR" "$HOME/.config/fish/config.fish" 2>/dev/null; then
+      printf '\n# Memingo\nfish_add_path %s\n' "$BIN_DIR" >> "$HOME/.config/fish/config.fish"
+    fi
+    ;;
 esac
+
+printf 'Memingo installed successfully.\n'
+printf 'Runtime: %s\n' "$INSTALL_DIR"
+printf 'Command: %s/memingo\n' "$BIN_DIR"
+printf 'Run this now if memingo is not found:\n  export PATH="%s:$PATH"\n  hash -r\n  memingo --version\n' "$BIN_DIR"
