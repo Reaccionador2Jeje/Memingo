@@ -35,3 +35,5 @@ code vscode-extension
 ```
 
 Press `F5` to open an Extension Development Host.
+
+Install Memingo on your system before running commands. Use `memingo doctor` for diagnostics, or set `memingo.executable` to an empty string to run the source package through Python.

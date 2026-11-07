@@ -4,7 +4,7 @@
     "name": "Memingo Extension Development Host",
     "type": "extensionHost",
     "request": "launch",
-    "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+    "args": ["--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
     "outFiles": []
   }]
 }

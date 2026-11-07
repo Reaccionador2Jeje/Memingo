@@ -25,7 +25,7 @@ function sourceCommand(args, cwd) {
   const configuration = vscode.workspace.getConfiguration("memingo");
   const executable = configuration.get("executable", "memingo");
   const python = configuration.get("pythonExecutable", "python3");
-  const command = executable === "memingo"
+  const command = executable === ""
     ? `${shellQuote(python)} -m memingo ${args.map(shellQuote).join(" ")}`
     : `${shellQuote(executable)} ${args.map(shellQuote).join(" ")}`;
   return `cd ${shellQuote(cwd)} && ${command}`;

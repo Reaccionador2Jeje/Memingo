@@ -31,7 +31,7 @@
     "configuration": {
       "title": "Memingo",
       "properties": {
-        "memingo.executable": { "type": "string", "default": "memingo", "description": "Memingo executable command." },
+        "memingo.executable": { "type": "string", "default": "memingo", "description": "Installed Memingo executable command. Leave empty to run the source package through Python." },
         "memingo.pythonExecutable": { "type": "string", "default": "python3", "description": "Python executable used when running Memingo from source." }
       }
     },
@@ -39,6 +39,11 @@
       "editor/title/run": [{ "when": "resourceLangId == memingo", "command": "memingo.run", "group": "navigation" }]
     }
   },
-  "scripts": { "check": "node --check extension.js", "package": "npx @vscode/vsce package" },
-  "license": "BSD-3-Clause"
+  "scripts": { "check": "node --check extension.js", "package": "npx @vscode/vsce package", "publish": "npx @vscode/vsce publish" },
+  "license": "BSD-3-Clause",
+  "homepage": "https://reaccionador2jeje.github.io/Memingo/",
+  "repository": { "type": "git", "url": "https://github.com/Reaccionador2Jeje/Memingo.git" },
+  "bugs": { "url": "https://github.com/Reaccionador2Jeje/Memingo/issues" },
+  "galleryBanner": { "color": "#FFCF3A", "theme": "light" },
+  "changelog": "CHANGELOG.md"
 }

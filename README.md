@@ -101,7 +101,7 @@ This creates an all-platform source release in `dist/`. Linux/macOS users run `s
 ```bash
 memingo init my-app --name my-app
 memingo run
-memingo dev
+memingo dev 
 memingo test
 memingo build
 memingo serve public
