@@ -8,6 +8,11 @@ class Program:
 
 
 @dataclass
+class Borrow:
+    package: object
+
+
+@dataclass
 class Let:
     name: str
     value: object
@@ -113,6 +118,8 @@ class Parser:
             return Return(self._expression())
         if self._match("SPILL"):
             return Say(self._expression())
+        if self._match("BORROW"):
+            return Borrow(self._expression())
         if self._check("IDENTIFIER"):
             name = self._advance().value
             if self._match("EQUAL"):

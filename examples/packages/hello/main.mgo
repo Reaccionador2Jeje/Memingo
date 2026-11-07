@@ -1,0 +1,5 @@
+vibe meme_hello = "Hello from an approved package!"
+
+ritual greet(name) {
+    spill meme_hello + " " + name
+}

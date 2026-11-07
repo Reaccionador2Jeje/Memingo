@@ -10,7 +10,7 @@ class Token:
 
 
 KEYWORDS = {
-    "vibe", "ritual", "drop", "when", "nah", "grind", "spill",
+    "vibe", "ritual", "drop", "when", "nah", "grind", "spill", "borrow",
     "based", "cringe", "ghost",
 }
 

@@ -1,7 +1,9 @@
 import json
+import os
+from pathlib import Path
 
 from .parser import (
-    Assign, Binary, Call, Function, If, Let, ListExpression, Literal,
+    Assign, Binary, Borrow, Call, Function, If, Let, ListExpression, Literal,
     Program, Return, Say, Unary, Variable, While, parse,
 )
 
@@ -61,7 +63,8 @@ class MemingoFunction:
 
 
 class Interpreter:
-    def __init__(self):
+    def __init__(self, project_directory="."):
+        self.project_directory = Path(project_directory).resolve()
         self.output = []
         self.global_environment = Environment()
         self.global_environment.define("headcount", lambda value: len(value))
@@ -97,9 +100,29 @@ class Interpreter:
             text = self._display(value)
             self.output.append(text)
             return value
-        if isinstance(node, Return):
-            value = self.evaluate(node.value) if node.value is not None else None
-            raise ReturnSignal(value)
+        if isinstance(node, Borrow):
+            package_name = self.evaluate(node.package)
+            if not isinstance(package_name, str):
+                raise RuntimeErrorMemingo("borrow requires a package name")
+            package_dir = self.project_directory / ".memingo" / "packages" / package_name
+            lock_path = self.project_directory / "memingo.lock.json"
+            lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.exists() else {}
+            record = lock.get("dependencies", {}).get(package_name)
+            entry = record.get("entry", "main.mgo") if isinstance(record, dict) else "main.mgo"
+            entry_path = package_dir / entry
+            if not entry_path.exists():
+                raise RuntimeErrorMemingo(f"Borrowed package '{package_name}' is not installed")
+            module_environment = Environment(self.environment)
+            previous = self.environment
+            self.environment = module_environment
+            try:
+                module_program = parse(entry_path.read_text(encoding="utf-8"))
+                self.execute_block(module_program.statements, module_environment)
+            finally:
+                self.environment = previous
+            for name, value in module_environment.values.items():
+                self.environment.define(name, value)
+            return None
         if isinstance(node, Function):
             function = MemingoFunction(node, self.environment)
             self.environment.define(node.name, function)
@@ -195,7 +218,7 @@ class Interpreter:
         return str(value)
 
 
-def execute(source, capture_output=True):
-    interpreter = Interpreter()
+def execute(source, capture_output=True, project_directory="."):
+    interpreter = Interpreter(project_directory=project_directory)
     interpreter.run(parse(source))
     return interpreter.output
