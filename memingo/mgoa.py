@@ -43,8 +43,11 @@ def parse_spec(spec):
 
 def _download(url, destination):
     request = urllib.request.Request(url, headers={"User-Agent": "mgoa/0.1"})
-    with urllib.request.urlopen(request, timeout=60) as response:
-        destination.write_bytes(response.read())
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            destination.write_bytes(response.read())
+    except Exception as error:
+        raise PackageError(f"Could not download package archive {url}: {error}")
 
 
 def _safe_extract(zip_path, destination):

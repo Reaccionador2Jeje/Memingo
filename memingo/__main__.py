@@ -12,6 +12,7 @@ from pathlib import Path
 from . import __version__
 from .interpreter import Interpreter, RuntimeErrorMemingo, execute
 from .formatter import format_file
+from .mgoa import PackageError, add_package, install_project, remove_package
 from .lexer import LexerError
 from .packages import (
     add_dependency, init_project, install_dependencies,
@@ -234,21 +235,57 @@ def main(argv=None) -> int:
         serve(args.directory, args.host, args.port)
         return 0
     if args.command == "add":
-        add_dependency(args.project, args.spec)
-        print(f"Added dependency: {args.spec}")
-        return 0
+        try:
+            project_path = Path(args.project).resolve()
+            if not (project_path / "memingo.toml").exists():
+                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
+            installed = add_package(project_path, args.spec)
+            print(f"Added approved dependency: {installed['name']}@{installed['version']}")
+            return 0
+        except Exception as error:
+            print(f"Memingo add error: {error}", file=sys.stderr)
+            return 1
     if args.command == "remove":
-        remove_dependency(args.project, args.name)
-        print(f"Removed dependency: {args.name}")
-        return 0
+        try:
+            project_path = Path(args.project).resolve()
+            if not (project_path / "memingo.toml").exists():
+                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
+            remove_package(project_path, args.name)
+            print(f"Removed dependency: {args.name}")
+            return 0
+        except Exception as error:
+            print(f"Memingo remove error: {error}", file=sys.stderr)
+            return 1
     if args.command == "install":
-        dependencies = install_dependencies(args.directory)
-        print(f"Installed {len(dependencies)} dependencies")
-        return 0
+        try:
+            project_path = Path(args.directory).resolve()
+            if not (project_path / "memingo.toml").exists():
+                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
+            manifest = read_manifest(project_path)
+            if not manifest.get("dependencies", {}):
+                print("No dependencies to install.")
+                return 0
+            dependencies = install_project(project_path)
+            print(f"Installed {len(dependencies)} approved package(s)")
+            return 0
+        except Exception as error:
+            print(f"Memingo install error: {error}", file=sys.stderr)
+            return 1
     if args.command == "update":
-        dependencies = install_dependencies(args.directory)
-        print(f"Updated {len(dependencies)} dependencies")
-        return 0
+        try:
+            project_path = Path(args.directory).resolve()
+            if not (project_path / "memingo.toml").exists():
+                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
+            manifest = read_manifest(project_path)
+            if not manifest.get("dependencies", {}):
+                print("No dependencies to update.")
+                return 0
+            dependencies = install_project(project_path)
+            print(f"Updated {len(dependencies)} approved package(s)")
+            return 0
+        except Exception as error:
+            print(f"Memingo update error: {error}", file=sys.stderr)
+            return 1
     if args.command == "fmt":
         changed = 0
         for input_path in args.paths:
