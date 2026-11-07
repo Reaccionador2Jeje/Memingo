@@ -11,6 +11,7 @@ VS Code language support for Memingo `.mgo` files.
 - Initialize a project
 - Open the REPL
 - Serve a project directory
+- Search and install approved `mgoa` packages
 
 ## Commands
 
@@ -18,15 +19,20 @@ VS Code language support for Memingo `.mgo` files.
 - `Memingo: Initialize Project`
 - `Memingo: Open REPL`
 - `Memingo: Serve Project`
+- `Memingo: Search Approved Packages`
+- `Memingo: Install Approved Packages`
 
 ## Settings
 
 ```json
 {
   "memingo.executable": "memingo",
+  "memingo.packageManagerExecutable": "mgoa",
   "memingo.pythonExecutable": "python3"
 }
 ```
+
+Set `memingo.executable` or `memingo.packageManagerExecutable` to an empty string to run the source packages through Python.
 
 ## Development
 
@@ -36,4 +42,4 @@ code vscode-extension
 
 Press `F5` to open an Extension Development Host.
 
-Install Memingo on your system before running commands. Use `memingo doctor` for diagnostics, or set `memingo.executable` to an empty string to run the source package through Python.
+Install Memingo on your system before running commands. Use `memingo doctor` for diagnostics.

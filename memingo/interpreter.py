@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import re
 import urllib.request
 from pathlib import Path
 
@@ -78,7 +79,7 @@ class Interpreter:
                 os.environ.setdefault(name.strip(), value.strip().strip('"').strip("'"))
         self.global_environment = Environment()
         self.global_environment.define("headcount", lambda value: len(value))
-        self.global_environment.define("whatkind", lambda value: "whole" if isinstance(value, (int, float)) else "caption" if isinstance(value, str) else "party" if isinstance(value, list) else "party" if isinstance(value, dict) else "based-or-cringe" if isinstance(value, bool) else "ghost" if value is None else type(value).__name__)
+        self.global_environment.define("whatkind", self._whatkind)
         self.global_environment.define("json_parse", lambda text: json.loads(text))
         self.global_environment.define("json_stringify", lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":")))
         self.global_environment.define("env", lambda name, default=None: os.environ.get(name, default))
@@ -94,7 +95,10 @@ class Interpreter:
         self.global_environment.define("http_post", self._http_post)
 
     def run(self, program):
-        return self.execute_block(program.statements, self.global_environment)
+        try:
+            return self.execute_block(program.statements, self.global_environment)
+        except ReturnSignal as signal:
+            return signal.value
 
     def execute_block(self, statements, environment):
         previous = getattr(self, "environment", None)
@@ -103,8 +107,6 @@ class Interpreter:
             result = None
             for statement in statements:
                 result = self.execute(statement)
-                if isinstance(statement, Return):
-                    return result
             return result
         finally:
             self.environment = previous
@@ -123,16 +125,25 @@ class Interpreter:
             text = self._display(value)
             self.output.append(text)
             return value
+        if isinstance(node, Return):
+            raise ReturnSignal(self.evaluate(node.value))
         if isinstance(node, Borrow):
             package_name = self.evaluate(node.package)
             if not isinstance(package_name, str):
                 raise RuntimeErrorMemingo("borrow requires a package name")
+            if not re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*$", package_name):
+                raise RuntimeErrorMemingo(f"Invalid package name '{package_name}'")
             package_dir = self.project_directory / ".memingo" / "packages" / package_name
             lock_path = self.project_directory / "memingo.lock.json"
             lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.exists() else {}
             record = lock.get("dependencies", {}).get(package_name)
             entry = record.get("entry", "main.mgo") if isinstance(record, dict) else "main.mgo"
-            entry_path = package_dir / entry
+            if not isinstance(entry, str) or not entry:
+                raise RuntimeErrorMemingo(f"Borrowed package '{package_name}' has an invalid entry point")
+            package_root = package_dir.resolve()
+            entry_path = (package_dir / entry).resolve()
+            if entry_path != package_root and package_root not in entry_path.parents:
+                raise RuntimeErrorMemingo(f"Borrowed package '{package_name}' has an unsafe entry point")
             if not entry_path.exists():
                 raise RuntimeErrorMemingo(f"Borrowed package '{package_name}' is not installed")
             module_environment = Environment(self.environment)
@@ -199,7 +210,13 @@ class Interpreter:
             if isinstance(callee, MemingoFunction):
                 return callee.call(self, arguments)
             if callable(callee):
-                return callee(*arguments)
+                try:
+                    return callee(*arguments)
+                except RuntimeErrorMemingo:
+                    raise
+                except Exception as exception:
+                    name = node.callee.name if isinstance(node.callee, Variable) else getattr(callee, "__name__", "built-in")
+                    raise RuntimeErrorMemingo(f"{name}() failed: {exception}") from exception
             raise RuntimeErrorMemingo("Attempted to call a non-function value")
         raise RuntimeErrorMemingo(f"Unknown expression: {type(node).__name__}")
 
@@ -234,16 +251,29 @@ class Interpreter:
         raise RuntimeErrorMemingo(f"Unknown operator '{operator}'")
 
     def _http_get(self, url):
-        request = urllib.request.Request(str(url), headers={"User-Agent": "Memingo/0.1"})
+        request = urllib.request.Request(str(url), headers={"User-Agent": "Memingo/0.2"})
         with urllib.request.urlopen(request, timeout=30) as response:
             return json.loads(response.read().decode("utf-8")) if response.headers.get_content_type() == "application/json" else response.read().decode("utf-8")
 
     def _http_post(self, url, payload=None):
         body = json.dumps(payload or {}, ensure_ascii=False).encode("utf-8")
-        request = urllib.request.Request(str(url), data=body, headers={"Content-Type": "application/json", "User-Agent": "Memingo/0.1"}, method="POST")
+        request = urllib.request.Request(str(url), data=body, headers={"Content-Type": "application/json", "User-Agent": "Memingo/0.2"}, method="POST")
         with urllib.request.urlopen(request, timeout=30) as response:
             data = response.read().decode("utf-8")
             return json.loads(data) if response.headers.get_content_type() == "application/json" else data
+
+    def _whatkind(self, value):
+        if value is None:
+            return "ghost"
+        if isinstance(value, bool):
+            return "based-or-cringe"
+        if isinstance(value, (int, float)):
+            return "whole"
+        if isinstance(value, str):
+            return "caption"
+        if isinstance(value, (list, dict)):
+            return "party"
+        return type(value).__name__
 
     def _number_operation(self, operator, left, right, operation):
         if not isinstance(left, (int, float)) or not isinstance(right, (int, float)):

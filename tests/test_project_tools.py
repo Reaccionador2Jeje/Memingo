@@ -1,5 +1,8 @@
+import contextlib
+import io
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 from memingo.__main__ import build_project, main
@@ -31,6 +34,24 @@ class ProjectToolsTests(unittest.TestCase):
             remove_dependency(root, "meme-core")
             manifest = read_manifest(root)
             self.assertNotIn("meme-core", manifest["dependencies"])
+
+    def test_run_directory_and_build_assets(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(main(["init", temporary, "--name", "run-app"]), 0)
+            (root / "main.mgo").write_text('spill "from project"\n', encoding="utf-8")
+            (root / "assets").mkdir()
+            (root / "assets" / "data.txt").write_text("asset", encoding="utf-8")
+
+            stream = io.StringIO()
+            with contextlib.redirect_stdout(stream), contextlib.redirect_stderr(stream):
+                self.assertEqual(main(["run", temporary]), 0)
+            self.assertIn("from project", stream.getvalue())
+
+            self.assertEqual(build_project(root), 0)
+            with zipfile.ZipFile(root / "dist" / "run-app.zip") as archive:
+                self.assertIn("assets/data.txt", archive.namelist())
+                self.assertNotIn(".env", archive.namelist())
 
 
 if __name__ == "__main__":

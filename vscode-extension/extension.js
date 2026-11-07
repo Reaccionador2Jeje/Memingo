@@ -1,3 +1,4 @@
+const path = require("path");
 const vscode = require("vscode");
 
 function workspaceFolder(document) {
@@ -21,6 +22,15 @@ function shellQuote(value) {
   return JSON.stringify(text);
 }
 
+function shellSeparator() {
+  const shell = path.basename(vscode.env.shell || "").toLowerCase();
+  return shell === "powershell.exe" || shell === "pwsh.exe" || shell === "pwsh" ? "; " : " && ";
+}
+
+function withWorkingDirectory(command, cwd) {
+  return cwd ? `cd ${shellQuote(cwd)}${shellSeparator()}${command}` : command;
+}
+
 function sourceCommand(args, cwd) {
   const configuration = vscode.workspace.getConfiguration("memingo");
   const executable = configuration.get("executable", "memingo");
@@ -28,7 +38,17 @@ function sourceCommand(args, cwd) {
   const command = executable === ""
     ? `${shellQuote(python)} -m memingo ${args.map(shellQuote).join(" ")}`
     : `${shellQuote(executable)} ${args.map(shellQuote).join(" ")}`;
-  return `cd ${shellQuote(cwd)} && ${command}`;
+  return withWorkingDirectory(command, cwd);
+}
+
+function packageCommand(args, cwd) {
+  const configuration = vscode.workspace.getConfiguration("memingo");
+  const executable = configuration.get("packageManagerExecutable", "mgoa");
+  const python = configuration.get("pythonExecutable", "python3");
+  const command = executable === ""
+    ? `${shellQuote(python)} -m memingo.mgoa_cli ${args.map(shellQuote).join(" ")}`
+    : `${shellQuote(executable)} ${args.map(shellQuote).join(" ")}`;
+  return withWorkingDirectory(command, cwd);
 }
 
 function activate(context) {
@@ -63,12 +83,16 @@ function activate(context) {
       terminal(sourceCommand(["repl"], cwd), "Memingo REPL");
     }),
     vscode.commands.registerCommand("memingo.searchPackages", () => {
-      terminal("mgoa search", "Memingo Packages");
+      const cwd = workspaceFolder() || vscode.workspace.rootPath;
+      terminal(packageCommand(["search"], cwd), "Memingo Packages");
     }),
     vscode.commands.registerCommand("memingo.installPackages", () => {
       const cwd = workspaceFolder() || vscode.workspace.rootPath;
-      if (!cwd) return vscode.window.showErrorMessage("Open a workspace folder first.");
-      terminal("mgoa install", "Memingo Packages");
+      if (!cwd) {
+        vscode.window.showErrorMessage("Open a workspace folder first.");
+        return;
+      }
+      terminal(packageCommand(["install"], cwd), "Memingo Packages");
     }),
     vscode.commands.registerCommand("memingo.serve", () => {
       const cwd = workspaceFolder() || vscode.workspace.rootPath;

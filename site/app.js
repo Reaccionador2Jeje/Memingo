@@ -74,12 +74,12 @@ runButton?.addEventListener("click", () => {
 
 const commandData = {
   linux: {
-    install: { command: "sh ./install.sh", output: "Memingo installed successfully\nOpen a new terminal or update PATH: export PATH=\"$HOME/.local/bin:$PATH\"" },
+    install: { command: "sh ./install.sh", output: "Memingo installed successfully\nCommands: memingo and mgoa\nOpen a new terminal or update PATH: export PATH=\"$HOME/.local/bin:$PATH\"" },
     project: { command: "memingo init my-app --name my-app", output: "Created Memingo project: ./memingo.toml" },
     run: { command: "memingo run", output: "Welcome to Memingo!" }
   },
   windows: {
-    install: { command: "powershell -ExecutionPolicy Bypass -File .\\install.ps1", output: "Memingo installed successfully\nOpen a new terminal and run memingo --version" },
+    install: { command: "powershell -ExecutionPolicy Bypass -File .\\install.ps1", output: "Memingo installed successfully\nCommands: memingo and mgoa\nOpen a new terminal and run memingo --version" },
     project: { command: "memingo init my-app --name my-app", output: "Created Memingo project: ./memingo.toml" },
     run: { command: "memingo run", output: "Welcome to Memingo!" }
   }

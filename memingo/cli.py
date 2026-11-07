@@ -36,14 +36,7 @@ def rule(char="─"):
 
 
 def banner(version="0.2.0", subtitle="CODE THE BIT"):
-    art = [
-        "██╗   ██╗██╗     ███╗   ███╗",
-        "███╗ ███║██║     ████╗ ████║",
-        "████████║██║     ██╔████╔██║",
-        "██╔═██╔═██║██║   ██╔═╝  ╚██║",
-        "██║   ██╔██║██║   ██║    ██║",
-    ]
-    print(color("\n  M E M I N G O", BOLD + YELLOW))
+    print(color("\n  MEMINGO", BOLD + YELLOW))
     print(color(f"  {subtitle}", DIM))
     print(color(f"  version {version}  ", CYAN))
 
@@ -79,7 +72,7 @@ def heading(title, subtitle=None):
 
 def key_value(rows, label_width=18):
     for label, value in rows:
-        print(f"  {color(label, DIM + CYAN):<{label_width + 12}} {value}")
+        print(f"  {color(str(label).ljust(label_width), DIM + CYAN)} {value}")
 
 
 def table(headers, rows):

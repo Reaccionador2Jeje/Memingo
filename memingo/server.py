@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 class MemingoHandler(SimpleHTTPRequestHandler):
-    server_version = "MemingoServer/0.1"
+    server_version = "MemingoServer/0.2"
 
 
 def serve(directory=".", host="127.0.0.1", port=8000):

@@ -54,7 +54,20 @@ except Exception as error:
 
 extract_dir.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(archive) as bundle:
-    bundle.extractall(extract_dir)
+    root = extract_dir.resolve()
+    for member in bundle.infolist():
+        member_path = Path(member.filename)
+        if member_path.is_absolute() or ".." in member_path.parts:
+            print(f"Memingo: ruta insegura en el archivo: {member.filename}", file=sys.stderr)
+            raise SystemExit(1)
+        target = (root / member.filename).resolve()
+        if root != target and root not in target.parents:
+            print(f"Memingo: ruta insegura en el archivo: {member.filename}", file=sys.stderr)
+            raise SystemExit(1)
+        if (member.external_attr >> 16) & 0o170000 == 0o120000:
+            print(f"Memingo: enlace simbólico no permitido: {member.filename}", file=sys.stderr)
+            raise SystemExit(1)
+    bundle.extractall(root)
 
 source = next((item for item in extract_dir.iterdir() if item.is_dir() and (item / "memingo").is_dir()), None)
 if source is None:
@@ -68,10 +81,12 @@ bin_path.mkdir(parents=True, exist_ok=True)
 
 package_target = install / "memingo"
 launcher_target = install / "launcher.py"
+mgoa_target = install / "mgoa.py"
 if package_target.exists():
     shutil.rmtree(package_target)
 shutil.copytree(source / "memingo", package_target)
 shutil.copy2(source / "scripts" / "launcher.py", launcher_target)
+shutil.copy2(source / "scripts" / "mgoa.py", mgoa_target)
 
 wrapper = bin_path / "memingo"
 wrapper.write_text(
@@ -81,14 +96,23 @@ wrapper.write_text(
 )
 wrapper.chmod(0o755)
 
+mgoa_wrapper = bin_path / "mgoa"
+mgoa_wrapper.write_text(
+    "#!/usr/bin/env sh\n"
+    f'exec "{python_path}" -I "{mgoa_target}" "$@"\n',
+    encoding="utf-8",
+)
+mgoa_wrapper.chmod(0o755)
+
 print("Memingo installed successfully.")
 print(f"Runtime: {install}")
-print(f"Command: {wrapper}")
+print(f"Commands: {wrapper}, {mgoa_wrapper}")
 print()
-print("Si memingo no se encuentra, ejecuta:")
+print("Si memingo o mgoa no se encuentran, ejecuta:")
 print(f'  export PATH="{bin_path}:$PATH"')
 print("  hash -r")
 print("  memingo --version")
+print("  mgoa --version")
 
 path_line = f'export PATH="{bin_path}:$PATH"'
 for profile in (Path.home() / ".profile", Path.home() / ".bashrc"):

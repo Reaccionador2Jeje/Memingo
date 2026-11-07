@@ -22,15 +22,24 @@ if ! "$PYTHON" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10)
 fi
 
 mkdir -p "$INSTALL_DIR" "$BIN_DIR"
-rm -rf "$INSTALL_DIR/memingo" "$INSTALL_DIR/launcher.py"
+rm -rf "$INSTALL_DIR/memingo" "$INSTALL_DIR/launcher.py" "$INSTALL_DIR/mgoa.py"
 cp -R "$SOURCE_DIR/memingo" "$INSTALL_DIR/memingo"
 cp "$SOURCE_DIR/scripts/launcher.py" "$INSTALL_DIR/launcher.py"
+cp "$SOURCE_DIR/scripts/mgoa.py" "$INSTALL_DIR/mgoa.py"
+find "$INSTALL_DIR/memingo" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
+find "$INSTALL_DIR/memingo" -type f -name '*.py[co]' -delete 2>/dev/null || true
 
 cat > "$BIN_DIR/memingo" <<EOF
 #!/usr/bin/env sh
 exec "$PYTHON" -I "$INSTALL_DIR/launcher.py" "\$@"
 EOF
 chmod +x "$BIN_DIR/memingo"
+
+cat > "$BIN_DIR/mgoa" <<EOF
+#!/usr/bin/env sh
+exec "$PYTHON" -I "$INSTALL_DIR/mgoa.py" "\$@"
+EOF
+chmod +x "$BIN_DIR/mgoa"
 
 PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
 if [ "$BIN_DIR" != "$HOME/.local/bin" ]; then
@@ -60,5 +69,5 @@ esac
 
 printf 'Memingo installed successfully.\n'
 printf 'Runtime: %s\n' "$INSTALL_DIR"
-printf 'Command: %s/memingo\n' "$BIN_DIR"
-printf 'Run this now if memingo is not found:\n  export PATH="%s:$PATH"\n  hash -r\n  memingo --version\n' "$BIN_DIR"
+printf 'Commands: %s/memingo, %s/mgoa\n' "$BIN_DIR" "$BIN_DIR"
+printf 'Run this now if memingo or mgoa is not found:\n  export PATH="%s:$PATH"\n  hash -r\n  memingo --version\n  mgoa --version\n' "$BIN_DIR"

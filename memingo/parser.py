@@ -147,11 +147,19 @@ class Parser:
     def _function_statement(self):
         name = self._consume("IDENTIFIER", "Expected function name").value
         self._consume("LPAREN", "Expected '(' after function name")
+        self._skip_separators()
         params = []
         if not self._check("RPAREN"):
             params.append(self._consume("IDENTIFIER", "Expected parameter name").value)
-            while self._match("COMMA"):
+            while True:
+                self._skip_separators()
+                if not self._match("COMMA"):
+                    break
+                self._skip_separators()
+                if self._check("RPAREN"):
+                    break
                 params.append(self._consume("IDENTIFIER", "Expected parameter name").value)
+        self._skip_separators()
         self._consume("RPAREN", "Expected ')' after parameters")
         return Function(name, params, self._block())
 
@@ -221,9 +229,11 @@ class Parser:
         return expr
 
     def _unary(self):
-        if self._check("OP") and self._peek().value in ("!", "-") or self._match("MINUS"):
-            operator = self._advance().value if not self._check("EOF") and self._peek().value in ("!", "-") else "-"
+        if self._check("OP") and self._peek().value in ("!", "-"):
+            operator = self._advance().value
             return Unary(operator, self._unary())
+        if self._match("MINUS"):
+            return Unary("-", self._unary())
         return self._call()
 
     def _call(self):
@@ -231,17 +241,27 @@ class Parser:
         while True:
             if self._match("LPAREN"):
                 arguments = []
+                self._skip_separators()
                 if not self._check("RPAREN"):
                     arguments.append(self._expression())
-                    while self._match("COMMA"):
+                    while True:
+                        self._skip_separators()
+                        if not self._match("COMMA"):
+                            break
+                        self._skip_separators()
+                        if self._check("RPAREN"):
+                            break
                         arguments.append(self._expression())
+                self._skip_separators()
                 self._consume("RPAREN", "Expected ')' after arguments")
                 expr = Call(expr, arguments)
             elif self._match("DOT"):
                 key = self._consume("IDENTIFIER", "Expected property name after '.'").value
                 expr = Get(expr, Literal(key))
             elif self._match("LBRACKET"):
+                self._skip_separators()
                 key = self._expression()
+                self._skip_separators()
                 self._consume("RBRACKET", "Expected ']' after index")
                 expr = Get(expr, key)
             else:
@@ -267,10 +287,18 @@ class Parser:
             return expr
         if self._match("LBRACKET"):
             items = []
+            self._skip_separators()
             if not self._check("RBRACKET"):
                 items.append(self._expression())
-                while self._match("COMMA"):
+                while True:
+                    self._skip_separators()
+                    if not self._match("COMMA"):
+                        break
+                    self._skip_separators()
+                    if self._check("RBRACKET"):
+                        break
                     items.append(self._expression())
+            self._skip_separators()
             self._consume("RBRACKET", "Expected ']' after list")
             return ListExpression(items)
         if self._match("LBRACE"):
@@ -285,6 +313,9 @@ class Parser:
                     if not self._match("COMMA"):
                         break
                     self._skip_separators()
+                    if self._check("RBRACE"):
+                        break
+            self._skip_separators()
             self._consume("RBRACE", "Expected '}' after object")
             return MapExpression(entries)
         raise ParseError(f"Unexpected token {self._peek().value!r} at line {self._peek().line}, column {self._peek().column}")

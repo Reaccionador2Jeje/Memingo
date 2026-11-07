@@ -32,6 +32,43 @@ spill profile.name
 spill profile["status"]
 ```
 
+Lists and objects may span multiple lines. Trailing commas are allowed.
+
+```mgo
+vibe world = {
+    name: "MemeCraft",
+    day: based
+}
+vibe materials = [
+    {name: "grass", solid: based},
+    {name: "stone", solid: based},
+]
+```
+
+## Functions
+
+```mgo
+ritual factorial(n) {
+    when n <= 1 {
+        drop 1
+    }
+    drop n * factorial(n - 1)
+}
+
+spill factorial(5)
+```
+
+`drop` returns immediately from the enclosing ritual. A `drop` at the top level stops the program and returns its value.
+
+## Operators
+
+Arithmetic: `+ - * / %`
+Comparison: `< > <= >=`
+Equality: `== !=`
+Logic: `&& || !`
+
+`+` also concatenates strings.
+
 ## JSON and environment
 
 ```mgo
@@ -55,7 +92,7 @@ spill created
 
 - `len(value)` is not built-in; use `headcount(value)`
 - `headcount(value)` counts lists and objects
-- `whatkind(value)` reports the Memingo type name
+- `whatkind(value)` reports the Memingo type: `whole`, `caption`, `party`, `based-or-cringe`, or `ghost`
 - `json_parse(text)` parses JSON
 - `json_stringify(value)` serializes JSON
 - `env(name, default)` reads an environment variable
@@ -69,3 +106,14 @@ spill created
 - `random_int(low, high)` returns an integer in the inclusive range
 - `http_get(url)` reads text or JSON
 - `http_post(url, object)` sends JSON and reads text or JSON
+
+Errors raised inside a built-in are reported as Memingo runtime errors with the function name.
+
+## Packages
+
+```mgo
+borrow "hello-memes"
+greet("Team")
+```
+
+`borrow` loads the installed package entry point from `.memingo/packages/<name>`. Package names may contain letters, digits, dots, dashes, and underscores.

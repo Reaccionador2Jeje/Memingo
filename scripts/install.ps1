@@ -33,6 +33,7 @@ if (Test-Path $PackageDir) {
 }
 Copy-Item -Recurse (Join-Path $SourceDir "memingo") $PackageDir
 Copy-Item (Join-Path $PSScriptRoot "launcher.py") (Join-Path $InstallDir "launcher.py")
+Copy-Item (Join-Path $PSScriptRoot "mgoa.py") (Join-Path $InstallDir "mgoa.py")
 
 $CmdPath = Join-Path $BinDir "memingo.cmd"
 $LauncherArgs = if ([System.IO.Path]::GetFileName($Python) -eq "py.exe") {
@@ -46,6 +47,18 @@ $LauncherArgs = if ([System.IO.Path]::GetFileName($Python) -eq "py.exe") {
     $LauncherArgs
 ) | Set-Content -Encoding ASCII $CmdPath
 
+$MgoaPath = Join-Path $BinDir "mgoa.cmd"
+$MgoaArgs = if ([System.IO.Path]::GetFileName($Python) -eq "py.exe") {
+    'py -3 -I "%MEMINGO_HOME%\mgoa.py" %*'
+} else {
+    '"' + $Python + '" -I "%MEMINGO_HOME%\mgoa.py" %*'
+}
+@(
+    '@echo off',
+    "set " + '"MEMINGO_HOME=' + $InstallDir + '"',
+    $MgoaArgs
+) | Set-Content -Encoding ASCII $MgoaPath
+
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
 $PathEntries = @($UserPath -split ';' | Where-Object { $_ })
 if ($PathEntries -notcontains $BinDir) {
@@ -55,5 +68,5 @@ if ($PathEntries -notcontains $BinDir) {
 $env:Path = "$BinDir;$env:Path"
 
 Write-Host "Memingo installed at $InstallDir"
-Write-Host "Command installed at $CmdPath"
-Write-Host "Open a new terminal and run: memingo"
+Write-Host "Commands installed at $CmdPath and $MgoaPath"
+Write-Host "Open a new terminal and run: memingo --version"

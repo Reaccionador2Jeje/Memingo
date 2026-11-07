@@ -28,6 +28,7 @@ try {
   if (Test-Path $PackageDir) { Remove-Item -Recurse -Force $PackageDir }
   Copy-Item -Recurse (Join-Path $SourceDir.FullName "memingo") $PackageDir
   Copy-Item -Force (Join-Path $SourceDir.FullName "scripts/launcher.py") (Join-Path $InstallDir "launcher.py")
+  Copy-Item -Force (Join-Path $SourceDir.FullName "scripts/mgoa.py") (Join-Path $InstallDir "mgoa.py")
 
   $CmdPath = Join-Path $BinDir "memingo.cmd"
   if ([System.IO.Path]::GetFileName($Python) -eq "py.exe") {
@@ -36,6 +37,14 @@ try {
     $LauncherArgs = '"' + $Python + '" -I "%MEMINGO_HOME%\launcher.py" %*'
   }
   @('@echo off', "set " + '"MEMINGO_HOME=' + $InstallDir + '"', $LauncherArgs) | Set-Content -Encoding ASCII $CmdPath
+
+  $MgoaPath = Join-Path $BinDir "mgoa.cmd"
+  if ([System.IO.Path]::GetFileName($Python) -eq "py.exe") {
+    $MgoaArgs = 'py -3 -I "%MEMINGO_HOME%\mgoa.py" %*'
+  } else {
+    $MgoaArgs = '"' + $Python + '" -I "%MEMINGO_HOME%\mgoa.py" %*'
+  }
+  @('@echo off', "set " + '"MEMINGO_HOME=' + $InstallDir + '"', $MgoaArgs) | Set-Content -Encoding ASCII $MgoaPath
 
   $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
   $PathEntries = @($UserPath -split ';' | Where-Object { $_ })
@@ -46,7 +55,7 @@ try {
 
   Write-Host "Memingo installed successfully."
   Write-Host "Runtime: $InstallDir"
-  Write-Host "Command: $CmdPath"
+  Write-Host "Commands: $CmdPath and $MgoaPath"
   Write-Host "Open a new terminal and run: memingo --version"
 }
 finally {

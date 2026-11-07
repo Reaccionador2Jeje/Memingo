@@ -34,6 +34,7 @@
       "title": "Memingo",
       "properties": {
         "memingo.executable": { "type": "string", "default": "memingo", "description": "Installed Memingo executable command. Leave empty to run the source package through Python." },
+        "memingo.packageManagerExecutable": { "type": "string", "default": "mgoa", "description": "Installed mgoa executable command. Leave empty to run the package manager through Python." },
         "memingo.pythonExecutable": { "type": "string", "default": "python3", "description": "Python executable used when running Memingo from source." }
       }
     },

@@ -7,7 +7,8 @@
         "latest": "0.1.0",
         "versions": {
           "0.1.0": {
-            "archive": "https://github.com/Reaccionador2Jeje/Memingo/archive/refs/heads/main.zip"
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/hello-memes-0.1.0.zip",
+            "sha256": "6d162ac88b6e7b3e05bfee0c82b5d510d80c6ff468cb3c0dd215af8960e3ebac"
           }
         }
       }

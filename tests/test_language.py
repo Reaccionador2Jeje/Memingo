@@ -41,6 +41,34 @@ class MemingoLanguageTests(unittest.TestCase):
         output = execute('vibe values = []\npush(values, "based")\nset_value(values, 0, "cringe")\nspill values[0]')
         self.assertEqual(output, ["cringe"])
 
+    def test_multiline_lists_and_objects(self):
+        source = (
+            'vibe world = {\n  name: "MemeCraft",\n  day: based,\n  size: 30\n}\n'
+            'vibe materials = [\n  {name: "grass", solid: based},\n  {name: "stone", solid: cringe},\n]\n'
+            'spill world.name\n'
+            'spill headcount(materials)\n'
+            'spill materials[1].name'
+        )
+        self.assertEqual(execute(source), ["MemeCraft", "2", "stone"])
+
+    def test_multiline_parameters(self):
+        source = (
+            'ritual add(\n  a,\n  b,\n) {\n  drop a + b\n}\n'
+            'spill add(\n  1,\n  2,\n)'
+        )
+        self.assertEqual(execute(source), ["3"])
+
+    def test_builtin_errors_are_wrapped(self):
+        with self.assertRaises(RuntimeErrorMemingo) as context:
+            execute("spill headcount(1)")
+        self.assertIn("headcount", str(context.exception))
+
+    def test_whatkind_and_borrow_validation(self):
+        output = execute('spill whatkind(based)\nspill whatkind(1)\nspill whatkind("x")\nspill whatkind(ghost)')
+        self.assertEqual(output, ["based-or-cringe", "whole", "caption", "ghost"])
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('borrow "../escape"')
+
     def test_json_round_trip(self):
         output = execute('vibe value = json_parse("{\\\"meme\\\":\\\"based\\\"}")\nspill value["meme"]')
         self.assertEqual(output, ["based"])

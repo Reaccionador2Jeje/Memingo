@@ -1,36 +1,24 @@
-import json
-import os
-from pathlib import Path
+"""Shared configuration defaults for Memingo and mgoa."""
+
+from .version import __version__
 
 
-DEFAULT_USER_CONFIG = """[memingo]\nversion = "0.2.0"\nregistry = "https://reaccionador2jeje.github.io/Memingo/mgoa/index.json"\nauto_update = false\ntelemetry = false\n\n[runtime]\ncolor = true\neditor = "env = "default""""vscode"
+DEFAULT_REGISTRY = "https://reaccionador2jeje.github.io/Memingo/mgoa/index.json"
+DEFAULT_MANIFEST = "memingo.toml"
+DEFAULT_LOCKFILE = "memingo.lock.json"
+DEFAULT_ENTRY = "main.mgo"
 
-cache"
+DEFAULT_USER_CONFIG = f"""[memingo]
+version = "{__version__}"
+registry = "{DEFAULT_REGISTRY}"
+auto_update = false
+telemetry = false
 
-threads""
-}
+[runtime]
+color = true
+editor = "vscode"
+"""
 
-
-
-
-" 
-
-
-DEFAULT_PROJECT_ENV_TEMPLATE = "":[PROJECT_CONFIG = 
-"# Memingo.toml"#""
-# Memingo.toml {":"}}, "{MEMINGOCA_ch"}
-{name}
-
-{\n# Local environment
-guello "
-t
-""."
-;? maybe not
-
-
-" 
-
-"}. 
-
-.memingo"
-#",
+DEFAULT_PROJECT_ENV_TEMPLATE = """# Local Memingo environment variables
+# CONFIG_JSON={"mode":"dev"}
+"""

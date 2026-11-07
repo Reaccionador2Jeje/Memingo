@@ -63,7 +63,7 @@ def repl() -> int:
 def run_project(directory=".") -> int:
     try:
         manifest = read_manifest(directory)
-    except FileNotFoundError as error:
+    except (FileNotFoundError, ValueError) as error:
         print(f"Memingo error: {error}", file=sys.stderr)
         return 1
     entry = manifest.get("package", {}).get("entry", "main.mgo")
@@ -78,7 +78,7 @@ def run_dev(directory=".", interval=0.5) -> int:
     info("Watching for file changes. Press Ctrl+C to stop.")
     try:
         while True:
-            signature = entry.stat().st_mtime_ns if entry.exists() else None
+            signature = _project_signature(directory)
             if signature != last_signature:
                 print(f"\n--- running {entry} ---")
                 run_file(str(entry))
@@ -92,24 +92,46 @@ def run_dev(directory=".", interval=0.5) -> int:
         return 1
 
 
+def _project_signature(directory):
+    root = Path(directory).resolve()
+    files = [root / "memingo.toml", root / ".env"]
+    files.extend(root.rglob("*.mgo"))
+    signature = []
+    for source in sorted(files):
+        if not source.is_file():
+            continue
+        parts = set(source.relative_to(root).parts)
+        if parts & {".git", ".memingo", "dist", "__pycache__", "node_modules", ".venv"}:
+            continue
+        signature.append((source.relative_to(root).as_posix(), source.stat().st_mtime_ns))
+    return tuple(signature)
+
+
 def build_project(directory=".", output="dist") -> int:
     manifest = read_manifest(directory)
-    entry_name = manifest.get("package", {}).get("entry", "main.mgo")
-    entry = Path(directory) / entry_name
+    package = manifest.get("package", {})
+    entry_name = package.get("entry", "main.mgo")
+    root = Path(directory).resolve()
+    entry = root / entry_name
     if not entry.exists():
         print(f"Memingo error: Missing entry file: {entry}", file=sys.stderr)
         return 1
 
-    output_dir = Path(directory) / output
+    output_dir = (root / output).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    package_name = manifest.get("package", {}).get("name", "memingo-app")
+    package_name = package.get("name", "memingo-app")
     archive = output_dir / f"{package_name}.zip"
+    ignored = {".git", ".memingo", "__pycache__", "node_modules", ".venv", ".env", output_dir.name}
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
-        bundle.write(entry, entry_name)
-        for source in Path(directory).glob("*.mgo"):
-            if source != entry:
-                bundle.write(source, source.name)
-        bundle.write(Path(directory) / "memingo.toml", "memingo.toml")
+        for source in sorted(root.rglob("*")):
+            if not source.is_file():
+                continue
+            relative = source.relative_to(root)
+            if set(relative.parts) & ignored:
+                continue
+            if source.resolve() == archive.resolve():
+                continue
+            bundle.write(source, relative.as_posix())
     heading("Build complete")
     success(f"Archive: {archive}")
     return 0
@@ -118,10 +140,13 @@ def build_project(directory=".", output="dist") -> int:
 def doctor() -> int:
     heading("Memingo Doctor", "installation diagnostics")
     executable = shutil.which("memingo")
+    package_manager = shutil.which("mgoa")
     key_value([
         ("Python", sys.version.split()[0]),
+        ("Platform", sys.platform),
         ("Module", str(Path(__file__).resolve().parent)),
         ("memingo PATH", executable or "not found"),
+        ("mgoa PATH", package_manager or "not found"),
     ])
     if sys.version_info < (3, 10):
         error("Python 3.10 or newer is required")
@@ -130,6 +155,8 @@ def doctor() -> int:
         success("Memingo installation is ready")
     else:
         warning("Memingo works as a module, but the command is missing from PATH")
+    if not package_manager:
+        warning("mgoa works as a module, but the package manager command is missing from PATH")
     return 0
 
 
@@ -157,9 +184,20 @@ def update_self() -> int:
 
 
 def run_tests(directory=".", pattern="test*.py") -> int:
+    root = Path(directory).resolve()
+    if not root.is_dir():
+        print(f"Memingo error: Test directory does not exist: {root}", file=sys.stderr)
+        return 1
+    environment = os.environ.copy()
+    search_paths = [str(Path(__file__).resolve().parent.parent), str(Path.cwd()), str(root)]
+    existing = environment.get("PYTHONPATH")
+    if existing:
+        search_paths.append(existing)
+    environment["PYTHONPATH"] = os.pathsep.join(dict.fromkeys(search_paths))
     result = subprocess.run(
-        [sys.executable, "-m", "unittest", "discover", "-s", str(directory), "-p", pattern],
-        cwd=directory,
+        [sys.executable, "-m", "unittest", "discover", "-s", ".", "-p", pattern],
+        cwd=root,
+        env=environment,
         check=False,
     )
     return result.returncode
@@ -231,22 +269,41 @@ def main(argv=None) -> int:
     if args.command == "update-self":
         return update_self()
     if args.command == "init":
-        manifest = init_project(args.directory, args.name)
+        try:
+            manifest = init_project(args.directory, args.name)
+        except OSError as exception:
+            error(f"Memingo init error: {exception}")
+            return 1
         heading("Project created", args.name)
         success(f"Manifest: {manifest}")
         return 0
     if args.command == "run":
         if args.path:
+            target = Path(args.path)
+            if target.is_dir():
+                return run_project(target)
             return run_file(args.path)
         return run_project(".")
     if args.command == "dev":
-        return run_dev(args.directory)
+        try:
+            return run_dev(args.directory)
+        except (FileNotFoundError, OSError, ValueError) as exception:
+            error(f"Memingo dev error: {exception}")
+            return 1
     if args.command == "build":
-        return build_project(args.directory, args.output)
+        try:
+            return build_project(args.directory, args.output)
+        except (FileNotFoundError, OSError, ValueError) as exception:
+            error(f"Memingo build error: {exception}")
+            return 1
     if args.command == "test":
         return run_tests(args.directory, args.pattern)
     if args.command == "serve":
-        serve(args.directory, args.host, args.port)
+        try:
+            serve(args.directory, args.host, args.port)
+        except (OSError, ValueError) as exception:
+            error(f"Memingo serve error: {exception}")
+            return 1
         return 0
     if args.command == "add":
         try:
@@ -295,7 +352,7 @@ def main(argv=None) -> int:
             if not manifest.get("dependencies", {}):
                 info("No dependencies to update")
                 return 0
-            dependencies = install_project(project_path)
+            dependencies = install_project(project_path, frozen=False)
             heading("Dependencies updated", str(len(dependencies)))
             success(f"{len(dependencies)} approved package(s) ready")
             return 0

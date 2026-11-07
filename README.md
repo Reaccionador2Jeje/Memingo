@@ -36,7 +36,8 @@ spill factorial(5)
 Memingo values are `whole`, `caption`, `party`, `based`, `cringe`, and `ghost`.
 Theme keywords include `vibe`, `ritual`, `drop`, `when`, `nah`, `grind`, and `spill`.
 Operators include arithmetic, comparison, equality, `&&`, `||`, and `!`.
-Built-ins currently include `headcount()` and `whatkind()`.
+Built-ins include `headcount()`, `whatkind()`, `json_parse()`, `json_stringify()`, `env()`, `range()`, `keys()`, `push()`, `append()`, `set_value()`, `delete_key()`, `random()`, `random_int()`, `http_get()`, and `http_post()`.
+Lists and objects can span multiple lines, including trailing commas.
 
 ## MemeCraft
 
@@ -63,20 +64,24 @@ vibe config = json_parse(env("CONFIG_JSON", "{\\\"mode\\\":\\\"dev\\\"}"))
 ## Run
 
 ```bash
-memingo run examples/hello.mgo
-memingo run examples/functions.mgo
-memingo repl
+python3 -m memingo run examples/hello.mgo
+python3 -m memingo run examples/functions.mgo
+python3 -m memingo run examples/minecraft.mgo
+python3 -m memingo repl
 ```
+
+After installing the native command, replace `python3 -m memingo` with `memingo`.
 
 ## Test
 
 ```bash
-python -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -v
+memingo test
 ```
 
 ## Install Memingo
 
-No `pip` is required. The official installers copy the Memingo runtime and create a native command for your platform.
+No `pip` is required. The official installers copy the Memingo runtime and create native commands for both `memingo` and `mgoa`.
 
 ### Linux and macOS
 
@@ -85,6 +90,7 @@ chmod +x scripts/install.sh scripts/uninstall.sh
 ./scripts/install.sh
 export PATH="$HOME/.local/bin:$PATH"
 memingo --version
+mgoa --version
 ```
 
 After downloading the public Linux/macOS installer from the website, run it with:
@@ -94,6 +100,7 @@ chmod +x install.sh
 sh ./install.sh
 export PATH="$HOME/.local/bin:$PATH"
 memingo --version
+mgoa --version
 ```
 
 The default command location is `~/.local/bin`. Add that directory to `PATH` if the shell does not find `memingo`.
@@ -104,6 +111,7 @@ The default command location is `~/.local/bin`. Add that directory to `PATH` if 
 powershell -ExecutionPolicy Bypass -File scripts/install.ps1
 # Open a new terminal, then run:
 memingo --version
+mgoa --version
 ```
 
 The default install location is `%LOCALAPPDATA%\Memingo`. The installer adds its `bin` directory to the user PATH.
@@ -123,7 +131,8 @@ This creates an all-platform source release in `dist/`. Linux/macOS users run `s
 ```bash
 memingo init my-app --name my-app
 memingo run
-memingo dev 
+memingo run my-app
+memingo dev
 memingo test
 memingo build
 memingo serve public
@@ -136,7 +145,6 @@ mgoa search
 mgoa add hello-memes
 mgoa install
 mgoa update
-memingo doctor
 ```
 
 ## Memingo Approved (mgoa)
@@ -148,6 +156,8 @@ mgoa install
 mgoa remove hello-memes
 mgoa publish ./mypackage
 ```
+
+The registry supports SHA-256 digests for package archives. `mgoa publish` writes an archive plus a `.sha256` checksum file, and installations verify the lockfile digest before replacing an installed package.
 
 Packages can export rituals and vibes using `borrow`:
 

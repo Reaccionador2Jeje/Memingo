@@ -10,11 +10,11 @@ from .mgoa import (
 
 
 def main(argv=None):
-    banner(__version__, "MEMINGO APPROVED PACKAGES")
     parser = argparse.ArgumentParser(
         prog="mgoa",
         description="Memingo Approved - package manager for Memingo",
     )
+    parser.add_argument("--version", action="version", version=f"mgoa {__version__}")
     parser.add_argument("--registry", help="Approved package registry URL")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -63,7 +63,7 @@ def main(argv=None):
             success(f"{len(installed)} approved package(s) ready")
             return 0
         if args.command == "update":
-            installed = install_project(args.directory, args.registry)
+            installed = install_project(args.directory, args.registry, frozen=False)
             heading("Dependencies updated", str(len(installed)))
             success(f"{len(installed)} approved package(s) ready")
             return 0
@@ -76,9 +76,10 @@ def main(argv=None):
             heading("Approved package archive")
             success(str(archive))
             return 0
+        banner(__version__, "MEMINGO APPROVED PACKAGES")
         parser.print_help()
         return 2
-    except PackageError as exception:
+    except (PackageError, FileNotFoundError, ValueError) as exception:
         error(f"mgoa: {exception}")
         return 1
     except Exception as exception:
