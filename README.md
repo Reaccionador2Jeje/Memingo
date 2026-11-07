@@ -38,6 +38,10 @@ Theme keywords include `vibe`, `ritual`, `drop`, `when`, `nah`, `grind`, and `sp
 Operators include arithmetic, comparison, equality, `&&`, `||`, and `!`.
 Built-ins currently include `headcount()` and `whatkind()`.
 
+## MemeCraft
+
+Memingo includes an original playable voxel game inspired by block-building sandboxes. Play it at `site/game.html` or add the `.mgo` world configuration from [examples/minecraft.mgo](examples/minecraft.mgo).
+
 ## Language reference
 
 See the complete syntax and standard library in [LANGUAGE.md](LANGUAGE.md).

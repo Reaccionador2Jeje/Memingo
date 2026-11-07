@@ -1,0 +1,20 @@
+# Memingo Voxel World
+vibe world = {
+    name: "MemeCraft",
+    seed: 404,
+    size: 30,
+    day: based,
+    gravity: 22,
+    walk_speed: 7,
+    build_range: 6
+}
+
+vibe materials = [
+    {name: "grass", color: "#5f9f45", solid: based},
+    {name: "stone", color: "#8a8a82", solid: based},
+    {name: "wood", color: "#8b5a2b", solid: based},
+    {name: "sand", color: "#d8c58a", solid: based},
+    {name: "glass", color: "#9dd9e5", solid: based}
+]
+
+spill "Loading " + world.name

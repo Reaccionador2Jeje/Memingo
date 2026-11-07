@@ -1,8 +1,8 @@
 window.MEMINGO_I18N = {
   es: {
-    navLabel: "Navegación principal", navHome: "Inicio", navDocs: "Docs", navCommunity: "Comunidad", navWiki: "Wiki", navDownloads: "Descargas",
+    navLabel: "Navegación principal", navHome: "Inicio", navDocs: "Docs", navCommunity: "Comunidad", navWiki: "Wiki", navDownloads: "Descargas", navGame: "Jugar",
     searchLabel: "Buscar", download: "Descargar", live: "Memingo 0.2 está vivo", heroLead: "Un lenguaje inspirado en los memes de internet para crear juegos, apps y servidores web sin perder el ritmo.",
-    installMemingo: "Instalar Memingo", readDocs: "Leer la documentación", run: "Ejecutar", welcome: "Bienvenido a Memingo!",
+    installMemingo: "Instalar Memingo", readDocs: "Leer la documentación", playGame: "Jugar MemeCraft", run: "Ejecutar", welcome: "Bienvenido a Memingo!",
     docsLabel: "01 / DOCUMENTACIÓN", docsTitleA: "Familiar, pero", docsTitleB: "más meme.", syntaxCardTitle: "Una sintaxis con personalidad", syntaxCardBody: "Variables llamadas `vibe`, funciones `ritual` y valores `based`, `cringe` o `ghost`.", viewSyntax: "Ver sintaxis",
     executeCardTitle: "Ejecuta algo en minutos", executeCardBody: "Archivos `.mgo`, REPL interactivo, proyecto local, tests y builds desde una sola CLI.", quickstartLink: "Inicio rápido",
     packagesCardTitle: "Paquetes sin drama", packagesCardBody: "Memingo Approved: registro, lockfile, caché y `borrow` para ejecutar paquetes `.mgo` aprobados.", packageManagerLink: "Memingo Approved (mgoa)",
@@ -18,9 +18,9 @@ window.MEMINGO_I18N = {
     ]
   },
   en: {
-    navLabel: "Main navigation", navHome: "Home", navDocs: "Docs", navCommunity: "Community", navWiki: "Wiki", navDownloads: "Downloads",
+    navLabel: "Main navigation", navHome: "Home", navDocs: "Docs", navCommunity: "Community", navWiki: "Wiki", navDownloads: "Downloads", navGame: "Play",
     searchLabel: "Search", download: "Download", live: "Memingo 0.2 is alive", heroLead: "An internet-meme-inspired language for making games, apps, and web servers without losing the rhythm.",
-    installMemingo: "Install Memingo", readDocs: "Read the documentation", run: "Run", welcome: "Welcome to Memingo!",
+    installMemingo: "Install Memingo", readDocs: "Read the documentation", playGame: "Play MemeCraft", run: "Run", welcome: "Welcome to Memingo!",
     docsLabel: "01 / DOCUMENTATION", docsTitleA: "Familiar, but", docsTitleB: "more meme.", syntaxCardTitle: "A syntax with personality", syntaxCardBody: "Variables called `vibe`, functions called `ritual`, and values like `based`, `cringe`, or `ghost`.", viewSyntax: "View syntax",
     executeCardTitle: "Build something in minutes", executeCardBody: "`.mgo` files, an interactive REPL, local projects, tests, and builds from one CLI.", quickstartLink: "Quickstart",
     packagesCardTitle: "Packages without the drama", packagesCardBody: "Memingo Approved registry, lockfile, cache and `borrow` for running approved `.mgo` packages.", packageManagerLink: "Memingo Approved (mgoa)",

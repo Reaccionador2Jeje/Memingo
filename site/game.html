@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#171717">
+  <title>MemeCraft - Memingo</title>
+  <link rel="icon" href="assets/memingo-mark.svg">
+  <link rel="stylesheet" href="game.css">
+</head>
+<body>
+  <canvas id="game-canvas" aria-label="MemeCraft voxel world"></canvas>
+
+  <header class="game-bar">
+    <a class="game-brand" href="index.html" aria-label="Volver a Memingo">
+      <img src="assets/memingo-mark.svg" alt="">
+      <div><strong>MemeCraft</strong><span>made with Memingo</span></div>
+    </a>
+    <div class="game-stats">
+      <span><b>00</b> XP</span>
+      <span><b id="blocks-count">0</b> bloques</span>
+    </div>
+  </header>
+
+  <div class="crosshair" aria-hidden="true"><span></span><span></span></div>
+  <div class="position" id="position">X 0 · Y 0 · Z 0</div>
+
+  <aside class="inventory" aria-label="Inventario">
+    <button class="slot active" data-block="grass" aria-label="Bloque césped"><span class="block-preview grass"></span><b>1</b><small>GRASS</small></button>
+    <button class="slot" data-block="stone" aria-label="Bloque piedra"><span class="block-preview stone"></span><b>2</b><small>STONE</small></button>
+    <button class="slot" data-block="wood" aria-label="Bloque madera"><span class="block-preview wood"></span><b>3</b><small>WOOD</small></button>
+    <button class="slot" data-block="sand" aria-label="Bloque arena"><span class="block-preview sand"></span><b>4</b><small>SAND</small></button>
+    <button class="slot" data-block="glass" aria-label="Bloque cristal"><span class="block-preview glass"></span><b>5</b><small>GLASS</small></button>
+  </aside>
+
+  <div class="mobile-controls" aria-label="Controles táctiles">
+    <div class="joystick" id="joystick"><span id="joystick-knob"></span></div>
+    <button class="mobile-action jump" id="mobile-jump" aria-label="Saltar">↑</button>
+  </div>
+
+  <div class="pause" id="pause">
+    <div class="pause-panel">
+      <p>MEMECRAFT</p>
+      <h1>PAUSED</h1>
+      <button id="resume-button">CONTINUAR</button>
+      <a href="index.html">SALIR AL SITIO</a>
+    </div>
+  </div>
+
+  <div class="start-screen" id="start-screen">
+    <div class="start-card">
+      <img src="assets/memingo-mark.svg" alt="Memingo">
+      <p>MEMINGO WORLD</p>
+      <h1>MemeCraft</h1>
+      <small>Un mundo voxel construido con Memingo</small>
+      <button id="start-button">ENTRAR AL MUNDO</button>
+      <div class="controls-help">
+        <span><b>WASD</b> mover</span><span><b>SPACE</b> saltar</span><span><b>CLICK</b> construir</span><span><b>R</b> destruir</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
+  </script>
+  <script type="module" src="game.js"></script>
+</body>
+</html>
