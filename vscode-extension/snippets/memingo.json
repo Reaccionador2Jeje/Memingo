@@ -5,5 +5,8 @@
   "When condition": { "prefix": "when", "body": ["when ${1:condition} {", "\t${2:spill \"based\"}", "} nah {", "\t${3:spill \"cringe\"}", "}"], "description": "Crear una condición when/nah" },
   "Grind loop": { "prefix": "grind", "body": ["vibe ${1:i} = 0", "grind ${1:i} < ${2:limit} {", "\tspill ${1:i}", "\t${1:i} = ${1:i} + 1", "}"], "description": "Crear un bucle grind" },
   "Drop return": { "prefix": "drop", "body": ["drop ${1:value}"], "description": "Devolver un valor" },
-  "Spill output": { "prefix": "spill", "body": ["spill ${1:value}"], "description": "Imprimir un valor" }
+  "Spill output": { "prefix": "spill", "body": ["spill ${1:value}"], "description": "Imprimir un valor" },
+  "Object vibes": { "prefix": "object", "body": ["vibe ${1:data} = {${2:name}: \"${3:value}\"}"], "description": "Crear un objeto Memingo" },
+  "Borrow package": { "prefix": "borrow", "body": ["borrow \"${1:package}\"", "${2:greet}(\"${3:Team}\")"], "description": "Cargar un paquete mgoa" },
+  "HTTP GET": { "prefix": "httpget", "body": ["vibe ${1:response} = http_get(\"${2:https://example.com/api}\")", "spill ${1:response}"], "description": "Consultar una API JSON" }
 }

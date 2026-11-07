@@ -214,11 +214,11 @@ def main(argv=None) -> int:
     install_parser.add_argument("directory", nargs="?", default=".")
 
     update_parser = subparsers.add_parser("update", help="Update installed dependencies")
+    update_parser.add_argument("directory", nargs="?", default=".")
 
     format_parser = subparsers.add_parser("fmt", help="Format Memingo source files")
     format_parser.add_argument("paths", nargs="+", help="Files or directories to format")
     format_parser.add_argument("--check", action="store_true", help="Check formatting without writing")
-    update_parser.add_argument("directory", nargs="?", default=".")
 
     args = parser.parse_args(argv)
 

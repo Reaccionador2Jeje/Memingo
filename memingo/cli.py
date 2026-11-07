@@ -35,7 +35,7 @@ def rule(char="─"):
     return char * width()
 
 
-def banner(version="0.1.0", subtitle="CODE THE BIT"):
+def banner(version="0.2.0", subtitle="CODE THE BIT"):
     art = [
         "██╗   ██╗██╗     ███╗   ███╗",
         "███╗ ███║██║     ████╗ ████║",

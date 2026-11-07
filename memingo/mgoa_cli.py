@@ -1,7 +1,8 @@
 import argparse
 import sys
 
-from .cli import banner, heading, success, info, error, warning, table
+from . import __version__
+from .cli import banner, heading, success, info, warning, table, error
 from .mgoa import (
     PackageError, add_package, install_project, publish_package,
     remove_package, search_registry,
@@ -9,7 +10,7 @@ from .mgoa import (
 
 
 def main(argv=None):
-    banner("0.1.0", "MEMINGO APPROVED PACKAGES")
+    banner(__version__, "MEMINGO APPROVED PACKAGES")
     parser = argparse.ArgumentParser(
         prog="mgoa",
         description="Memingo Approved - package manager for Memingo",
@@ -26,6 +27,9 @@ def main(argv=None):
 
     install_parser = subparsers.add_parser("install", help="Install project dependencies")
     install_parser.add_argument("directory", nargs="?", default=".")
+
+    update_parser = subparsers.add_parser("update", help="Update project dependencies")
+    update_parser.add_argument("directory", nargs="?", default=".")
 
     remove_parser = subparsers.add_parser("remove", help="Remove an installed package")
     remove_parser.add_argument("name")
@@ -56,6 +60,11 @@ def main(argv=None):
         if args.command == "install":
             installed = install_project(args.directory, args.registry)
             heading("Dependencies installed", str(len(installed)))
+            success(f"{len(installed)} approved package(s) ready")
+            return 0
+        if args.command == "update":
+            installed = install_project(args.directory, args.registry)
+            heading("Dependencies updated", str(len(installed)))
             success(f"{len(installed)} approved package(s) ready")
             return 0
         if args.command == "remove":

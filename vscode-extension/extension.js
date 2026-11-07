@@ -62,6 +62,14 @@ function activate(context) {
       }
       terminal(sourceCommand(["repl"], cwd), "Memingo REPL");
     }),
+    vscode.commands.registerCommand("memingo.searchPackages", () => {
+      terminal("mgoa search", "Memingo Packages");
+    }),
+    vscode.commands.registerCommand("memingo.installPackages", () => {
+      const cwd = workspaceFolder() || vscode.workspace.rootPath;
+      if (!cwd) return vscode.window.showErrorMessage("Open a workspace folder first.");
+      terminal("mgoa install", "Memingo Packages");
+    }),
     vscode.commands.registerCommand("memingo.serve", () => {
       const cwd = workspaceFolder() || vscode.workspace.rootPath;
       if (!cwd) {

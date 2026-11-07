@@ -1,8 +1,8 @@
 # Memingo
 
-Memingo is a programming language with internet-meme-inspired functions for games, servers, apps, and tools. This repository currently contains the first executable MVP of the language and interpreter.
+Memingo is a meme-inspired programming ecosystem for games, apps, servers, packages, the web and the VS Code editor. Version 0.2 includes the interpreter, objects and collections, JSON/HTTP helpers, projects, `mgoa`, a formatter, installers, a CLI, GitHub Pages website and VS Code support.
 
-## MVP syntax
+## Ecosystem syntax
 
 ```mgo
 # Vibes are variables
@@ -114,7 +114,7 @@ python3 scripts/build-release.py
 
 This creates an all-platform source release in `dist/`. Linux/macOS users run `scripts/install.sh`; Windows users run `scripts/install.ps1`.
 
-## Project commands
+## Ecosystem commands
 
 ```bash
 memingo init my-app --name my-app
@@ -123,13 +123,16 @@ memingo dev
 memingo test
 memingo build
 memingo serve public
-memingo add meme-core=1.2.0
 memingo install
 memingo remove meme-core
 memingo doctor
 memingo update-self
 memingo fmt examples
-memingo serve public
+mgoa search
+mgoa add hello-memes
+mgoa install
+mgoa update
+memingo doctor
 ```
 
 ## Memingo Approved (mgoa)

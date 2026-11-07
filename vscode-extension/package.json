@@ -2,7 +2,7 @@
   "name": "memingo",
   "displayName": "Memingo",
   "description": "Memingo language support, commands and project tooling for Visual Studio Code.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "atdev",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Programming Languages", "Snippets", "Other"],
@@ -26,7 +26,9 @@
       { "command": "memingo.run", "title": "Memingo: Run Current File", "category": "Memingo" },
       { "command": "memingo.init", "title": "Memingo: Initialize Project", "category": "Memingo" },
       { "command": "memingo.repl", "title": "Memingo: Open REPL", "category": "Memingo" },
-      { "command": "memingo.serve", "title": "Memingo: Serve Project", "category": "Memingo" }
+      { "command": "memingo.serve", "title": "Memingo: Serve Project", "category": "Memingo" },
+      { "command": "memingo.searchPackages", "title": "Memingo: Search Approved Packages", "category": "Memingo" },
+      { "command": "memingo.installPackages", "title": "Memingo: Install Approved Packages", "category": "Memingo" }
     ],
     "configuration": {
       "title": "Memingo",

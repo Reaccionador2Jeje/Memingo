@@ -12,7 +12,7 @@ def init_project(directory=".", name="my-memingo-app"):
     manifest = root / MANIFEST
     if not manifest.exists():
         manifest.write_text(
-            f'[package]\nname = "{name}"\nversion = "0.1.0"\nentry = "main.mgo"\n\n[dependencies]\n',
+            f'[package]\nname = "{name}"\nversion = "0.2.0"\nentry = "main.mgo"\n\n[dependencies]\n',
             encoding="utf-8",
         )
 

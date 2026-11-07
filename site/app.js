@@ -95,7 +95,7 @@ function renderCommand() {
   if (currentLanguage === "en") {
     output.textContent = data.output
       .replace("Memingo installed successfully", "Memingo installed successfully")
-      .replace("Memingo 0.1.0 listo para usar", "Memingo 0.1.0 ready to use")
+      .replace("Memingo 0.2.0 listo para usar", "Memingo 0.2.0 ready to use")
       .replace("Abre una terminal nueva y ejecuta memingo", "Open a new terminal and run memingo")
       .replace("Created Memingo project: ./memingo.toml", "Created Memingo project: ./memingo.toml")
       .replace("Welcome to Memingo!", "Welcome to Memingo!");
