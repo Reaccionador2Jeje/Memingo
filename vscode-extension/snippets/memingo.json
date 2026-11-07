@@ -1,0 +1,9 @@
+{
+  "Memingo hello": { "prefix": "hello", "body": ["vibe app = \"${1:Memingo}\"", "spill \"Welcome to \" + app + \"!\""], "description": "Crear un programa Memingo básico" },
+  "Vibe variable": { "prefix": "vibe", "body": ["vibe ${1:name} = ${2:value}"], "description": "Declarar una vibe variable" },
+  "Ritual function": { "prefix": "ritual", "body": ["ritual ${1:name}(${2:params}) {", "\t${3:}", "}"], "description": "Crear una función ritual" },
+  "When condition": { "prefix": "when", "body": ["when ${1:condition} {", "\t${2:spill \"based\"}", "} nah {", "\t${3:spill \"cringe\"}", "}"], "description": "Crear una condición when/nah" },
+  "Grind loop": { "prefix": "grind", "body": ["vibe ${1:i} = 0", "grind ${1:i} < ${2:limit} {", "\tspill ${1:i}", "\t${1:i} = ${1:i} + 1", "}"], "description": "Crear un bucle grind" },
+  "Drop return": { "prefix": "drop", "body": ["drop ${1:value}"], "description": "Devolver un valor" },
+  "Spill output": { "prefix": "spill", "body": ["spill ${1:value}"], "description": "Imprimir un valor" }
+}

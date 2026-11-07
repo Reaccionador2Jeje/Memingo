@@ -1,0 +1,16 @@
+# Primer ritual Memingo
+vibe nombre = "Memingo"
+spill "Hola desde " + nombre + "!"
+
+vibe numero = 6
+when numero > 3 {
+    spill "Esto es based"
+} nah {
+    spill "Eso es cringe"
+}
+
+vibe i = 1
+grind i <= 5 {
+    spill i
+    i = i + 1
+}

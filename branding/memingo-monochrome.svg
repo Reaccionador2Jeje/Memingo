@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Memingo monochrome mark">
+  <rect width="160" height="160" rx="28" fill="#171717"/>
+  <path d="M36 112V48h22l22 28 22-28h22v64h-22V78l-22 27-22-27v34z" fill="#fffef9"/>
+  <circle cx="58" cy="45" r="9" fill="#fffef9"/><circle cx="102" cy="45" r="9" fill="#fffef9"/>
+</svg>

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Memingo",
+  "scopeName": "source.memingo",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#values" },
+    { "include": "#functions" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": { "patterns": [{ "name": "comment.line.number-sign.memingo", "match": "#.*$" }] },
+    "strings": { "patterns": [{ "name": "string.quoted.double.memingo", "begin": "\"", "end": "\"", "patterns": [{ "name": "constant.character.escape.memingo", "match": "\\\\[\\\\\"nt]" }] }] },
+    "numbers": { "patterns": [{ "name": "constant.numeric.memingo", "match": "\\b\\d+(\\.\\d+)?\\b" }] },
+    "keywords": { "patterns": [{ "name": "keyword.control.memingo", "match": "\\b(vibe|ritual|drop|when|nah|grind|spill)\\b" }] },
+    "values": { "patterns": [{ "name": "constant.language.memingo", "match": "\\b(based|cringe|ghost|whole|caption|party)\\b" }] },
+    "functions": { "patterns": [{ "name": "entity.name.function.memingo", "match": "\\b(headcount|whatkind)\\b(?=\\s*\\()" }] },
+    "operators": { "patterns": [{ "name": "keyword.operator.memingo", "match": "(?:==|!=|<=|>=|&&|\\|\\||[+\\-*\\/%=<>!])" }] }
+  }
+}

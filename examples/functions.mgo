@@ -1,0 +1,10 @@
+ritual factorial(n) {
+    when n <= 1 {
+        drop 1
+    }
+    drop n * factorial(n - 1)
+}
+
+spill "5! = " + factorial(5)
+spill [1, 2, 3]
+spill headcount([1, 2, 3])

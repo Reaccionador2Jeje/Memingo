@@ -1,0 +1,44 @@
+{
+  "name": "memingo",
+  "displayName": "Memingo",
+  "description": "Memingo language support, commands and project tooling for Visual Studio Code.",
+  "version": "0.1.0",
+  "publisher": "atdev",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages", "Snippets", "Other"],
+  "keywords": ["memingo", "meme", "language", "web", "mgo"],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "memingo",
+      "aliases": ["Memingo", "mgo"],
+      "extensions": [".mgo"],
+      "configuration": "./language-configuration.json",
+      "icon": { "light": "./branding/memingo-file-light.svg", "dark": "./branding/memingo-file-dark.svg" }
+    }],
+    "grammars": [{
+      "language": "memingo",
+      "scopeName": "source.memingo",
+      "path": "./syntaxes/memingo.tmLanguage.json"
+    }],
+    "snippets": [{ "language": "memingo", "path": "./snippets/memingo.json" }],
+    "commands": [
+      { "command": "memingo.run", "title": "Memingo: Run Current File", "category": "Memingo" },
+      { "command": "memingo.init", "title": "Memingo: Initialize Project", "category": "Memingo" },
+      { "command": "memingo.repl", "title": "Memingo: Open REPL", "category": "Memingo" },
+      { "command": "memingo.serve", "title": "Memingo: Serve Project", "category": "Memingo" }
+    ],
+    "configuration": {
+      "title": "Memingo",
+      "properties": {
+        "memingo.executable": { "type": "string", "default": "memingo", "description": "Memingo executable command." },
+        "memingo.pythonExecutable": { "type": "string", "default": "python3", "description": "Python executable used when running Memingo from source." }
+      }
+    },
+    "menus": {
+      "editor/title/run": [{ "when": "resourceLangId == memingo", "command": "memingo.run", "group": "navigation" }]
+    }
+  },
+  "scripts": { "check": "node --check extension.js", "package": "npx @vscode/vsce package" },
+  "license": "BSD-3-Clause"
+}
