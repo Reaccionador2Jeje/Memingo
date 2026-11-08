@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from . import __version__
-from .cli import banner, heading, success, info, warning, table, error
+from .cli import banner, heading, success, info, table, error
 from .mgoa import (
     PackageError, add_package, install_project, publish_package,
     remove_package, search_registry,
@@ -82,6 +82,11 @@ def main(argv=None):
     except (PackageError, FileNotFoundError, ValueError) as exception:
         error(f"mgoa: {exception}")
         return 1
+    except KeyboardInterrupt:
+        print("\nmgoa interrupted.", file=sys.stderr)
+        return 130
+    except BrokenPipeError:
+        return 0
     except Exception as exception:
         error(f"mgoa: unexpected error: {exception}")
         return 1

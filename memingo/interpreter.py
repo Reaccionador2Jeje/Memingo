@@ -135,8 +135,18 @@ class Interpreter:
                 raise RuntimeErrorMemingo(f"Invalid package name '{package_name}'")
             package_dir = self.project_directory / ".memingo" / "packages" / package_name
             lock_path = self.project_directory / "memingo.lock.json"
-            lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.exists() else {}
-            record = lock.get("dependencies", {}).get(package_name)
+            lock = {}
+            if lock_path.exists():
+                try:
+                    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+                except (json.JSONDecodeError, OSError, UnicodeError) as error:
+                    raise RuntimeErrorMemingo(f"Could not read package lockfile: {error}") from error
+            if not isinstance(lock, dict):
+                raise RuntimeErrorMemingo("Package lockfile is invalid")
+            dependencies = lock.get("dependencies", {})
+            if not isinstance(dependencies, dict):
+                raise RuntimeErrorMemingo("Package lockfile is invalid")
+            record = dependencies.get(package_name)
             entry = record.get("entry", "main.mgo") if isinstance(record, dict) else "main.mgo"
             if not isinstance(entry, str) or not entry:
                 raise RuntimeErrorMemingo(f"Borrowed package '{package_name}' has an invalid entry point")
@@ -150,7 +160,13 @@ class Interpreter:
             previous = self.environment
             self.environment = module_environment
             try:
-                module_program = parse(entry_path.read_text(encoding="utf-8"))
+                try:
+                    module_source = entry_path.read_text(encoding="utf-8")
+                except UnicodeError as error:
+                    raise RuntimeErrorMemingo(
+                        f"Borrowed package '{package_name}' is not valid UTF-8"
+                    ) from error
+                module_program = parse(module_source)
                 self.execute_block(module_program.statements, module_environment)
             finally:
                 self.environment = previous

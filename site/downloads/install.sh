@@ -53,7 +53,12 @@ except Exception as error:
     raise SystemExit(1)
 
 extract_dir.mkdir(parents=True, exist_ok=True)
-with zipfile.ZipFile(archive) as bundle:
+try:
+    bundle = zipfile.ZipFile(archive)
+except (zipfile.BadZipFile, OSError) as error:
+    print(f"Memingo: archivo de instalación inválido: {error}", file=sys.stderr)
+    raise SystemExit(1)
+with bundle:
     root = extract_dir.resolve()
     for member in bundle.infolist():
         member_path = Path(member.filename)
@@ -76,33 +81,37 @@ if source is None:
 
 install = Path(install_dir)
 bin_path = Path(bin_dir)
-install.mkdir(parents=True, exist_ok=True)
-bin_path.mkdir(parents=True, exist_ok=True)
+try:
+    install.mkdir(parents=True, exist_ok=True)
+    bin_path.mkdir(parents=True, exist_ok=True)
 
-package_target = install / "memingo"
-launcher_target = install / "launcher.py"
-mgoa_target = install / "mgoa.py"
-if package_target.exists():
-    shutil.rmtree(package_target)
-shutil.copytree(source / "memingo", package_target)
-shutil.copy2(source / "scripts" / "launcher.py", launcher_target)
-shutil.copy2(source / "scripts" / "mgoa.py", mgoa_target)
+    package_target = install / "memingo"
+    launcher_target = install / "launcher.py"
+    mgoa_target = install / "mgoa.py"
+    if package_target.exists():
+        shutil.rmtree(package_target)
+    shutil.copytree(source / "memingo", package_target)
+    shutil.copy2(source / "scripts" / "launcher.py", launcher_target)
+    shutil.copy2(source / "scripts" / "mgoa.py", mgoa_target)
 
-wrapper = bin_path / "memingo"
-wrapper.write_text(
-    "#!/usr/bin/env sh\n"
-    f'exec "{python_path}" -I "{launcher_target}" "$@"\n',
-    encoding="utf-8",
-)
-wrapper.chmod(0o755)
+    wrapper = bin_path / "memingo"
+    wrapper.write_text(
+        "#!/usr/bin/env sh\n"
+        f'exec "{python_path}" -I "{launcher_target}" "$@"\n',
+        encoding="utf-8",
+    )
+    wrapper.chmod(0o755)
 
-mgoa_wrapper = bin_path / "mgoa"
-mgoa_wrapper.write_text(
-    "#!/usr/bin/env sh\n"
-    f'exec "{python_path}" -I "{mgoa_target}" "$@"\n',
-    encoding="utf-8",
-)
-mgoa_wrapper.chmod(0o755)
+    mgoa_wrapper = bin_path / "mgoa"
+    mgoa_wrapper.write_text(
+        "#!/usr/bin/env sh\n"
+        f'exec "{python_path}" -I "{mgoa_target}" "$@"\n',
+        encoding="utf-8",
+    )
+    mgoa_wrapper.chmod(0o755)
+except OSError as error:
+    print(f"Memingo: no se pudo instalar el runtime: {error}", file=sys.stderr)
+    raise SystemExit(1)
 
 print("Memingo installed successfully.")
 print(f"Runtime: {install}")

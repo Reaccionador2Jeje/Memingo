@@ -11,16 +11,13 @@ from pathlib import Path
 
 from . import __version__
 from .interpreter import Interpreter, RuntimeErrorMemingo, execute
-from .formatter import format_file
+from .formatter import format_source
 from .mgoa import PackageError, add_package, install_project, remove_package
 from .lexer import LexerError
-from .packages import (
-    add_dependency, init_project, install_dependencies,
-    read_manifest, remove_dependency,
-)
+from .packages import init_project, read_manifest, resolve_entry
 from .parser import ParseError, parse
 from .server import serve
-from .cli import banner, heading, key_value, success, info, error, warning, table, spinner
+from .cli import banner, heading, key_value, success, info, error, warning
 
 
 def run_file(path: str) -> int:
@@ -34,6 +31,14 @@ def run_file(path: str) -> int:
     except (LexerError, ParseError, RuntimeErrorMemingo) as error:
         print(f"Memingo error: {error}", file=sys.stderr)
         return 1
+    except UnicodeError:
+        print(f"Memingo error: {path} is not valid UTF-8", file=sys.stderr)
+        return 1
+    except RecursionError:
+        print("Memingo error: Maximum recursion depth exceeded", file=sys.stderr)
+        return 1
+    except BrokenPipeError:
+        return 0
     except OSError as error:
         print(f"Memingo error: {error}", file=sys.stderr)
         return 1
@@ -58,21 +63,24 @@ def repl() -> int:
                 print(result)
         except (LexerError, ParseError, RuntimeErrorMemingo) as error:
             print(f"Memingo error: {error}", file=sys.stderr)
+        except (RecursionError, UnicodeError) as error:
+            print(f"Memingo error: {error}", file=sys.stderr)
+        except KeyboardInterrupt:
+            print()
+            return 0
 
 
 def run_project(directory=".") -> int:
     try:
-        manifest = read_manifest(directory)
-    except (FileNotFoundError, ValueError) as error:
+        _, _, entry = resolve_entry(directory)
+    except (FileNotFoundError, OSError, ValueError) as error:
         print(f"Memingo error: {error}", file=sys.stderr)
         return 1
-    entry = manifest.get("package", {}).get("entry", "main.mgo")
-    return run_file(str(Path(directory).resolve() / entry))
+    return run_file(str(entry))
 
 
 def run_dev(directory=".", interval=0.5) -> int:
-    manifest = read_manifest(directory)
-    entry = Path(directory) / manifest.get("package", {}).get("entry", "main.mgo")
+    _, _, entry = resolve_entry(directory)
     last_signature = None
     banner(__version__, "MEMINGO DEV MODE")
     info("Watching for file changes. Press Ctrl+C to stop.")
@@ -108,12 +116,10 @@ def _project_signature(directory):
 
 
 def build_project(directory=".", output="dist") -> int:
-    manifest = read_manifest(directory)
+    manifest, _, entry = resolve_entry(directory)
     package = manifest.get("package", {})
-    entry_name = package.get("entry", "main.mgo")
     root = Path(directory).resolve()
-    entry = root / entry_name
-    if not entry.exists():
+    if not entry.is_file():
         print(f"Memingo error: Missing entry file: {entry}", file=sys.stderr)
         return 1
 
@@ -203,7 +209,7 @@ def run_tests(directory=".", pattern="test*.py") -> int:
     return result.returncode
 
 
-def main(argv=None) -> int:
+def _main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="memingo",
         description="Memingo programming language",
@@ -271,7 +277,7 @@ def main(argv=None) -> int:
     if args.command == "init":
         try:
             manifest = init_project(args.directory, args.name)
-        except OSError as exception:
+        except (OSError, ValueError) as exception:
             error(f"Memingo init error: {exception}")
             return 1
         heading("Project created", args.name)
@@ -368,18 +374,51 @@ def main(argv=None) -> int:
                 if not source_file.exists():
                     print(f"Memingo error: File not found: {source_file}", file=sys.stderr)
                     return 1
-                original = source_file.read_text(encoding="utf-8")
-                formatted = format_file(source_file)
+                try:
+                    original = source_file.read_text(encoding="utf-8")
+                except (OSError, UnicodeError) as exception:
+                    error(f"Memingo fmt error: {source_file}: {exception}")
+                    return 1
+                formatted = format_source(original)
                 if args.check and original != formatted:
                     warning(f"Would format: {source_file}")
                     changed += 1
                 elif not args.check and original != formatted:
-                    source_file.write_text(formatted, encoding="utf-8")
+                    try:
+                        source_file.write_text(formatted, encoding="utf-8")
+                    except OSError as exception:
+                        error(f"Memingo fmt error: {source_file}: {exception}")
+                        return 1
                     success(f"Formatted: {source_file}")
                     changed += 1
         return 1 if args.check and changed else 0
     parser.print_help()
     return 2
+
+
+def main(argv=None) -> int:
+    try:
+        code = _main(argv)
+        try:
+            sys.stdout.flush()
+        except BrokenPipeError:
+            code = 0
+        return code
+    except KeyboardInterrupt:
+        print("\nMemingo interrupted.", file=sys.stderr)
+        return 130
+    except BrokenPipeError:
+        try:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+        except OSError:
+            pass
+        return 0
+    except SystemExit:
+        raise
+    except Exception as exception:
+        print(f"Memingo error: {exception}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

@@ -10,12 +10,15 @@ MANIFEST = "memingo.toml"
 
 
 def init_project(directory=".", name="my-memingo-app"):
+    project_name = str(name).strip()
+    if not project_name or any(character in project_name for character in '"\\\n\r'):
+        raise ValueError("Project name cannot be empty and must not contain quotes or line breaks")
     root = Path(directory)
     root.mkdir(parents=True, exist_ok=True)
     manifest = root / MANIFEST
     if not manifest.exists():
         manifest.write_text(
-            f'[package]\nname = "{name}"\nversion = "{__version__}"\nentry = "main.mgo"\n\n[dependencies]\n',
+            f'[package]\nname = "{project_name}"\nversion = "{__version__}"\nentry = "main.mgo"\n\n[dependencies]\n',
             encoding="utf-8",
         )
 
@@ -40,6 +43,23 @@ def read_manifest(directory="."):
     return _read_simple_toml(Path(directory) / MANIFEST)
 
 
+def resolve_entry(directory="."):
+    """Read a project manifest and return its validated entry point."""
+    root = Path(directory).resolve()
+    data = read_manifest(root)
+    package = data.get("package")
+    if not isinstance(package, dict):
+        raise ValueError(f"Manifest is missing a [package] section: {root / MANIFEST}")
+    entry = package.get("entry", "main.mgo")
+    if not isinstance(entry, str) or not entry.strip():
+        raise ValueError("[package].entry must be a non-empty string")
+    entry = entry.strip()
+    entry_path = (root / entry).resolve()
+    if entry_path != root and root not in entry_path.parents:
+        raise ValueError("[package].entry must stay inside the project directory")
+    return data, entry, entry_path
+
+
 def add_dependency(directory=".", spec=""):
     if "=" not in spec:
         spec = spec + "=*"
@@ -53,6 +73,8 @@ def add_dependency(directory=".", spec=""):
     manifest_path = root / MANIFEST
     data = read_manifest(root)
     dependencies = data.setdefault("dependencies", {})
+    if not isinstance(dependencies, dict):
+        raise ValueError("[dependencies] must be a table in memingo.toml")
     dependencies[name] = version
     _write_simple_toml(manifest_path, data)
 
@@ -72,6 +94,8 @@ def remove_dependency(directory=".", name=""):
     root = Path(directory)
     data = read_manifest(root)
     dependencies = data.setdefault("dependencies", {})
+    if not isinstance(dependencies, dict):
+        raise ValueError("[dependencies] must be a table in memingo.toml")
     if name not in dependencies:
         raise ValueError(f"Dependency '{name}' is not installed")
     dependencies.pop(name)
@@ -92,6 +116,8 @@ def install_dependencies(directory="."):
     root = Path(directory)
     data = read_manifest(root)
     dependencies = data.get("dependencies", {})
+    if not isinstance(dependencies, dict):
+        raise ValueError("[dependencies] must be a table in memingo.toml")
     packages_dir = root / ".memingo" / "packages"
     packages_dir.mkdir(parents=True, exist_ok=True)
 
@@ -125,6 +151,8 @@ def _read_lock(path):
     if not isinstance(data, dict):
         return {"dependencies": {}}
     data.setdefault("dependencies", {})
+    if not isinstance(data["dependencies"], dict):
+        data["dependencies"] = {}
     return data
 
 

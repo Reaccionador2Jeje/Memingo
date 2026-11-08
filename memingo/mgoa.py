@@ -90,6 +90,8 @@ def _read_lock(path):
     if not isinstance(data, dict):
         return {"dependencies": {}}
     data.setdefault("dependencies", {})
+    if not isinstance(data["dependencies"], dict):
+        data["dependencies"] = {}
     return data
 
 
@@ -132,7 +134,11 @@ def _download(url, destination):
 def _safe_extract(zip_path, destination):
     destination.mkdir(parents=True, exist_ok=True)
     root = Path(destination).resolve()
-    with zipfile.ZipFile(zip_path) as archive:
+    try:
+        archive = zipfile.ZipFile(zip_path)
+    except (zipfile.BadZipFile, OSError) as error:
+        raise PackageError(f"Invalid package archive {zip_path}: {error}") from error
+    with archive:
         for member in archive.infolist():
             raw_name = member.filename.replace("\\", "/")
             member_path = Path(raw_name)
@@ -171,7 +177,8 @@ def _find_package_root(directory, package_name=None):
         if package_name is None:
             return candidate
         metadata = _load_toml(manifest)
-        if metadata.get("package", {}).get("name") == package_name:
+        package_info = metadata.get("package")
+        if isinstance(package_info, dict) and package_info.get("name") == package_name:
             return candidate
     raise PackageError("Package archive does not contain memingo.toml or package.toml")
 
@@ -287,7 +294,9 @@ def install_package(project_directory=".", spec="", registry_url=None, expected_
         raise PackageError("Package is missing memingo.toml or package.toml")
 
     metadata = _load_toml(manifest_path)
-    package = metadata.get("package", {})
+    package = metadata.get("package")
+    if not isinstance(package, dict):
+        raise PackageError(f"Manifest is missing a [package] section: {manifest_path}")
     name = _validate_package_name(package.get("name"))
     version = _validate_version(package.get("version"))
     entry = package.get("entry", "main.mgo")
@@ -376,6 +385,8 @@ def install_project(project_directory=".", registry_url=None, frozen=True):
     project = Path(project_directory).resolve()
     data = read_manifest(project)
     dependencies = data.get("dependencies", {})
+    if not isinstance(dependencies, dict):
+        raise PackageError("[dependencies] must be a table in memingo.toml")
     lock = _read_lock(project / LOCKFILE)
     installed = []
     for name, version in dependencies.items():
@@ -399,12 +410,14 @@ def search_registry(query="", registry_url=None):
     for name, record in registry.get("approved", {}).get("packages", {}).items():
         if not isinstance(record, dict):
             continue
-        text = " ".join([name, record.get("description", "")]).lower()
+        name = str(name)
+        description = record.get("description") or ""
+        text = f"{name} {description}".lower()
         if not query or query in text:
             matches.append({
                 "name": name,
                 "latest": record.get("latest"),
-                "description": record.get("description", ""),
+                "description": description,
             })
     return matches
 
@@ -417,7 +430,9 @@ def publish_package(directory=".", output="dist"):
     if not manifest_path.exists():
         raise PackageError("Missing memingo.toml or package.toml")
 
-    package = _load_toml(manifest_path).get("package", {})
+    package = _load_toml(manifest_path).get("package")
+    if not isinstance(package, dict):
+        raise PackageError(f"Manifest is missing a [package] section: {manifest_path}")
     name = _validate_package_name(package.get("name"))
     version = _validate_version(package.get("version"))
     entry = package.get("entry", "main.mgo")
