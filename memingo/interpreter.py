@@ -158,6 +158,8 @@ class Interpreter:
 
     def execute(self, node):
         if self.debug_trace is not None:
+            if len(self.debug_trace) >= 10000:
+                raise RuntimeErrorMemingo("Debug trace limit reached (10,000 steps). Check for an endless loop.")
             self.debug_trace.append({
                 "line": getattr(node, "line", None),
                 "type": type(node).__name__,
