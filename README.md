@@ -264,6 +264,42 @@ Use `--registry <url>` or `MGOA_REGISTRY` to install from a different registry. 
 
 `mgoa` records the package source (URL, registry, or local path) and its checksums in `memingo.lock.json`. `mgoa install` reuses that source, so installs stay reproducible whether or not the package is approved. Safe ZIP extraction, path traversal protection, and SHA-256 verification apply to every source.
 
+### Registry catalog
+
+The curated registry ships with real packages covering math, text, collections, files, validation, CLI output, tests, games and memes. Every package includes a `self_test()` ritual that returns `based` when its checks pass.
+
+| Package | What it provides |
+| --- | --- |
+| `hello-memes` | Minimal greeting package and `borrow` example |
+| `mathkit` | Primes, factorials, GCD/LCM, Fibonacci and digit helpers |
+| `statkit` | Average, median, variance, standard deviation and percentiles |
+| `stringkit` | Slugs, initials, padding, truncation and palindromes |
+| `listkit` | Chunking, flattening, lookups, `pluck`, `zip` and list predicates |
+| `jsonkit` | Safe paths, deep updates, merging, picking and omitting keys |
+| `envkit` | Typed environment variables: text, int, bool, list and JSON |
+| `filekit` | Read/write JSON, lines and text in the current project |
+| `randomkit` | Picks, samples, dice, coin flips and random digits |
+| `timekit` | Timestamps, durations, weekdays and weekend checks |
+| `uuidkit` | Short ids, tokens and UUID validation |
+| `validate` | Email, URL, integer, float, hex color and password validators |
+| `template` | Tiny text templates, HTML escaping, indentation and wrapping |
+| `color` | Hex/RGB conversion, luminance, contrast and lighten/darken |
+| `markdown` | Headings, lists, links, quotes and code blocks |
+| `csvkit` | Parse, build and query simple CSV data |
+| `gamekit` | Health, damage, healing, XP levels and weighted loot |
+| `clikit` | Terminal messages, progress bars, byte sizes and banners |
+| `testing` | Expectation objects and pass/fail summaries |
+| `memes` | Hype, roast, meme case and based-or-cringe helpers |
+
+Package sources live in `packages/<name>/`. Regenerate the published ZIPs, SHA-256 checksums and `site/mgoa/index.json` after changing a package:
+
+```bash
+python3 scripts/build-registry.py
+python3 scripts/build-registry.py --check
+```
+
+Use `--base-url` to preview a registry served from another location. `--check` validates the existing archives and checksums without rewriting them.
+
 Packages can export rituals and vibes using `borrow`:
 
 ```mgo

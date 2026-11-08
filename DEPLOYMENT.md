@@ -23,6 +23,19 @@ python3 scripts/build-packages.py
 
 Both packages install the runtime under `/usr/lib/memingo` and expose `memingo` and `mgoa` through `/usr/bin`. CI builds them for pull requests and pushes, and stores them as workflow artifacts named `memingo-linux-packages`.
 
+## Package registry
+
+The `mgoa` registry is published with the site at `https://reaccionador2jeje.github.io/Memingo/mgoa/index.json`. Package sources live in `packages/<name>/`; the generated archives live in `site/mgoa/packages/`.
+
+After changing a package source, rebuild the registry before deploying:
+
+```bash
+python3 scripts/build-registry.py
+python3 scripts/build-registry.py --check
+```
+
+The build script creates reproducible ZIPs, computes their SHA-256 digests and rewrites `site/mgoa/index.json`. Commit the source, the archives and the index together so published checksums stay valid. `tests/test_registry_packages.py` verifies the catalog, archives, checksums, installation and every package `self_test()`.
+
 The package repository workflow can publish metadata and artifacts locally or to GitHub Pages. Package signatures must be verified in a clean system before public distribution.
 
 ## Create and publish Linux repositories

@@ -39,6 +39,7 @@
 - [x] Direct archive URLs and non-approved registries
 - [x] SHA-256 archive checksums and published `.sha256` files
 - [x] Automatic project scaffolding and `memingo.toml` creation
+- [x] Curated registry catalog with reproducible ZIP, checksum and index generation
 - [ ] Package signing and verification
 - [x] Secure local cache
 
@@ -67,4 +68,5 @@
 - [ ] Cross-platform release builds
 - [ ] Language specification
 - [ ] Contributor guide
-- [ ] Package documentation
+- [x] Package documentation
+- [x] Curated package catalog and self-tests

@@ -2,15 +2,245 @@
   "schema": "memingo-approved/v1",
   "approved": {
     "packages": {
+      "clikit": {
+        "description": "Terminal messages, progress bars and byte formatting",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/clikit-0.1.0.zip",
+            "sha256": "bbe8982f863f50f1b079f534b338cee14b5cb7832dd526523e0b5b3a2a0607f8"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "color": {
+        "description": "Hex and RGB conversion, luminance and color tweaks",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/color-0.1.0.zip",
+            "sha256": "802109758410824469b6c2b12f4ae65ba065ff5536947aed5993e93c6cd83438"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "csvkit": {
+        "description": "Parse, build and query simple CSV data",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/csvkit-0.1.0.zip",
+            "sha256": "5d7bb6c10ab2f0fb75b2aa5195f6ff80c074a6bea0a6455af1b077e1752949f2"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "envkit": {
+        "description": "Typed environment variable helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/envkit-0.1.0.zip",
+            "sha256": "9e268b4c57f45f8d707592e76960a5f687886bf349e2642e8781c270ab8fd2fb"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "filekit": {
+        "description": "JSON, line and text helpers for project files",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/filekit-0.1.0.zip",
+            "sha256": "ba5ce570d83fc7732b8c65c475299948e396b35a81f6097ddf8433312082ea86"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "gamekit": {
+        "description": "Health, XP, dice and loot helpers for games",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/gamekit-0.1.0.zip",
+            "sha256": "ad68eee173fda238ded66bff5feb5ce755a7b2aedecf22c9b02813152a45b89f"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
       "hello-memes": {
         "description": "Tiny approved package with a greeting ritual",
         "latest": "0.1.0",
         "versions": {
           "0.1.0": {
             "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/hello-memes-0.1.0.zip",
-            "sha256": "6d162ac88b6e7b3e05bfee0c82b5d510d80c6ff468cb3c0dd215af8960e3ebac"
+            "sha256": "37e2bb38519e830d680147b648c201cb315bfd9554d558580b29a0d35590dd4d"
           }
-        }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "jsonkit": {
+        "description": "Safe paths, merging and filtering for JSON objects",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/jsonkit-0.1.0.zip",
+            "sha256": "b8860ae1ac5e3e130cfeb9810f1d85540c08f97b239c57ada0bea7c7d9596580"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "listkit": {
+        "description": "Chunking, flattening, lookups and object helpers for lists",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/listkit-0.1.0.zip",
+            "sha256": "6b375c766dee0f4f2720972f1ac9cbfcf798e8865b9071bddad757ddbfaa64bf"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "markdown": {
+        "description": "Markdown builders for headings, lists, links and code",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/markdown-0.1.0.zip",
+            "sha256": "b70065f66960a52ed7813a55b3d86972d91b07a44abfdf621deb97c1cd0e7098"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "mathkit": {
+        "description": "Numbers, primes, factorials and integer helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/mathkit-0.1.0.zip",
+            "sha256": "a4c5d64ac1053cb155bb42f06cb95641fb658ddca5ad27db7e5536f4aa640f84"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "memes": {
+        "description": "Meme case, hype and based-or-cringe helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/memes-0.1.0.zip",
+            "sha256": "9aed6a6d537fbd9d7515d985aa7eb0184f1477d39148f212085353ce32070269"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "randomkit": {
+        "description": "Picks, samples, dice and random helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/randomkit-0.1.0.zip",
+            "sha256": "eeefb588805b38b4da7db04731bfccb7e45318e4e85ee07bf325b2bc8608b8d8"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "statkit": {
+        "description": "Averages, medians, variance and percentile helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/statkit-0.1.0.zip",
+            "sha256": "e6171e39b8bc36371e7f7e1c3c50c86ef44128361aaaa04dd2b80d849c6705bb"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "stringkit": {
+        "description": "Slugs, initials, padding, truncation and text helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/stringkit-0.1.0.zip",
+            "sha256": "b08c8710719a382a06838d3cc2f39c8dddf64604ea207a4ae938dcca45b267f0"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "template": {
+        "description": "Tiny text templates, wrapping and HTML escaping",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/template-0.1.0.zip",
+            "sha256": "29cd3ac76812fd47901bd997b2069c3e7546d0fcb581869b538473e78570753a"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "testing": {
+        "description": "Small expectation and summary helpers for Memingo tests",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/testing-0.1.0.zip",
+            "sha256": "1fcb2ab896af0535722823385556e1f9a70c15ee5e02ab84903fbd7a9544e002"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "timekit": {
+        "description": "Timestamps, durations and weekday helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/timekit-0.1.0.zip",
+            "sha256": "02975a4387de7cd36249ae7be85cbd0aeda87b478d7bc2b8c159364de18827bc"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "uuidkit": {
+        "description": "Short ids, tokens and UUID validation",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/uuidkit-0.1.0.zip",
+            "sha256": "4bb102c7473526a9e5d963eaa0c87266ab4e245ed5d78ec313fd65960a725420"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "validate": {
+        "description": "Email, URL, number, color and password validators",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/validate-0.1.0.zip",
+            "sha256": "28dd4c2d085a44b3256155ba23b705baf419da9c51a04b422b327c25ba5c1066"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
       }
     }
   }
