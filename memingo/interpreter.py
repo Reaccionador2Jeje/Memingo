@@ -236,7 +236,11 @@ class Interpreter:
             return self.execute_block(node.else_branch, Environment(self.environment)) if node.else_branch else None
         if isinstance(node, While):
             result = None
+            iterations = 0
             while self.evaluate(node.condition):
+                iterations += 1
+                if self.debug_trace is not None and iterations > 10000:
+                    raise RuntimeErrorMemingo("Debug loop limit reached (10,000 iterations). Check the loop condition.")
                 result = self.execute_block(node.body, Environment(self.environment))
             return result
         return self.evaluate(node)
