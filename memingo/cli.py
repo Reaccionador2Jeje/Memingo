@@ -13,6 +13,8 @@ RED = "\033[38;5;203m"
 GREEN = "\033[38;5;114m"
 CYAN = "\033[38;5;81m"
 WHITE = "\033[38;5;255m"
+MAGENTA = "\033[38;5;213m"
+BLUE = "\033[38;5;75m"
 
 
 def supports_color():
@@ -36,9 +38,12 @@ def rule(char="─"):
 
 
 def banner(version="0.2.0", subtitle="CODE THE BIT"):
-    print(color("\n  MEMINGO", BOLD + YELLOW))
-    print(color(f"  {subtitle}", DIM))
-    print(color(f"  version {version}  ", CYAN))
+    print()
+    print(color("  ╭────────────────────╮", YELLOW))
+    print(color("  │  M  E  M  I  N  G  O  │", BOLD + YELLOW))
+    print(color("  ╰───┬────────────┬───╯", YELLOW))
+    print(color("      │  " + subtitle[:18].upper().ljust(18) + "  │  " + f"v{version}", BOLD + CYAN))
+    print(color("      ╰──────────────╯", DIM))
 
 
 def logo():
@@ -46,8 +51,12 @@ def logo():
     print(color(r"  █▄▀  █▄█  █▀▄  █▄ ", BOLD + YELLOW))
 
 
+def brand_mark():
+    print(color("  ◆ MEMINGO SYSTEMS", BOLD + MAGENTA))
+
+
 def success(message):
-    print(color("✓", GREEN + BOLD), message)
+    print(color("  ✓", GREEN + BOLD), color(message, WHITE))
 
 
 def info(message):
@@ -64,15 +73,38 @@ def error(message):
 
 def heading(title, subtitle=None):
     print()
-    print(color(title.upper(), BOLD + WHITE))
-    if subtitle:
-        print(color(subtitle, DIM))
-    print(color(rule("─"), DIM))
+    print(color("  ┌─ " + title.upper(), BOLD + YELLOW))
+    print(color("  │", DIM), color(subtitle, CYAN) if subtitle else "")
+    print(color("  └" + "─" * max(12, width() - 4), DIM))
 
 
 def key_value(rows, label_width=18):
+    print(color("  ┌" + "─" * (label_width + 2), DIM))
     for label, value in rows:
-        print(f"  {color(str(label).ljust(label_width), DIM + CYAN)} {value}")
+        print(color("  │", DIM) + " " + color(str(label).upper().ljust(label_width), CYAN) + color("  " + str(value), WHITE))
+    print(color("  └" + "─" * (label_width + 2), DIM))
+
+
+def panel(title, lines, accent=CYAN):
+    max_width = max([len(str(title))] + [len(str(line)) for line in lines])
+    max_width = max(24, min(max_width + 4, width() - 4))
+    print()
+    print(color("  ╭─ " + title.upper().ljust(max_width - 3) + "╮", accent))
+    for line in lines:
+        print(color("  │", accent) + " " + str(line).ljust(max_width - 1) + color("│", accent))
+    print(color("  ╰" + "─" * (max_width + 1) + "╯", accent))
+
+
+def status_bar(items):
+    segments = []
+    for label, value, tone in items:
+        segments.append(color(label.upper(), DIM) + " " + color(str(value), tone + BOLD))
+    print()
+    print("  " + color(" ◆ ", MAGENTA + BOLD) + color("  │  ".join(segments), WHITE))
+
+
+def tip(message):
+    print(color("  ↳ ", YELLOW + BOLD) + color("TIP  ", DIM) + message)
 
 
 def table(headers, rows):

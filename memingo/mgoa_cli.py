@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from . import __version__
-from .cli import banner, heading, key_value, success, info, table, error
+from .cli import banner, heading, key_value, success, info, table, error, panel, status_bar, tip, CYAN, GREEN, YELLOW
 from .completion import mgoa_completion
 from .mgoa import (
     PackageError, add_package, install_project, list_installed, package_info,
@@ -60,6 +60,21 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     try:
+        if args.command is None:
+            banner(__version__, "MEMINGO PACKAGE MANAGER")
+            status_bar([
+                ("Registry", "mgoa", CYAN),
+                ("Packages", "ready", GREEN),
+                ("Version", __version__, YELLOW),
+            ])
+            panel("Package console", [
+                "mgoa search <text>      Find packages",
+                "mgoa add <package>      Install into a project",
+                "mgoa list               Inspect installed dependencies",
+                "mgoa publish <dir>      Build a package archive",
+            ])
+            tip("Use mgoa --help for the complete command catalog.")
+            return 0
         if args.command == "completion":
             print(mgoa_completion(args.shell), end="")
             return 0

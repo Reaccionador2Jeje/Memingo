@@ -18,7 +18,10 @@ from .lexer import LexerError
 from .packages import ensure_project, init_project, read_manifest, resolve_entry
 from .parser import ParseError, parse
 from .server import serve
-from .cli import banner, heading, key_value, success, info, error, warning, table
+from .cli import (
+    banner, heading, key_value, success, info, error, warning, table, panel,
+    status_bar, tip, CYAN, GREEN, YELLOW,
+)
 from .completion import memingo_completion
 
 
@@ -245,8 +248,45 @@ def clean_project(directory=".", dry_run=False) -> int:
         return 1
 
 
+def project_status(directory=".") -> int:
+    try:
+        root = Path(directory).resolve()
+        manifest = ensure_project(root)
+        data = read_manifest(root)
+        package = data.get("package", {})
+        dependencies = data.get("dependencies", {})
+        if not isinstance(dependencies, dict):
+            dependencies = {}
+        source_files = [
+            path for path in root.rglob("*.mgo")
+            if not ({".git", ".memingo", "dist", "__pycache__", "node_modules", ".venv"} & set(path.relative_to(root).parts))
+        ]
+        banner(__version__, "SYSTEM STATUS")
+        status_bar([
+            ("Python", sys.version.split()[0], CYAN),
+            ("Project", package.get("name", root.name), GREEN),
+            ("Version", package.get("version", __version__), YELLOW),
+        ])
+        panel("Workspace", [
+            f"Entry          {package.get('entry', 'main.mgo')}",
+            f"Manifest       {manifest}",
+            f"Source files   {len(source_files)}",
+            f"Dependencies   {len(dependencies)}",
+        ])
+        return 0
+    except (OSError, ValueError) as exception:
+        error(f"Memingo status error: {exception}")
+        return 1
+
+
 def repl() -> int:
     banner(__version__, "INTERACTIVE MEMINGO REPL")
+    status_bar([
+        ("Language", "Memingo", CYAN),
+        ("Mode", "REPL", YELLOW),
+        ("Version", __version__, GREEN),
+    ])
+    tip("Type a Memingo ritual, then press Enter. Ctrl+D exits.")
     info("Write Memingo code. Press Ctrl+D to exit.")
     interpreter = Interpreter(project_directory=Path.cwd())
     while True:
@@ -345,9 +385,15 @@ def build_project(directory=".", output="dist") -> int:
 
 
 def doctor() -> int:
-    heading("Memingo Doctor", "installation diagnostics")
     executable = shutil.which("memingo")
     package_manager = shutil.which("mgoa")
+    banner(__version__, "SYSTEM DIAGNOSTICS")
+    status_bar([
+        ("Python", sys.version.split()[0], CYAN),
+        ("memingo", "ready" if executable else "module", GREEN if executable else YELLOW),
+        ("mgoa", "ready" if package_manager else "module", GREEN if package_manager else YELLOW),
+    ])
+    heading("Memingo Doctor", "installation diagnostics")
     key_value([
         ("Python", sys.version.split()[0]),
         ("Platform", sys.platform),
@@ -423,6 +469,8 @@ def _main(argv=None) -> int:
     subparsers.add_parser("repl", help="Open the interactive REPL")
     subparsers.add_parser("doctor", help="Check the Memingo installation")
     subparsers.add_parser("update-self", help="Update Memingo from the official installer")
+    status_parser = subparsers.add_parser("status", help="Show a complete project and runtime dashboard")
+    status_parser.add_argument("directory", nargs="?", default=".")
 
     init_parser = subparsers.add_parser("init", help="Create a Memingo project")
     init_parser.add_argument("directory", nargs="?", default=".")
@@ -502,6 +550,8 @@ def _main(argv=None) -> int:
         return doctor()
     if args.command == "update-self":
         return update_self()
+    if args.command == "status":
+        return project_status(args.directory)
     if args.command == "init":
         try:
             manifest = init_project(args.directory, args.name)

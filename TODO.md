@@ -30,7 +30,9 @@
 - [x] `memingo info`, `deps` and `clean` project tools
 - [x] `memingo manifest` standalone manifest creation
 - [x] Shell completion
-
+- [x] Art-directed CLI dashboards and project status
+- [x] Native Linux package repositories
+- [x] Automatic project manifest scaffolding
 ## Package manager
 - [x] `memingo.toml` package specification
 - [x] `memingo add`, `remove`, `install` and `update` local workflows

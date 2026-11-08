@@ -5,7 +5,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from memingo.__main__ import build_project, main, project_stats
+from memingo.__main__ import build_project, main, project_stats, project_status
 from memingo.packages import add_dependency, install_dependencies, read_manifest, remove_dependency
 
 
@@ -71,6 +71,13 @@ class ProjectToolsTests(unittest.TestCase):
             manifest = read_manifest(root)
             self.assertEqual(manifest["package"]["entry"], "main.mgo")
             self.assertEqual(manifest["dependencies"], {})
+
+            stream = io.StringIO()
+            with contextlib.redirect_stdout(stream), contextlib.redirect_stderr(stream):
+                self.assertEqual(project_status(root), 0)
+            output = stream.getvalue()
+            self.assertIn("SYSTEM STATUS", output.upper())
+            self.assertIn("WORKSPACE", output.upper())
 
 
 if __name__ == "__main__":

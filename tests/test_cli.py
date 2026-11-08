@@ -3,7 +3,7 @@ import io
 import os
 import unittest
 
-from memingo.cli import banner, error, heading, key_value, success, table
+from memingo.cli import banner, error, heading, key_value, panel, status_bar, success, table, tip
 from memingo.__main__ import main as memingo_main
 from memingo.mgoa_cli import main as mgoa_main
 
@@ -28,6 +28,11 @@ class CliStyleTests(unittest.TestCase):
         self.assertIn("ready", output)
         self.assertNotIn("\033[", output)
 
+    def test_mgoa_dashboard(self):
+        output = self.capture(mgoa_main)
+        self.assertIn("MEMINGO", output.upper())
+        self.assertIn("PACKAGE CONSOLE", output.upper())
+
     def test_shell_completion(self):
         for command, expected in (
             (lambda shell: memingo_main(["completion", shell]), ("complete -F _memingo_completion memingo", "stats", "completion")),
@@ -44,6 +49,14 @@ class CliStyleTests(unittest.TestCase):
         self.assertIn("complete -c memingo", fish_output)
         zsh_output = self.capture(lambda: mgoa_main(["completion", "zsh"]))
         self.assertIn("#compdef mgoa", zsh_output)
+
+    def test_art_components(self):
+        output = self.capture(panel, "Project", ["main.mgo ready", "mgoa linked"])
+        output += self.capture(status_bar, [("Language", "Memingo", "33"), ("Package", "mgoa", "81")])
+        output += self.capture(tip, "Run memingo dev while you build")
+        self.assertIn("PROJECT", output.upper())
+        self.assertIn("MEMINGO", output.upper())
+        self.assertIn("TIP", output.upper())
 
     def test_heading_key_value_and_table(self):
         output = self.capture(heading, "Package Manager")
