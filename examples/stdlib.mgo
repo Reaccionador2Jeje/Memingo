@@ -1,0 +1,42 @@
+# Un recorrido por la biblioteca estándar
+vibe phrase = "  memingo is based  "
+spill trim(phrase)
+spill upper("meme")
+spill lower("MEME")
+
+vibe parts = split("web,games,packages", ",")
+spill join(parts, " + ")
+spill replace("meme life", "meme", "based")
+spill starts_with("memingo", "mem")
+spill ends_with("memingo", "go")
+
+vibe numbers = [3, 1, 2]
+spill sort(numbers)
+spill reverse(numbers)
+spill unique([1, 2, 2, 3, 1])
+spill sum(numbers)
+spill min(numbers)
+spill max(numbers)
+spill repeat("meme ", 3)
+spill lines("uno\ndos\ntres")
+
+ritual double(n) {
+    drop n * 2
+}
+
+ritual even(n) {
+    drop n % 2 == 0
+}
+
+ritual combine(a, b) {
+    drop a + b
+}
+
+spill map([1, 2, 3], double)
+spill filter([1, 2, 3, 4], even)
+spill reduce([1, 2, 3, 4], combine, 0)
+
+spill clamp(round(2.6), 0, 3)
+spill parse_int("42") + parse_float("2.5")
+spill range(0, 6, 2)
+spill values({web: 1, games: 2, packages: 3})
