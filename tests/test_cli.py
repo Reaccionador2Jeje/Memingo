@@ -3,7 +3,7 @@ import io
 import os
 import unittest
 
-from memingo.cli import banner, error, heading, key_value, panel, status_bar, success, table, tip
+from memingo.cli import banner, command_header, error, heading, key_value, panel, status_bar, success, table, tip
 from memingo.__main__ import main as memingo_main
 from memingo.mgoa_cli import main as mgoa_main
 
@@ -49,6 +49,11 @@ class CliStyleTests(unittest.TestCase):
         self.assertIn("complete -c memingo", fish_output)
         zsh_output = self.capture(lambda: mgoa_main(["completion", "zsh"]))
         self.assertIn("#compdef mgoa", zsh_output)
+
+    def test_command_header(self):
+        output = self.capture(command_header, "memingo", "build", "CREATE RELEASE ARTIFACT")
+        self.assertIn("MEMINGO / BUILD", output.upper())
+        self.assertIn("CREATE RELEASE ARTIFACT", output.upper())
 
     def test_art_components(self):
         output = self.capture(panel, "Project", ["main.mgo ready", "mgoa linked"])

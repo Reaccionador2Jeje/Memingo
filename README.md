@@ -201,7 +201,7 @@ Metadata is written to `site/linux/apt` and `site/linux/rpm`. The GitHub Pages r
 
 Both packages install the runtime under `/usr/lib/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
 
-The CLI now uses an art-directed terminal interface for banners, project panels, status bars, diagnostics and package dashboards. Run `memingo status`, `memingo doctor`, or `mgoa` without arguments for a visual overview.
+The CLI now uses an art-directed terminal interface for every interactive subcommand: compact `MEMINGO / COMMAND` headers frame project, package, build, formatting and diagnostic workflows. `run`, `eval`, `completion`, REPL and watcher output remain clean or intentionally interactive so they can be piped safely. mgoa uses the same visual language for package commands. Run `memingo status`, `memingo doctor`, or `mgoa` without arguments for a visual overview.
 
 Project-aware commands create a missing `memingo.toml` automatically. Commands such as `run`, `build`, `info`, `deps`, `clean`, `stats`, `install`, `update`, `add`, `remove`, and the equivalent `mgoa` project commands also generate `main.mgo`, `.env`, `.gitignore`, and the dependencies table when needed.
 

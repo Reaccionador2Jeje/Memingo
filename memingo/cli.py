@@ -55,6 +55,16 @@ def brand_mark():
     print(color("  ◆ MEMINGO SYSTEMS", BOLD + MAGENTA))
 
 
+def command_header(program, command=None, subtitle=None):
+    label = program.upper() if command is None else f"{program.upper()} / {command.upper()}"
+    detail = subtitle or "MEMINGO COMMAND SYSTEM"
+    print()
+    print(color("  ╭─" + "─" * min(width() - 4, 52) + "╮", CYAN))
+    print(color("  │ ◆", MAGENTA + BOLD) + " " + color(label.ljust(48), BOLD + WHITE))
+    print(color("  │", CYAN) + " " + color(detail, DIM))
+    print(color("  ╰─" + "─" * min(width() - 4, 52) + "╯", CYAN))
+
+
 def success(message):
     print(color("  ✓", GREEN + BOLD), color(message, WHITE))
 

@@ -31,6 +31,7 @@
 - [x] `memingo manifest` standalone manifest creation
 - [x] Shell completion
 - [x] Art-directed CLI dashboards and project status
+- [x] Universal subcommand headers for interactive CLI workflows
 - [x] Native Linux package repositories
 - [x] Automatic project manifest scaffolding
 ## Package manager

@@ -2,7 +2,10 @@ import argparse
 import sys
 
 from . import __version__
-from .cli import banner, heading, key_value, success, info, table, error, panel, status_bar, tip, CYAN, GREEN, YELLOW
+from .cli import (
+    banner, heading, key_value, success, info, table, error, panel, status_bar,
+    tip, command_header, CYAN, GREEN, YELLOW,
+)
 from .completion import mgoa_completion
 from .mgoa import (
     PackageError, add_package, install_project, list_installed, package_info,
@@ -60,6 +63,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     try:
+        if args.command not in {None, "completion"}:
+            command_header("mgoa", args.command)
         if args.command is None:
             banner(__version__, "MEMINGO PACKAGE MANAGER")
             status_bar([

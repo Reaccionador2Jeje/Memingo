@@ -20,7 +20,7 @@ from .parser import ParseError, parse
 from .server import serve
 from .cli import (
     banner, heading, key_value, success, info, error, warning, table, panel,
-    status_bar, tip, CYAN, GREEN, YELLOW,
+    status_bar, tip, command_header, CYAN, GREEN, YELLOW,
 )
 from .completion import memingo_completion
 
@@ -541,6 +541,10 @@ def _main(argv=None) -> int:
     completion_parser.add_argument("shell", choices=("bash", "zsh", "fish"))
 
     args = parser.parse_args(argv)
+
+    raw_output_commands = {"completion", "run", "eval", "repl", "dev", "serve", "test"}
+    if args.command not in raw_output_commands and args.command is not None:
+        command_header("memingo", args.command)
 
     if args.command is None:
         return repl()
