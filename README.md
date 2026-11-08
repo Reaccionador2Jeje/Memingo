@@ -201,6 +201,8 @@ Metadata is written to `site/linux/apt` and `site/linux/rpm`. The GitHub Pages r
 
 Both packages install the runtime under `/usr/lib/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
 
+Project-aware commands create a missing `memingo.toml` automatically. Commands such as `run`, `build`, `info`, `deps`, `clean`, `stats`, `install`, `update`, `add`, `remove`, and the equivalent `mgoa` project commands also generate `main.mgo`, `.env`, `.gitignore`, and the dependencies table when needed.
+
 ## Ecosystem commands
 
 ```bash

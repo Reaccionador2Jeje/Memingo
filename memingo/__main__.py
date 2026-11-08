@@ -557,8 +557,6 @@ def _main(argv=None) -> int:
     if args.command == "add":
         try:
             project_path = Path(args.project).resolve()
-            if not (project_path / "memingo.toml").exists():
-                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             installed = add_package(project_path, args.spec)
             success(f"Added dependency {installed['name']}@{installed['version']}")
             return 0
@@ -568,8 +566,6 @@ def _main(argv=None) -> int:
     if args.command == "remove":
         try:
             project_path = Path(args.project).resolve()
-            if not (project_path / "memingo.toml").exists():
-                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             remove_package(project_path, args.name)
             success(f"Removed dependency {args.name}")
             return 0
@@ -579,8 +575,6 @@ def _main(argv=None) -> int:
     if args.command == "install":
         try:
             project_path = Path(args.directory).resolve()
-            if not (project_path / "memingo.toml").exists():
-                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             manifest = read_manifest(project_path)
             if not manifest.get("dependencies", {}):
                 info("No dependencies to install")
@@ -595,8 +589,6 @@ def _main(argv=None) -> int:
     if args.command == "update":
         try:
             project_path = Path(args.directory).resolve()
-            if not (project_path / "memingo.toml").exists():
-                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             manifest = read_manifest(project_path)
             if not manifest.get("dependencies", {}):
                 info("No dependencies to update")

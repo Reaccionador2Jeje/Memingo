@@ -40,7 +40,12 @@ def init_project(directory=".", name="my-memingo-app"):
 
 
 def read_manifest(directory="."):
-    return _read_simple_toml(Path(directory) / MANIFEST)
+    root = Path(directory).resolve()
+    manifest_path = root / MANIFEST
+    if not manifest_path.exists():
+        project_name = root.name.strip() or "memingo-app"
+        init_project(root, project_name)
+    return _read_simple_toml(manifest_path)
 
 
 def resolve_entry(directory="."):

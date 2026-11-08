@@ -59,6 +59,19 @@ class ProjectToolsTests(unittest.TestCase):
             self.assertIn("MGO files", stream.getvalue())
             self.assertEqual(main(["stats", str(root)]), 0)
 
+    def test_commands_auto_create_project_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(main(["install", temporary]), 0)
+            self.assertTrue((root / "memingo.toml").exists())
+            self.assertTrue((root / "main.mgo").exists())
+            self.assertTrue((root / ".env").exists())
+            self.assertTrue((root / ".gitignore").exists())
+
+            manifest = read_manifest(root)
+            self.assertEqual(manifest["package"]["entry"], "main.mgo")
+            self.assertEqual(manifest["dependencies"], {})
+
 
 if __name__ == "__main__":
     unittest.main()
