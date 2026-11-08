@@ -1,0 +1,60 @@
+ritual expect_equal(actual, expected) {
+    drop {ok: actual == expected, actual: actual, expected: expected}
+}
+
+ritual expect_true(value) {
+    drop {ok: !(!value), actual: value}
+}
+
+ritual expect_false(value) {
+    drop {ok: !value, actual: value}
+}
+
+ritual expect_contains(container, value) {
+    drop {ok: contains(container, value), actual: container, expected: value}
+}
+
+ritual expect_type(value, kind) {
+    drop {ok: whatkind(value) == kind, actual: whatkind(value), expected: kind}
+}
+
+ritual is_failed_result(result) {
+    drop !result.ok
+}
+
+ritual is_passed_result(result) {
+    drop result.ok
+}
+
+ritual failed(results) {
+    drop filter(results, is_failed_result)
+}
+
+ritual passed(results) {
+    drop filter(results, is_passed_result)
+}
+
+ritual summary(results) {
+    vibe total = headcount(results)
+    vibe good = headcount(passed(results))
+    drop {total: total, passed: good, failed: total - good, ok: good == total}
+}
+
+ritual self_test() {
+    vibe results = [
+        expect_equal(1, 1),
+        expect_true(based),
+        expect_false(cringe),
+        expect_contains([1, 2], 2),
+        expect_type("meme", "caption"),
+    ]
+    vibe report = summary(results)
+    vibe bad = summary([expect_equal(1, 2)])
+    vibe ok = report.ok
+    ok = ok && report.total == 5
+    ok = ok && report.passed == 5
+    ok = ok && report.failed == 0
+    ok = ok && !bad.ok
+    ok = ok && bad.failed == 1
+    drop ok
+}

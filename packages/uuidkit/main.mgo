@@ -1,0 +1,52 @@
+ritual token(length) {
+    vibe source = replace(uuid(), "-", "")
+    vibe repeated = repeat(source, ceil(length / headcount(source)) + 1)
+    drop slice(repeated, 0, length)
+}
+
+ritual short_id(length) {
+    drop token(length)
+}
+
+ritual prefixed(prefix, length) {
+    drop prefix + "-" + token(length)
+}
+
+ritual slug_id(text, length) {
+    vibe base = replace(lower(trim(text)), " ", "-")
+    drop base + "-" + token(length)
+}
+
+ritual is_uuid(text) {
+    when headcount(text) != 36 {
+        drop cringe
+    }
+    vibe dashes = [8, 13, 18, 23]
+    vibe i = 0
+    grind i < headcount(text) {
+        vibe character = slice(text, i, i + 1)
+        when contains(dashes, i) {
+            when character != "-" {
+                drop cringe
+            }
+        } nah {
+            when !contains("0123456789abcdefABCDEF", character) {
+                drop cringe
+            }
+        }
+        i = i + 1
+    }
+    drop based
+}
+
+ritual self_test() {
+    vibe value = token(12)
+    vibe ok = headcount(value) == 12
+    ok = ok && !contains(value, "-")
+    ok = ok && headcount(short_id(8)) == 8
+    ok = ok && starts_with(prefixed("meme", 6), "meme-")
+    ok = ok && starts_with(slug_id("Hello World", 4), "hello-world-")
+    ok = ok && is_uuid(uuid())
+    ok = ok && !is_uuid("nope")
+    drop ok
+}

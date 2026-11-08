@@ -1,0 +1,104 @@
+ritual average(values) {
+    when headcount(values) == 0 {
+        drop 0
+    }
+    drop sum(values) / headcount(values)
+}
+
+ritual median(values) {
+    vibe ordered = sort(values)
+    vibe total = headcount(ordered)
+    when total == 0 {
+        drop 0
+    }
+    vibe middle = floor(total / 2)
+    when total % 2 == 1 {
+        drop ordered[middle]
+    }
+    drop (ordered[middle - 1] + ordered[middle]) / 2
+}
+
+ritual spread(values) {
+    when headcount(values) == 0 {
+        drop 0
+    }
+    drop max(values) - min(values)
+}
+
+ritual variance(values) {
+    vibe total = headcount(values)
+    when total == 0 {
+        drop 0
+    }
+    vibe mean = average(values)
+    vibe accumulated = 0
+    vibe i = 0
+    grind i < total {
+        vibe difference = values[i] - mean
+        accumulated = accumulated + difference * difference
+        i = i + 1
+    }
+    drop accumulated / total
+}
+
+ritual stddev(values) {
+    vibe value = variance(values)
+    when value == 0 {
+        drop 0
+    }
+    vibe guess = value / 2
+    vibe i = 0
+    grind i < 20 {
+        guess = (guess + value / guess) / 2
+        i = i + 1
+    }
+    drop guess
+}
+
+ritual mode(values) {
+    when headcount(values) == 0 {
+        drop ghost
+    }
+    vibe candidates = unique(values)
+    vibe best = candidates[0]
+    vibe best_count = 0
+    vibe i = 0
+    grind i < headcount(candidates) {
+        vibe candidate = candidates[i]
+        vibe count = 0
+        vibe j = 0
+        grind j < headcount(values) {
+            when values[j] == candidate {
+                count = count + 1
+            }
+            j = j + 1
+        }
+        when count > best_count {
+            best = candidate
+            best_count = count
+        }
+        i = i + 1
+    }
+    drop best
+}
+
+ritual percentile(values, percent) {
+    vibe ordered = sort(values)
+    vibe total = headcount(ordered)
+    when total == 0 {
+        drop 0
+    }
+    vibe index = floor((percent / 100) * (total - 1))
+    drop ordered[clamp(index, 0, total - 1)]
+}
+
+ritual self_test() {
+    vibe ok = average([2, 4, 6]) == 4
+    ok = ok && median([1, 3, 2]) == 2
+    ok = ok && median([1, 2, 3, 4]) == 2.5
+    ok = ok && spread([4, 9]) == 5
+    ok = ok && mode([1, 2, 2, 3]) == 2
+    ok = ok && percentile([10, 20, 30, 40], 50) == 20
+    ok = ok && stddev([2, 4, 4, 4, 5, 5, 7, 9]) == 2
+    drop ok
+}

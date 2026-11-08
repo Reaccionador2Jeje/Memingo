@@ -1,0 +1,132 @@
+ritual chunk(values, size) {
+    when size <= 0 {
+        drop []
+    }
+    vibe result = []
+    vibe index = 0
+    grind index < headcount(values) {
+        push(result, slice(values, index, index + size))
+        index = index + size
+    }
+    drop result
+}
+
+ritual flatten(values) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(values) {
+        vibe item = values[i]
+        when whatkind(item) == "party" && headcount(keys(item)) == 0 {
+            vibe nested = flatten(item)
+            vibe j = 0
+            grind j < headcount(nested) {
+                push(result, nested[j])
+                j = j + 1
+            }
+        } nah {
+            push(result, item)
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual index_of(values, target) {
+    vibe i = 0
+    grind i < headcount(values) {
+        when values[i] == target {
+            drop i
+        }
+        i = i + 1
+    }
+    drop -1
+}
+
+ritual without(values, target) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(values) {
+        when values[i] != target {
+            push(result, values[i])
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual take(values, count) {
+    drop slice(values, 0, clamp(count, 0, headcount(values)))
+}
+
+ritual skip(values, count) {
+    drop slice(values, clamp(count, 0, headcount(values)))
+}
+
+ritual contains_all(values, targets) {
+    vibe i = 0
+    grind i < headcount(targets) {
+        when !contains(values, targets[i]) {
+            drop cringe
+        }
+        i = i + 1
+    }
+    drop based
+}
+
+ritual contains_any(values, targets) {
+    vibe i = 0
+    grind i < headcount(targets) {
+        when contains(values, targets[i]) {
+            drop based
+        }
+        i = i + 1
+    }
+    drop cringe
+}
+
+ritual pluck(items, field) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(items) {
+        push(result, items[i][field])
+        i = i + 1
+    }
+    drop result
+}
+
+ritual sum_by(items, field) {
+    vibe total = 0
+    vibe i = 0
+    grind i < headcount(items) {
+        total = total + items[i][field]
+        i = i + 1
+    }
+    drop total
+}
+
+ritual zip(keys_list, values_list) {
+    vibe result = {}
+    vibe i = 0
+    grind i < headcount(keys_list) && i < headcount(values_list) {
+        set_value(result, keys_list[i], values_list[i])
+        i = i + 1
+    }
+    drop result
+}
+
+ritual self_test() {
+    vibe ok = chunk([1, 2, 3, 4, 5], 2) == [[1, 2], [3, 4], [5]]
+    ok = ok && flatten([1, [2, [3, 4]]]) == [1, 2, 3, 4]
+    ok = ok && index_of(["a", "b"], "b") == 1
+    ok = ok && index_of(["a"], "z") == -1
+    ok = ok && without([1, 2, 2, 3], 2) == [1, 3]
+    ok = ok && take([1, 2, 3], 2) == [1, 2]
+    ok = ok && skip([1, 2, 3], 1) == [2, 3]
+    ok = ok && contains_all([1, 2, 3], [1, 3])
+    ok = ok && contains_any([1, 2], [9, 2])
+    ok = ok && !contains_any([1, 2], [8, 9])
+    ok = ok && pluck([{name: "a"}, {name: "b"}], "name") == ["a", "b"]
+    ok = ok && sum_by([{score: 2}, {score: 3}], "score") == 5
+    ok = ok && zip(["a", "b"], [1, 2]) == {a: 1, b: 2}
+    drop ok
+}

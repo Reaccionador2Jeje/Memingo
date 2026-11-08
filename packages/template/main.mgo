@@ -1,0 +1,71 @@
+ritual stringify(value) {
+    drop join([value], "")
+}
+
+ritual render(text, values_object) {
+    vibe result = text
+    vibe names = keys(values_object)
+    vibe i = 0
+    grind i < headcount(names) {
+        vibe key = names[i]
+        result = replace(result, "{" + key + "}", stringify(values_object[key]))
+        i = i + 1
+    }
+    drop result
+}
+
+ritual render_all(text, items) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(items) {
+        push(result, render(text, items[i]))
+        i = i + 1
+    }
+    drop result
+}
+
+ritual escape_html(text) {
+    vibe result = replace(text, "&", "&amp;")
+    result = replace(result, "<", "&lt;")
+    result = replace(result, ">", "&gt;")
+    result = replace(result, "\"", "&quot;")
+    drop result
+}
+
+ritual indent(text, spaces) {
+    vibe prefix = repeat(" ", spaces)
+    drop prefix + replace(text, "\n", "\n" + prefix)
+}
+
+ritual wrap(text, width) {
+    vibe words = split(text)
+    vibe output = []
+    vibe current = ""
+    vibe i = 0
+    grind i < headcount(words) {
+        vibe candidate = words[i]
+        when headcount(current) > 0 {
+            candidate = current + " " + words[i]
+        }
+        when headcount(candidate) > width && headcount(current) > 0 {
+            push(output, current)
+            current = words[i]
+        } nah {
+            current = candidate
+        }
+        i = i + 1
+    }
+    when headcount(current) > 0 {
+        push(output, current)
+    }
+    drop join(output, "\n")
+}
+
+ritual self_test() {
+    vibe ok = render("Hola {name}, {n} memes", {name: "Ana", n: 3}) == "Hola Ana, 3 memes"
+    ok = ok && render_all("- {name}", [{name: "a"}, {name: "b"}]) == ["- a", "- b"]
+    ok = ok && escape_html("<b>") == "&lt;b&gt;"
+    ok = ok && indent("a\nb", 2) == "  a\n  b"
+    ok = ok && wrap("uno dos tres", 7) == "uno dos\ntres"
+    drop ok
+}

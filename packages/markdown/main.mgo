@@ -1,0 +1,74 @@
+ritual heading(text, level) {
+    drop repeat("#", clamp(level, 1, 6)) + " " + text
+}
+
+ritual bold(text) {
+    drop "**" + text + "**"
+}
+
+ritual italic(text) {
+    drop "*" + text + "*"
+}
+
+ritual inline_code(text) {
+    drop "`" + text + "`"
+}
+
+ritual code_block(text, language) {
+    drop "```" + language + "\n" + text + "\n```"
+}
+
+ritual link(text, url) {
+    drop "[" + text + "](" + url + ")"
+}
+
+ritual image(alt, url) {
+    drop "![" + alt + "](" + url + ")"
+}
+
+ritual quote(text) {
+    drop "> " + replace(text, "\n", "\n> ")
+}
+
+ritual divider() {
+    drop "---"
+}
+
+ritual bullet_list(items) {
+    vibe output = []
+    vibe i = 0
+    grind i < headcount(items) {
+        push(output, "- " + stringify(items[i]))
+        i = i + 1
+    }
+    drop join(output, "\n")
+}
+
+ritual ordered_list(items) {
+    vibe output = []
+    vibe i = 0
+    grind i < headcount(items) {
+        push(output, (i + 1) + ". " + stringify(items[i]))
+        i = i + 1
+    }
+    drop join(output, "\n")
+}
+
+ritual stringify(value) {
+    drop join([value], "")
+}
+
+ritual self_test() {
+    vibe ok = heading("Hola", 2) == "## Hola"
+    ok = ok && bold("meme") == "**meme**"
+    ok = ok && italic("meme") == "*meme*"
+    ok = ok && inline_code("mgo") == "`mgo`"
+    ok = ok && link("Memingo", "https://memingo.dev") == "[Memingo](https://memingo.dev)"
+    ok = ok && image("logo", "logo.svg") == "![logo](logo.svg)"
+    ok = ok && quote("uno\ndos") == "> uno\n> dos"
+    ok = ok && divider() == "---"
+    ok = ok && bullet_list(["a", "b"]) == "- a\n- b"
+    ok = ok && ordered_list(["a", "b"]) == "1. a\n2. b"
+    ok = ok && code_block("spill 1", "mgo") == "```mgo\nspill 1\n```"
+    drop ok
+}

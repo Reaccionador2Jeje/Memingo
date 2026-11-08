@@ -1,0 +1,81 @@
+ritual roll(sides) {
+    when sides < 1 {
+        drop 0
+    }
+    drop random_int(1, sides)
+}
+
+ritual roll_many(sides, count) {
+    vibe result = []
+    vibe i = 0
+    grind i < count {
+        push(result, roll(sides))
+        i = i + 1
+    }
+    drop result
+}
+
+ritual is_alive(health) {
+    drop health > 0
+}
+
+ritual damage(health, amount) {
+    drop clamp(health - abs(amount), 0, health)
+}
+
+ritual heal(health, amount, maximum) {
+    drop clamp(health + abs(amount), 0, maximum)
+}
+
+ritual xp_for_level(level) {
+    when level <= 1 {
+        drop 0
+    }
+    drop floor(100 * (level - 1) * (level - 1))
+}
+
+ritual level_from_xp(xp) {
+    vibe level = 1
+    grind xp_for_level(level + 1) <= xp {
+        level = level + 1
+    }
+    drop level
+}
+
+ritual loot(table) {
+    vibe total = 0
+    vibe i = 0
+    grind i < headcount(table) {
+        total = total + table[i].weight
+        i = i + 1
+    }
+    when total <= 0 {
+        drop ghost
+    }
+    vibe target = random_int(1, total)
+    vibe running = 0
+    vibe j = 0
+    grind j < headcount(table) {
+        running = running + table[j].weight
+        when target <= running {
+            drop table[j].name
+        }
+        j = j + 1
+    }
+    drop table[headcount(table) - 1].name
+}
+
+ritual self_test() {
+    vibe ok = roll(1) == 1
+    ok = ok && headcount(roll_many(4, 3)) == 3
+    ok = ok && is_alive(1)
+    ok = ok && !is_alive(0)
+    ok = ok && damage(10, 3) == 7
+    ok = ok && damage(10, 30) == 0
+    ok = ok && heal(5, 3, 10) == 8
+    ok = ok && heal(5, 30, 10) == 10
+    ok = ok && xp_for_level(2) == 100
+    ok = ok && level_from_xp(100) == 2
+    ok = ok && loot([{name: "gold", weight: 1}]) == "gold"
+    drop ok
+}

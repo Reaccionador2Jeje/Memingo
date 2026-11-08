@@ -1,0 +1,9 @@
+[package]
+name = "randomkit"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Picks, samples, dice and random helpers"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]

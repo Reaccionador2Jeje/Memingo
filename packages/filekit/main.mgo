@@ -1,0 +1,58 @@
+ritual read_json(path) {
+    drop json_parse(read_file(path))
+}
+
+ritual write_json(path, value) {
+    drop write_file(path, json_stringify(value))
+}
+
+ritual read_lines(path) {
+    drop lines(read_file(path))
+}
+
+ritual write_lines(path, items) {
+    drop write_file(path, join(items, "\n"))
+}
+
+ritual append_line(path, line) {
+    when file_exists(path) {
+        vibe current = read_file(path)
+        when headcount(current) > 0 && ends_with(current, "\n") {
+            drop write_file(path, current + line + "\n")
+        }
+        drop write_file(path, current + "\n" + line)
+    }
+    drop write_file(path, line + "\n")
+}
+
+ritual read_text(path, fallback) {
+    when !file_exists(path) {
+        drop fallback
+    }
+    drop read_file(path)
+}
+
+ritual file_size(path) {
+    drop headcount(read_file(path))
+}
+
+ritual file_extension(path) {
+    vibe parts = split(path, ".")
+    when headcount(parts) <= 1 {
+        drop ""
+    }
+    drop parts[headcount(parts) - 1]
+}
+
+ritual self_test() {
+    vibe path = ".memingo-filekit-test.txt"
+    write_file(path, "uno\ndos")
+    vibe ok = read_lines(path) == ["uno", "dos"] && file_size(path) == 7
+    append_line(path, "tres")
+    ok = ok && read_lines(path) == ["uno", "dos", "tres"]
+    ok = ok && read_text(path, "") != ""
+    write_json(path, {meme: based})
+    ok = ok && read_json(path) == {meme: based}
+    ok = ok && file_extension("notes.txt") == "txt"
+    drop ok
+}

@@ -1,0 +1,132 @@
+ritual index_of_char(text, character) {
+    vibe i = 0
+    grind i < headcount(text) {
+        when slice(text, i, i + 1) == character {
+            drop i
+        }
+        i = i + 1
+    }
+    drop -1
+}
+
+ritual is_blank(text) {
+    drop headcount(trim(text)) == 0
+}
+
+ritual is_int_text(text) {
+    vibe body = trim(text)
+    when headcount(body) == 0 {
+        drop cringe
+    }
+    when starts_with(body, "-") {
+        body = slice(body, 1)
+    }
+    when headcount(body) == 0 {
+        drop cringe
+    }
+    vibe i = 0
+    grind i < headcount(body) {
+        when !contains("0123456789", slice(body, i, i + 1)) {
+            drop cringe
+        }
+        i = i + 1
+    }
+    drop based
+}
+
+ritual is_float_text(text) {
+    vibe body = trim(text)
+    when headcount(body) == 0 {
+        drop cringe
+    }
+    when starts_with(body, "-") {
+        body = slice(body, 1)
+    }
+    when headcount(body) == 0 {
+        drop cringe
+    }
+    vibe dots = 0
+    vibe i = 0
+    grind i < headcount(body) {
+        vibe character = slice(body, i, i + 1)
+        when character == "." {
+            dots = dots + 1
+        }
+        when character != "." && !contains("0123456789", character) {
+            drop cringe
+        }
+        i = i + 1
+    }
+    drop dots <= 1
+}
+
+ritual is_email(text) {
+    vibe value = trim(text)
+    vibe at = index_of_char(value, "@")
+    when at <= 0 {
+        drop cringe
+    }
+    vibe domain = slice(value, at + 1)
+    vibe dot = index_of_char(domain, ".")
+    drop dot > 0 && dot < headcount(domain) - 1
+}
+
+ritual is_url(text) {
+    vibe value = lower(trim(text))
+    drop starts_with(value, "http://") || starts_with(value, "https://")
+}
+
+ritual is_hex_color(text) {
+    vibe value = trim(text)
+    when headcount(value) != 7 || !starts_with(value, "#") {
+        drop cringe
+    }
+    vibe i = 1
+    grind i < 7 {
+        when !contains("0123456789abcdefABCDEF", slice(value, i, i + 1)) {
+            drop cringe
+        }
+        i = i + 1
+    }
+    drop based
+}
+
+ritual is_strong_password(text) {
+    when headcount(text) < 8 {
+        drop cringe
+    }
+    vibe has_lower = cringe
+    vibe has_upper = cringe
+    vibe has_digit = cringe
+    vibe i = 0
+    grind i < headcount(text) {
+        vibe character = slice(text, i, i + 1)
+        when character == lower(character) && character != upper(character) {
+            has_lower = based
+        }
+        when character == upper(character) && character != lower(character) {
+            has_upper = based
+        }
+        when contains("0123456789", character) {
+            has_digit = based
+        }
+        i = i + 1
+    }
+    drop has_lower && has_upper && has_digit
+}
+
+ritual self_test() {
+    vibe ok = is_blank("   ")
+    ok = ok && is_int_text("-12")
+    ok = ok && !is_int_text("12a")
+    ok = ok && is_float_text("1.5")
+    ok = ok && !is_float_text("1.2.3")
+    ok = ok && is_email("meme@memingo.dev")
+    ok = ok && !is_email("meme@dev")
+    ok = ok && is_url("https://memingo.dev")
+    ok = ok && is_hex_color("#ff00aa")
+    ok = ok && !is_hex_color("#ff00a")
+    ok = ok && is_strong_password("Meme1234")
+    ok = ok && !is_strong_password("meme")
+    drop ok
+}

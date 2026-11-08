@@ -1,0 +1,71 @@
+ritual hex_value(character) {
+    vibe digits = "0123456789abcdef"
+    vibe lowered = lower(character)
+    vibe i = 0
+    grind i < headcount(digits) {
+        when slice(digits, i, i + 1) == lowered {
+            drop i
+        }
+        i = i + 1
+    }
+    drop 0
+}
+
+ritual hex_to_rgb(hex) {
+    vibe value = trim(hex)
+    when starts_with(value, "#") {
+        value = slice(value, 1)
+    }
+    when headcount(value) != 6 {
+        drop [0, 0, 0]
+    }
+    vibe red = hex_value(slice(value, 0, 1)) * 16 + hex_value(slice(value, 1, 2))
+    vibe green = hex_value(slice(value, 2, 3)) * 16 + hex_value(slice(value, 3, 4))
+    vibe blue = hex_value(slice(value, 4, 5)) * 16 + hex_value(slice(value, 5, 6))
+    drop [red, green, blue]
+}
+
+ritual hex_pair(value) {
+    vibe digits = "0123456789abcdef"
+    vibe high = floor(value / 16)
+    vibe low = value % 16
+    drop slice(digits, high, high + 1) + slice(digits, low, low + 1)
+}
+
+ritual rgb_to_hex(red, green, blue) {
+    vibe r = clamp(round(red), 0, 255)
+    vibe g = clamp(round(green), 0, 255)
+    vibe b = clamp(round(blue), 0, 255)
+    drop "#" + hex_pair(r) + hex_pair(g) + hex_pair(b)
+}
+
+ritual luminance(hex) {
+    vibe rgb = hex_to_rgb(hex)
+    drop (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255
+}
+
+ritual contrast_text(hex) {
+    when luminance(hex) > 0.5 {
+        drop "#000000"
+    }
+    drop "#ffffff"
+}
+
+ritual lighten(hex, amount) {
+    vibe rgb = hex_to_rgb(hex)
+    drop rgb_to_hex(rgb[0] + amount, rgb[1] + amount, rgb[2] + amount)
+}
+
+ritual darken(hex, amount) {
+    drop lighten(hex, 0 - amount)
+}
+
+ritual self_test() {
+    vibe ok = hex_to_rgb("#ff8000") == [255, 128, 0]
+    ok = ok && rgb_to_hex(255, 128, 0) == "#ff8000"
+    ok = ok && contrast_text("#000000") == "#ffffff"
+    ok = ok && contrast_text("#ffffff") == "#000000"
+    ok = ok && darken("#ffffff", 255) == "#000000"
+    ok = ok && lighten("#000000", 255) == "#ffffff"
+    drop ok
+}

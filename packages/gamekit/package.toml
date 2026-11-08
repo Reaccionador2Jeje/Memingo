@@ -1,0 +1,9 @@
+[package]
+name = "gamekit"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Health, XP, dice and loot helpers for games"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]

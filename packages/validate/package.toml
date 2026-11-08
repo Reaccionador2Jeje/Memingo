@@ -1,0 +1,9 @@
+[package]
+name = "validate"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Email, URL, number, color and password validators"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]

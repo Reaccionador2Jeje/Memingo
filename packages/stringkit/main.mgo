@@ -1,0 +1,111 @@
+ritual initials(text) {
+    vibe words = split(trim(text))
+    vibe result = ""
+    vibe i = 0
+    grind i < headcount(words) {
+        vibe word = words[i]
+        when headcount(word) > 0 {
+            result = result + upper(slice(word, 0, 1))
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual title_case(text) {
+    vibe words = split(lower(trim(text)))
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(words) {
+        vibe word = words[i]
+        push(result, upper(slice(word, 0, 1)) + slice(word, 1))
+        i = i + 1
+    }
+    drop join(result, " ")
+}
+
+ritual slugify(text) {
+    vibe normalized = lower(trim(text))
+    vibe allowed = "abcdefghijklmnopqrstuvwxyz0123456789-_"
+    vibe result = ""
+    vibe i = 0
+    grind i < headcount(normalized) {
+        vibe character = slice(normalized, i, i + 1)
+        when character == " " {
+            character = "-"
+        }
+        when contains(allowed, character) {
+            result = result + character
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual is_palindrome(text) {
+    vibe cleaned = replace(lower(trim(text)), " ", "")
+    drop cleaned == reverse(cleaned)
+}
+
+ritual count_words(text) {
+    drop headcount(split(trim(text)))
+}
+
+ritual truncate(text, limit) {
+    when headcount(text) <= limit {
+        drop text
+    }
+    when limit <= 3 {
+        drop slice(text, 0, limit)
+    }
+    drop slice(text, 0, limit - 3) + "..."
+}
+
+ritual pad_left(text, width, character) {
+    vibe missing = width - headcount(text)
+    when missing <= 0 {
+        drop text
+    }
+    drop repeat(character, missing) + text
+}
+
+ritual pad_right(text, width, character) {
+    vibe missing = width - headcount(text)
+    when missing <= 0 {
+        drop text
+    }
+    drop text + repeat(character, missing)
+}
+
+ritual count_char(text, character) {
+    vibe total = 0
+    vibe i = 0
+    grind i < headcount(text) {
+        when slice(text, i, i + 1) == character {
+            total = total + 1
+        }
+        i = i + 1
+    }
+    drop total
+}
+
+ritual capitalize(text) {
+    when headcount(text) == 0 {
+        drop text
+    }
+    drop upper(slice(text, 0, 1)) + lower(slice(text, 1))
+}
+
+ritual self_test() {
+    vibe ok = slugify("  Hello Memingo World! ") == "hello-memingo-world"
+    ok = ok && initials("meme driven development") == "MDD"
+    ok = ok && title_case("meme driven development") == "Meme Driven Development"
+    ok = ok && is_palindrome("Anita lava la tina")
+    ok = ok && count_words("uno dos tres") == 3
+    ok = ok && truncate("memingo forever", 10) == "memingo..."
+    ok = ok && pad_left("7", 3, "0") == "007"
+    ok = ok && pad_right("7", 3, "0") == "700"
+    ok = ok && count_char("banana", "a") == 3
+    ok = ok && capitalize("MEMINGO") == "Memingo"
+    drop ok
+}

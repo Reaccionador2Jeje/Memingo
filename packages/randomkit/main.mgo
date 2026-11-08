@@ -1,0 +1,67 @@
+ritual pick(items) {
+    when headcount(items) == 0 {
+        drop ghost
+    }
+    drop items[random_int(0, headcount(items) - 1)]
+}
+
+ritual sample(items, count) {
+    vibe shuffled = shuffle(items)
+    drop slice(shuffled, 0, clamp(count, 0, headcount(shuffled)))
+}
+
+ritual coinflip() {
+    drop random_int(0, 1) == 0
+}
+
+ritual chance(probability) {
+    drop random() < probability
+}
+
+ritual roll(sides) {
+    when sides < 1 {
+        drop 0
+    }
+    drop random_int(1, sides)
+}
+
+ritual roll_many(sides, count) {
+    vibe result = []
+    vibe i = 0
+    grind i < count {
+        push(result, roll(sides))
+        i = i + 1
+    }
+    drop result
+}
+
+ritual random_word(words) {
+    drop pick(words)
+}
+
+ritual random_digit() {
+    drop random_int(0, 9)
+}
+
+ritual random_bool() {
+    drop coinflip()
+}
+
+ritual roll_total(sides, count) {
+    drop sum(roll_many(sides, count))
+}
+
+ritual self_test() {
+    vibe chosen = pick([1])
+    vibe numbers = roll_many(6, 6)
+    vibe single = roll(6)
+    vibe ok = chosen == 1
+    ok = ok && headcount(numbers) == 6
+    ok = ok && single >= 1
+    ok = ok && single <= 6
+    ok = ok && random_digit() >= 0
+    ok = ok && random_digit() <= 9
+    ok = ok && sample([1, 2, 3], 2) != ghost
+    ok = ok && roll_total(1, 3) == 3
+    drop ok
+}

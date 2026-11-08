@@ -1,0 +1,72 @@
+ritual success(text) {
+    drop "✓ " + text
+}
+
+ritual warning(text) {
+    drop "⚠ " + text
+}
+
+ritual failure(text) {
+    drop "× " + text
+}
+
+ritual info(text) {
+    drop "• " + text
+}
+
+ritual progress_bar(percent, width) {
+    vibe value = clamp(percent, 0, 100)
+    vibe filled = floor((value / 100) * width)
+    drop repeat("█", filled) + repeat("░", width - filled)
+}
+
+ritual format_bytes(size) {
+    vibe value = abs(size)
+    when value < 1024 {
+        drop value + " B"
+    }
+    when value < 1024 * 1024 {
+        drop round(value / 1024) + " KB"
+    }
+    when value < 1024 * 1024 * 1024 {
+        drop round(value / (1024 * 1024)) + " MB"
+    }
+    drop round(value / (1024 * 1024 * 1024)) + " GB"
+}
+
+ritual pad_right_text(text, width) {
+    vibe missing = width - headcount(text)
+    when missing <= 0 {
+        drop text
+    }
+    drop text + repeat(" ", missing)
+}
+
+ritual table_line(cells, widths) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(cells) {
+        push(result, pad_right_text(join([cells[i]], ""), widths[i]))
+        i = i + 1
+    }
+    drop join(result, " | ")
+}
+
+ritual banner(text) {
+    vibe line = repeat("=", headcount(text) + 4)
+    drop line + "\n  " + text + "\n" + line
+}
+
+ritual self_test() {
+    vibe ok = success("ok") == "✓ ok"
+    ok = ok && warning("hey") == "⚠ hey"
+    ok = ok && failure("no") == "× no"
+    ok = ok && info("data") == "• data"
+    ok = ok && progress_bar(50, 4) == "██░░"
+    ok = ok && progress_bar(200, 2) == "██"
+    ok = ok && format_bytes(2048) == "2 KB"
+    ok = ok && format_bytes(1048576) == "1 MB"
+    ok = ok && table_line(["a", "bb"], [3, 4]) == "a   | bb  "
+    ok = ok && banner("hi") == "======\n  hi\n======"
+    drop ok
+}

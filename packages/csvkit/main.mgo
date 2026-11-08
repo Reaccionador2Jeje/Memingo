@@ -1,0 +1,72 @@
+ritual parse_line(line) {
+    vibe parts = split(line, ",")
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(parts) {
+        push(result, trim(parts[i]))
+        i = i + 1
+    }
+    drop result
+}
+
+ritual parse(text) {
+    vibe rows = lines(text)
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(rows) {
+        when headcount(trim(rows[i])) > 0 {
+            push(result, parse_line(rows[i]))
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual to_line(items) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(items) {
+        push(result, join([items[i]], ""))
+        i = i + 1
+    }
+    drop join(result, ",")
+}
+
+ritual to_text(rows) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(rows) {
+        push(result, to_line(rows[i]))
+        i = i + 1
+    }
+    drop join(result, "\n")
+}
+
+ritual column(rows, index) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(rows) {
+        when index >= 0 && index < headcount(rows[i]) {
+            push(result, rows[i][index])
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual header(rows) {
+    when headcount(rows) == 0 {
+        drop []
+    }
+    drop rows[0]
+}
+
+ritual self_test() {
+    vibe rows = parse("name,score\nana,10\nmeme,7")
+    vibe ok = headcount(rows) == 3
+    ok = ok && rows[1][0] == "ana"
+    ok = ok && column(rows, 1) == ["score", "10", "7"]
+    ok = ok && header(rows) == ["name", "score"]
+    ok = ok && to_text(rows) == "name,score\nana,10\nmeme,7"
+    drop ok
+}

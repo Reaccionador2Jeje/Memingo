@@ -1,0 +1,9 @@
+[package]
+name = "stringkit"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Slugs, initials, padding, truncation and text helpers"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]

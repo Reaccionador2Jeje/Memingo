@@ -1,0 +1,92 @@
+ritual env_text(name, fallback) {
+    vibe value = env(name, ghost)
+    when value == ghost {
+        drop fallback
+    }
+    drop value
+}
+
+ritual env_required(name) {
+    vibe value = env(name, ghost)
+    when value == ghost {
+        drop ghost
+    }
+    drop value
+}
+
+ritual is_number_text(text) {
+    vibe cleaned = trim(text)
+    when headcount(cleaned) == 0 {
+        drop cringe
+    }
+    when starts_with(cleaned, "-") {
+        cleaned = slice(cleaned, 1)
+    }
+    when headcount(cleaned) == 0 {
+        drop cringe
+    }
+    vibe dots = 0
+    vibe i = 0
+    grind i < headcount(cleaned) {
+        vibe character = slice(cleaned, i, i + 1)
+        when character == "." {
+            dots = dots + 1
+        }
+        when character != "." && !contains("0123456789", character) {
+            drop cringe
+        }
+        i = i + 1
+    }
+    drop dots <= 1
+}
+
+ritual env_int(name, fallback) {
+    vibe value = env(name, ghost)
+    when value == ghost {
+        drop fallback
+    }
+    when !is_number_text(value) {
+        drop fallback
+    }
+    drop floor(parse_float(value))
+}
+
+ritual env_bool(name, fallback) {
+    vibe value = lower(trim(env_text(name, "")))
+    when contains(["1", "true", "based", "yes", "on"], value) {
+        drop based
+    }
+    when contains(["0", "false", "cringe", "no", "off"], value) {
+        drop cringe
+    }
+    drop fallback
+}
+
+ritual env_list(name, fallback) {
+    vibe value = env(name, ghost)
+    when value == ghost {
+        drop fallback
+    }
+    drop split(value, ",")
+}
+
+ritual env_json(name, fallback) {
+    vibe value = env(name, ghost)
+    when value == ghost {
+        drop fallback
+    }
+    drop json_parse(value)
+}
+
+ritual self_test() {
+    vibe missing = "MEMINGO_ENVKIT_MISSING"
+    vibe ok = env_text(missing, "fallback") == "fallback"
+    ok = ok && env_required(missing) == ghost
+    ok = ok && env_int(missing, 7) == 7
+    ok = ok && env_bool(missing, based) == based
+    ok = ok && env_list(missing, []) == []
+    ok = ok && env_json(missing, {}) == {}
+    ok = ok && is_number_text("-12.5")
+    ok = ok && !is_number_text("12a")
+    drop ok
+}

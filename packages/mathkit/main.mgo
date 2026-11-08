@@ -1,0 +1,118 @@
+ritual is_even(n) {
+    drop n % 2 == 0
+}
+
+ritual is_odd(n) {
+    drop n % 2 != 0
+}
+
+ritual sign(n) {
+    when n > 0 {
+        drop 1
+    }
+    when n < 0 {
+        drop -1
+    }
+    drop 0
+}
+
+ritual gcd(a, b) {
+    when b == 0 {
+        drop abs(a)
+    }
+    drop gcd(b, a % b)
+}
+
+ritual lcm(a, b) {
+    when a == 0 || b == 0 {
+        drop 0
+    }
+    drop floor(abs(a * b) / gcd(a, b))
+}
+
+ritual factorial(n) {
+    when n <= 1 {
+        drop 1
+    }
+    drop n * factorial(n - 1)
+}
+
+ritual fibonacci(n) {
+    when n <= 1 {
+        drop n
+    }
+    vibe a = 0
+    vibe b = 1
+    vibe i = 2
+    grind i <= n {
+        vibe next = a + b
+        a = b
+        b = next
+        i = i + 1
+    }
+    drop b
+}
+
+ritual power(base, exponent) {
+    vibe result = 1
+    vibe i = 0
+    grind i < exponent {
+        result = result * base
+        i = i + 1
+    }
+    drop result
+}
+
+ritual is_prime(n) {
+    when n < 2 {
+        drop cringe
+    }
+    vibe i = 2
+    grind i * i <= n {
+        when n % i == 0 {
+            drop cringe
+        }
+        i = i + 1
+    }
+    drop based
+}
+
+ritual digit_sum(n) {
+    vibe value = abs(n)
+    vibe total = 0
+    grind value > 0 {
+        total = total + value % 10
+        value = floor(value / 10)
+    }
+    drop total
+}
+
+ritual collatz_steps(n) {
+    vibe value = abs(n)
+    when value == 0 {
+        drop 0
+    }
+    vibe steps = 0
+    grind value != 1 {
+        when value % 2 == 0 {
+            value = value / 2
+        } nah {
+            value = value * 3 + 1
+        }
+        steps = steps + 1
+    }
+    drop steps
+}
+
+ritual self_test() {
+    vibe ok = gcd(12, 18) == 6
+    ok = ok && lcm(4, 6) == 12
+    ok = ok && factorial(5) == 120
+    ok = ok && fibonacci(10) == 55
+    ok = ok && is_prime(13)
+    ok = ok && !is_prime(9)
+    ok = ok && power(2, 8) == 256
+    ok = ok && digit_sum(1234) == 10
+    ok = ok && collatz_steps(6) == 8
+    drop ok
+}

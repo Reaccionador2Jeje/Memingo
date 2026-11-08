@@ -1,0 +1,9 @@
+[package]
+name = "testing"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Small expectation and summary helpers for Memingo tests"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]

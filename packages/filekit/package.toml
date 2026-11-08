@@ -1,0 +1,9 @@
+[package]
+name = "filekit"
+version = "0.1.0"
+entry = "main.mgo"
+description = "JSON, line and text helpers for project files"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]

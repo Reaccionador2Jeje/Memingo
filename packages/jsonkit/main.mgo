@@ -1,0 +1,117 @@
+ritual has_path(value, path) {
+    vibe current = value
+    vibe i = 0
+    grind i < headcount(path) {
+        vibe key = path[i]
+        when whatkind(current) != "party" {
+            drop cringe
+        }
+        when !contains(current, key) {
+            drop cringe
+        }
+        current = current[key]
+        i = i + 1
+    }
+    drop based
+}
+
+ritual get_path(value, path, fallback) {
+    vibe current = value
+    vibe i = 0
+    grind i < headcount(path) {
+        vibe key = path[i]
+        when whatkind(current) != "party" {
+            drop fallback
+        }
+        when !contains(current, key) {
+            drop fallback
+        }
+        current = current[key]
+        i = i + 1
+    }
+    drop current
+}
+
+ritual set_path(value, path, new_value) {
+    when headcount(path) == 0 {
+        drop value
+    }
+    vibe current = value
+    vibe i = 0
+    grind i < headcount(path) - 1 {
+        vibe key = path[i]
+        when !contains(current, key) {
+            set_value(current, key, {})
+        }
+        current = current[key]
+        i = i + 1
+    }
+    set_value(current, path[headcount(path) - 1], new_value)
+    drop value
+}
+
+ritual merge(left, right) {
+    vibe result = {}
+    vibe left_keys = keys(left)
+    vibe i = 0
+    grind i < headcount(left_keys) {
+        set_value(result, left_keys[i], left[left_keys[i]])
+        i = i + 1
+    }
+    vibe right_keys = keys(right)
+    vibe j = 0
+    grind j < headcount(right_keys) {
+        set_value(result, right_keys[j], right[right_keys[j]])
+        j = j + 1
+    }
+    drop result
+}
+
+ritual pick(value, wanted) {
+    vibe result = {}
+    vibe i = 0
+    grind i < headcount(wanted) {
+        when contains(value, wanted[i]) {
+            set_value(result, wanted[i], value[wanted[i]])
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual omit(value, unwanted) {
+    vibe result = {}
+    vibe names = keys(value)
+    vibe i = 0
+    grind i < headcount(names) {
+        when !contains(unwanted, names[i]) {
+            set_value(result, names[i], value[names[i]])
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual key_count(value) {
+    drop headcount(keys(value))
+}
+
+ritual is_empty(value) {
+    drop headcount(keys(value)) == 0
+}
+
+ritual self_test() {
+    vibe data = {user: {name: "Ana", tags: []}, active: based}
+    vibe updated = set_path({}, ["settings", "theme"], "dark")
+    vibe ok = get_path(data, ["user", "name"], ghost) == "Ana"
+    ok = ok && get_path(data, ["user", "age"], 0) == 0
+    ok = ok && has_path(data, ["user", "name"])
+    ok = ok && !has_path(data, ["user", "age"])
+    ok = ok && get_path(updated, ["settings", "theme"], ghost) == "dark"
+    ok = ok && merge({a: 1}, {b: 2}) == {a: 1, b: 2}
+    ok = ok && pick({a: 1, b: 2}, ["a"]) == {a: 1}
+    ok = ok && omit({a: 1, b: 2}, ["b"]) == {a: 1}
+    ok = ok && key_count({a: 1}) == 1
+    ok = ok && is_empty({})
+    drop ok
+}

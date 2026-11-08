@@ -1,0 +1,32 @@
+ritual hype(text) {
+    drop upper(text) + "!!!"
+}
+
+ritual roast(text) {
+    drop lower(text) + "... cringe"
+}
+
+ritual meme_case_text(text) {
+    drop meme_case(text)
+}
+
+ritual based_or_cringe(value) {
+    when value {
+        drop "based"
+    }
+    drop "cringe"
+}
+
+ritual amplify(text, times) {
+    drop repeat(upper(text) + " ", times)
+}
+
+ritual self_test() {
+    vibe ok = hype("memingo") == "MEMINGO!!!"
+    ok = ok && roast("LOL") == "lol... cringe"
+    ok = ok && meme_case_text("hello memingo") == "HeLlO MeMiNgO"
+    ok = ok && based_or_cringe(based) == "based"
+    ok = ok && based_or_cringe(cringe) == "cringe"
+    ok = ok && amplify("meme", 2) == "MEME MEME "
+    drop ok
+}
