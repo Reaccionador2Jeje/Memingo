@@ -117,6 +117,14 @@ class Parser:
         return Program(statements)
 
     def _statement(self):
+        token = self._peek()
+        node = self._statement_impl()
+        if hasattr(node, "__dict__"):
+            node.line = token.line
+            node.column = token.column
+        return node
+
+    def _statement_impl(self):
         if self._match("VIBE"):
             return self._let_statement()
         if self._match("RITUAL"):
