@@ -29,7 +29,7 @@
 - [x] `memingo check` syntax validation
 - [x] `memingo info`, `deps` and `clean` project tools
 - [x] `memingo manifest` standalone manifest creation
-- [ ] Shell completion
+- [x] Shell completion
 
 ## Package manager
 - [x] `memingo.toml` package specification

@@ -117,6 +117,9 @@ spill created
 - `starts_with(text, prefix)` and `ends_with(text, suffix)`
 - `repeat(text, count)` repeats text `count` times
 - `lines(text)` splits text into a list of lines
+- `meme_case(text)` alternates uppercase and lowercase letters for maximum meme energy
+- `shuffle(list)` returns a shuffled copy of a list
+- `uuid()` returns a random UUID string
 
 ### Numbers
 

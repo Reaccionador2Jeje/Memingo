@@ -3,6 +3,7 @@ import sys
 
 from . import __version__
 from .cli import banner, heading, key_value, success, info, table, error
+from .completion import mgoa_completion
 from .mgoa import (
     PackageError, add_package, install_project, list_installed, package_info,
     publish_package, remove_package, search_registry,
@@ -53,9 +54,15 @@ def main(argv=None):
     publish_parser.add_argument("directory", nargs="?", default=".")
     publish_parser.add_argument("--output", default="dist")
 
+    completion_parser = subparsers.add_parser("completion", help="Print shell completion scripts")
+    completion_parser.add_argument("shell", choices=("bash", "zsh", "fish"))
+
     args = parser.parse_args(argv)
 
     try:
+        if args.command == "completion":
+            print(mgoa_completion(args.shell), end="")
+            return 0
         if args.command == "search":
             matches = search_registry(args.query, args.registry)
             if not matches:

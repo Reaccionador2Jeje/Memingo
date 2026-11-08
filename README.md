@@ -75,7 +75,23 @@ ritual double(n) {
 spill map([1, 2, 3], double)
 ```
 
-Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `repeat`, `lines`, `unique`, `now`, `sleep`, the project-scoped file helpers `read_file`, `write_file`, `file_exists` and `list_files`, and the JSON, environment and HTTP helpers. See [LANGUAGE.md](LANGUAGE.md) for the full list.
+Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `repeat`, `lines`, `unique`, `meme_case`, `shuffle`, `uuid`, `now`, `sleep`, the project-scoped file helpers `read_file`, `write_file`, `file_exists` and `list_files`, and the JSON, environment and HTTP helpers. Shell completions for Bash, Zsh and Fish are available through `memingo completion` and `mgoa completion`. See [LANGUAGE.md](LANGUAGE.md) for the full list.
+
+Activate completions with:
+
+```bash
+# Bash: add to ~/.bashrc
+source <(memingo completion bash)
+source <(mgoa completion bash)
+
+# Zsh: add to ~/.zshrc
+source <(memingo completion zsh)
+source <(mgoa completion zsh)
+
+# Fish: write permanently
+memingo completion fish > ~/.config/fish/completions/memingo.fish
+mgoa completion fish > ~/.config/fish/completions/mgoa.fish
+```
 
 ## Run
 
@@ -157,7 +173,7 @@ python3 scripts/build-packages.py
 
 Artifacts are written to `dist/` as `memingo_<version>_all.deb` and `memingo-<version>-1.noarch.rpm`. On Fedora/RHEL, the RPM release may include a distribution suffix such as `1.fc41`.
 
-Building the `.deb` requires `dpkg-deb` (part of `dpkg`). Building the `.rpm` requires `rpmbuild`:
+Building the `.deb` requires `dpkg-deb` (part of `dpkg`). Building the `.rpm` requires `rpmbuild`. Both packages install the shared runtime and expose both `memingo` and `mgoa` commands:
 
 ```bash
 sudo apt install rpm        # Debian/Ubuntu
@@ -174,7 +190,18 @@ sudo apt install ./dist/memingo_*_all.deb
 sudo dnf install ./dist/memingo-*.noarch.rpm
 ```
 
-Both packages install the runtime under `/usr/share/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
+To create repository metadata locally:
+
+```bash
+python3 scripts/build-packages.py
+python3 scripts/build-linux-repositories.py
+```
+
+Metadata is written to `site/linux/apt` and `site/linux/rpm`. The GitHub Pages release workflow signs and publishes it automatically when `MEMINGO_GPG_*` Actions secrets are configured. Full setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+Both packages install the runtime under `/usr/lib/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
+
+Project-aware commands create a missing `memingo.toml` automatically. Commands such as `run`, `build`, `info`, `deps`, `clean`, `stats`, `install`, `update`, `add`, `remove`, and the equivalent `mgoa` project commands also generate `main.mgo`, `.env`, `.gitignore`, and the dependencies table when needed.
 
 ## Ecosystem commands
 

@@ -5,6 +5,7 @@ import random
 import re
 import time
 import urllib.request
+import uuid
 from pathlib import Path
 
 from .parser import (
@@ -90,6 +91,8 @@ class Interpreter:
         self.global_environment.define("env", lambda name, default=None: os.environ.get(name, default))
         self.global_environment.define("random", random.random)
         self.global_environment.define("random_int", lambda low, high: random.randint(low, high))
+        self.global_environment.define("shuffle", self._shuffle)
+        self.global_environment.define("uuid", lambda: str(uuid.uuid4()))
         self.global_environment.define("range", self._range)
         self.global_environment.define("keys", lambda value: list(value.keys()) if isinstance(value, dict) else [])
         self.global_environment.define("values", self._values)
@@ -106,6 +109,7 @@ class Interpreter:
         self.global_environment.define("contains", self._contains)
         self.global_environment.define("starts_with", self._starts_with)
         self.global_environment.define("ends_with", self._ends_with)
+        self.global_environment.define("meme_case", self._meme_case)
         self.global_environment.define("slice", self._slice)
         self.global_environment.define("repeat", self._repeat)
         self.global_environment.define("lines", self._lines)
@@ -434,6 +438,24 @@ class Interpreter:
         text = self._string_argument("ends_with", text)
         suffix = self._string_argument("ends_with", suffix, "suffix")
         return text.endswith(suffix)
+
+    def _meme_case(self, text):
+        text = self._string_argument("meme_case", text)
+        letters = iter(text)
+        result = []
+        capital = True
+        for character in letters:
+            if character.isalpha():
+                result.append(character.upper() if capital else character.lower())
+            else:
+                result.append(character)
+            capital = not capital
+        return "".join(result)
+
+    def _shuffle(self, items):
+        shuffled = list(self._list_argument("shuffle", items))
+        random.shuffle(shuffled)
+        return shuffled
 
     def _slice(self, value, start, end=None):
         if not isinstance(value, (str, list)):

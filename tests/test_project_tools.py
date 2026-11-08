@@ -5,7 +5,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from memingo.__main__ import build_project, main
+from memingo.__main__ import build_project, main, project_stats
 from memingo.packages import add_dependency, install_dependencies, read_manifest, remove_dependency
 
 
@@ -52,6 +52,25 @@ class ProjectToolsTests(unittest.TestCase):
             with zipfile.ZipFile(root / "dist" / "run-app.zip") as archive:
                 self.assertIn("assets/data.txt", archive.namelist())
                 self.assertNotIn(".env", archive.namelist())
+
+            stream = io.StringIO()
+            with contextlib.redirect_stdout(stream), contextlib.redirect_stderr(stream):
+                self.assertEqual(project_stats(root), 0)
+            self.assertIn("MGO files", stream.getvalue())
+            self.assertEqual(main(["stats", str(root)]), 0)
+
+    def test_commands_auto_create_project_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(main(["install", temporary]), 0)
+            self.assertTrue((root / "memingo.toml").exists())
+            self.assertTrue((root / "main.mgo").exists())
+            self.assertTrue((root / ".env").exists())
+            self.assertTrue((root / ".gitignore").exists())
+
+            manifest = read_manifest(root)
+            self.assertEqual(manifest["package"]["entry"], "main.mgo")
+            self.assertEqual(manifest["dependencies"], {})
 
 
 if __name__ == "__main__":

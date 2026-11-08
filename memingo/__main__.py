@@ -19,6 +19,7 @@ from .packages import ensure_project, init_project, read_manifest, resolve_entry
 from .parser import ParseError, parse
 from .server import serve
 from .cli import banner, heading, key_value, success, info, error, warning, table
+from .completion import memingo_completion
 
 
 def run_file(path: str) -> int:
@@ -63,6 +64,35 @@ def run_source(source: str, project_directory=".") -> int:
         return 0
     except OSError as error:
         print(f"Memingo error: {error}", file=sys.stderr)
+        return 1
+
+
+def project_stats(directory=".") -> int:
+    try:
+        root = Path(directory).resolve()
+        if not root.is_dir():
+            raise FileNotFoundError(f"Project directory does not exist: {root}")
+        files = sorted(root.rglob("*.mgo"))
+        excluded = {".git", ".memingo", "dist", "__pycache__", "node_modules", ".venv"}
+        files = [path for path in files if not (excluded & set(path.relative_to(root).parts))]
+        lines = 0
+        rituals = 0
+        spills = 0
+        for source_file in files:
+            source = source_file.read_text(encoding="utf-8")
+            lines += len(source.splitlines())
+            rituals += sum(1 for line in source.splitlines() if line.lstrip().startswith("ritual "))
+            spills += sum(1 for line in source.splitlines() if line.lstrip().startswith("spill "))
+        heading("Memingo stats", str(root))
+        key_value([
+            ("MGO files", str(len(files))),
+            ("Lines", str(lines)),
+            ("Rituals", str(rituals)),
+            ("Spills", str(spills)),
+        ])
+        return 0
+    except (FileNotFoundError, OSError, UnicodeError, ValueError) as exception:
+        error(f"Memingo stats error: {exception}")
         return 1
 
 
@@ -412,6 +442,9 @@ def _main(argv=None) -> int:
     check_parser = subparsers.add_parser("check", help="Parse Memingo files without running them")
     check_parser.add_argument("paths", nargs="*", default=["."], help="Files or directories to check")
 
+    stats_parser = subparsers.add_parser("stats", help="Summarize Memingo source files in a project")
+    stats_parser.add_argument("directory", nargs="?", default=".")
+
     info_parser = subparsers.add_parser("info", help="Show project information")
     info_parser.add_argument("directory", nargs="?", default=".")
 
@@ -455,6 +488,9 @@ def _main(argv=None) -> int:
     format_parser = subparsers.add_parser("fmt", help="Format Memingo source files")
     format_parser.add_argument("paths", nargs="+", help="Files or directories to format")
     format_parser.add_argument("--check", action="store_true", help="Check formatting without writing")
+
+    completion_parser = subparsers.add_parser("completion", help="Print shell completion scripts")
+    completion_parser.add_argument("shell", choices=("bash", "zsh", "fish"))
 
     args = parser.parse_args(argv)
 
@@ -500,6 +536,15 @@ def _main(argv=None) -> int:
         return run_source(" ".join(args.code), args.project)
     if args.command == "check":
         return check_sources(args.paths)
+    if args.command == "completion":
+        try:
+            print(memingo_completion(args.shell), end="")
+            return 0
+        except ValueError as exception:
+            error(str(exception))
+            return 1
+    if args.command == "stats":
+        return project_stats(args.directory)
     if args.command == "info":
         return project_info(args.directory)
     if args.command == "deps":
@@ -539,8 +584,6 @@ def _main(argv=None) -> int:
     if args.command == "remove":
         try:
             project_path = Path(args.project).resolve()
-            if not (project_path / "memingo.toml").exists():
-                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             remove_package(project_path, args.name)
             success(f"Removed dependency {args.name}")
             return 0

@@ -26,6 +26,7 @@ class PackageCliTests(unittest.TestCase):
             manifest = (root / "memingo.toml").read_text(encoding="utf-8")
             self.assertIn("[package]", manifest)
             self.assertIn("[dependencies]", manifest)
+            self.assertTrue((root / "main.mgo").is_file())
 
     def test_update_creates_missing_manifest(self):
         with tempfile.TemporaryDirectory() as temporary:
