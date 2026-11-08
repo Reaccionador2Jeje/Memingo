@@ -26,3 +26,22 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Run package tests
         run: python -m compileall -q memingo
+
+  native-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install RPM builder
+        run: sudo apt-get update && sudo apt-get install -y rpm
+      - name: Build DEB package
+        run: python3 scripts/build-packages.py --only deb
+      - name: Build RPM package
+        run: python3 scripts/build-packages.py --only rpm
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: memingo-linux-packages
+          path: dist/*

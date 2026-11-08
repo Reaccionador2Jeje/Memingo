@@ -157,7 +157,7 @@ python3 scripts/build-packages.py
 
 Artifacts are written to `dist/` as `memingo_<version>_all.deb` and `memingo-<version>-1.noarch.rpm`. On Fedora/RHEL, the RPM release may include a distribution suffix such as `1.fc41`.
 
-Building the `.deb` requires `dpkg-deb` (part of `dpkg`). Building the `.rpm` requires `rpmbuild`:
+Building the `.deb` requires `dpkg-deb` (part of `dpkg`). Building the `.rpm` requires `rpmbuild`. Both packages install the shared runtime and expose both `memingo` and `mgoa` commands:
 
 ```bash
 sudo apt install rpm        # Debian/Ubuntu
