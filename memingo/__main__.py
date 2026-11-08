@@ -456,6 +456,43 @@ def run_tests(directory=".", pattern="test*.py") -> int:
     return result.returncode
 
 
+
+def debug_file(path: str, breakpoints=None) -> int:
+    """Run a file and emit a machine-readable statement trace for IDE debuggers."""
+    source_path = Path(path).resolve()
+    try:
+        source = source_path.read_text(encoding="utf-8")
+        interpreter = Interpreter(project_directory=source_path.parent)
+        trace = []
+        interpreter.debug_trace = trace
+        exit_code = 0
+        error_message = None
+        try:
+            interpreter.run(parse(source))
+        except (LexerError, ParseError, RuntimeErrorMemingo, RecursionError, UnicodeError) as exception:
+            exit_code = 1
+            error_message = str(exception)
+        selected = set(breakpoints or [])
+        for index, event in enumerate(trace):
+            event["index"] = index
+            event["breakpoint"] = event.get("line") in selected
+        payload = {
+            "file": str(source_path),
+            "events": trace,
+            "output": interpreter.output,
+            "error": error_message,
+            "exitCode": exit_code,
+        }
+        print("MEMINGO_DEBUG:" + json.dumps(payload, ensure_ascii=False))
+        return exit_code
+    except (OSError, UnicodeError) as exception:
+        print("MEMINGO_DEBUG:" + json.dumps({
+            "file": str(source_path), "events": [], "output": [],
+            "error": str(exception), "exitCode": 1,
+        }, ensure_ascii=False))
+        return 1
+
+
 def _main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="memingo",
@@ -482,6 +519,10 @@ def _main(argv=None) -> int:
 
     run_parser = subparsers.add_parser("run", help="Run a project or .mgo file")
     run_parser.add_argument("path", nargs="?", default=None)
+
+    debug_parser = subparsers.add_parser("debug", help="Run a file and collect a statement-by-statement debug trace")
+    debug_parser.add_argument("path", help="Memingo .mgo source file")
+    debug_parser.add_argument("--breakpoints", default="", help="Comma-separated source line numbers to mark")
 
     eval_parser = subparsers.add_parser("eval", help="Run Memingo code from the command line")
     eval_parser.add_argument("code", nargs="+", help="Memingo source code")
@@ -542,7 +583,7 @@ def _main(argv=None) -> int:
 
     args = parser.parse_args(argv)
 
-    raw_output_commands = {"completion", "run", "eval", "repl", "dev", "serve", "test"}
+    raw_output_commands = {"completion", "run", "debug", "eval", "repl", "dev", "serve", "test"}
     if args.command not in raw_output_commands and args.command is not None:
         command_header("memingo", args.command)
 
@@ -586,6 +627,15 @@ def _main(argv=None) -> int:
                 return run_project(target)
             return run_file(args.path)
         return run_project(".")
+    if args.command == "debug":
+        try:
+            breakpoints = [int(value) for value in args.breakpoints.split(",") if value.strip()]
+            if any(value < 1 for value in breakpoints):
+                raise ValueError("Breakpoint line numbers must be positive")
+            return debug_file(args.path, breakpoints)
+        except ValueError as exception:
+            print(f"Memingo debug error: {exception}", file=sys.stderr)
+            return 2
     if args.command == "eval":
         return run_source(" ".join(args.code), args.project)
     if args.command == "check":
