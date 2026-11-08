@@ -114,6 +114,9 @@ spill created
 - `replace(text, old, new)`
 - `contains(text, value)` also works on lists and object keys
 - `starts_with(text, prefix)` and `ends_with(text, suffix)`
+- `meme_case(text)` alternates uppercase and lowercase letters for maximum meme energy
+- `shuffle(list)` returns a shuffled copy of a list
+- `uuid()` returns a random UUID string
 
 ### Numbers
 

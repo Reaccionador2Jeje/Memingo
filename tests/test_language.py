@@ -131,6 +131,18 @@ class MemingoLanguageTests(unittest.TestCase):
         )
         self.assertEqual(execute(source), ["7", "2", "3", "3", "10", "42", "2.5", "[2, 4, 6]", "[1, 2]"])
 
+    def test_playful_builtins(self):
+        output = execute(
+            'spill meme_case("hello memingo")\n'
+            'vibe cards = ["a", "b", "c"]\n'
+            'spill shuffle(cards)\n'
+            'vibe id = uuid()\n'
+            'spill headcount(id)'
+        )
+        self.assertEqual(output[0], "HeLlO MeMiNgO")
+        self.assertEqual(sorted(output[1][1:-1].replace('"', '').split(', ')), ['a', 'b', 'c'])
+        self.assertEqual(output[2], "36")
+
     def test_new_builtin_argument_validation(self):
         with self.assertRaises(RuntimeErrorMemingo) as context:
             execute('spill upper(3)')
@@ -141,6 +153,10 @@ class MemingoLanguageTests(unittest.TestCase):
             execute('spill reduce([], upper)')
         with self.assertRaises(RuntimeErrorMemingo):
             execute('spill parse_int("not-a-number")')
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill meme_case(42)')
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill shuffle("not-a-list")')
 
 
 if __name__ == "__main__":

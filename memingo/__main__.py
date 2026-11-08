@@ -66,6 +66,35 @@ def run_source(source: str, project_directory=".") -> int:
         return 1
 
 
+def project_stats(directory=".") -> int:
+    try:
+        root = Path(directory).resolve()
+        if not root.is_dir():
+            raise FileNotFoundError(f"Project directory does not exist: {root}")
+        files = sorted(root.rglob("*.mgo"))
+        excluded = {".git", ".memingo", "dist", "__pycache__", "node_modules", ".venv"}
+        files = [path for path in files if not (excluded & set(path.relative_to(root).parts))]
+        lines = 0
+        rituals = 0
+        spills = 0
+        for source_file in files:
+            source = source_file.read_text(encoding="utf-8")
+            lines += len(source.splitlines())
+            rituals += sum(1 for line in source.splitlines() if line.lstrip().startswith("ritual "))
+            spills += sum(1 for line in source.splitlines() if line.lstrip().startswith("spill "))
+        heading("Memingo stats", str(root))
+        key_value([
+            ("MGO files", str(len(files))),
+            ("Lines", str(lines)),
+            ("Rituals", str(rituals)),
+            ("Spills", str(spills)),
+        ])
+        return 0
+    except (FileNotFoundError, OSError, UnicodeError, ValueError) as exception:
+        error(f"Memingo stats error: {exception}")
+        return 1
+
+
 def check_sources(paths) -> int:
     files = []
     for input_path in paths:
@@ -408,6 +437,9 @@ def _main(argv=None) -> int:
     check_parser = subparsers.add_parser("check", help="Parse Memingo files without running them")
     check_parser.add_argument("paths", nargs="*", default=["."], help="Files or directories to check")
 
+    stats_parser = subparsers.add_parser("stats", help="Summarize Memingo source files in a project")
+    stats_parser.add_argument("directory", nargs="?", default=".")
+
     info_parser = subparsers.add_parser("info", help="Show project information")
     info_parser.add_argument("directory", nargs="?", default=".")
 
@@ -482,6 +514,8 @@ def _main(argv=None) -> int:
         return run_source(" ".join(args.code), args.project)
     if args.command == "check":
         return check_sources(args.paths)
+    if args.command == "stats":
+        return project_stats(args.directory)
     if args.command == "info":
         return project_info(args.directory)
     if args.command == "deps":

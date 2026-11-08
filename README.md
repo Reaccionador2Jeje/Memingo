@@ -75,7 +75,7 @@ ritual double(n) {
 spill map([1, 2, 3], double)
 ```
 
-Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `now`, `sleep`, and the JSON, environment and HTTP helpers. See [LANGUAGE.md](LANGUAGE.md) for the full list.
+Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `meme_case`, `shuffle`, `uuid`, `now`, `sleep`, and the JSON, environment and HTTP helpers. See [LANGUAGE.md](LANGUAGE.md) for the full list.
 
 ## Run
 
