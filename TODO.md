@@ -27,7 +27,7 @@
 - [x] `memingo eval` inline code execution
 - [x] `memingo check` syntax validation
 - [x] `memingo info`, `deps` and `clean` project tools
-- [ ] Shell completion
+- [x] Shell completion
 
 ## Package manager
 - [x] `memingo.toml` package specification

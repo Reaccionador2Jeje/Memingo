@@ -75,7 +75,23 @@ ritual double(n) {
 spill map([1, 2, 3], double)
 ```
 
-Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `meme_case`, `shuffle`, `uuid`, `now`, `sleep`, and the JSON, environment and HTTP helpers. See [LANGUAGE.md](LANGUAGE.md) for the full list.
+Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `meme_case`, `shuffle`, `uuid`, `now`, `sleep`, and the JSON, environment and HTTP helpers. Shell completions for Bash, Zsh and Fish are available through `memingo completion` and `mgoa completion`. See [LANGUAGE.md](LANGUAGE.md) for the full list.
+
+Activate completions with:
+
+```bash
+# Bash: add to ~/.bashrc
+source <(memingo completion bash)
+source <(mgoa completion bash)
+
+# Zsh: add to ~/.zshrc
+source <(memingo completion zsh)
+source <(mgoa completion zsh)
+
+# Fish: write permanently
+memingo completion fish > ~/.config/fish/completions/memingo.fish
+mgoa completion fish > ~/.config/fish/completions/mgoa.fish
+```
 
 ## Run
 
@@ -174,7 +190,16 @@ sudo apt install ./dist/memingo_*_all.deb
 sudo dnf install ./dist/memingo-*.noarch.rpm
 ```
 
-Both packages install the runtime under `/usr/share/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
+To create repository metadata locally:
+
+```bash
+python3 scripts/build-packages.py
+python3 scripts/build-linux-repositories.py
+```
+
+Metadata is written to `site/linux/apt` and `site/linux/rpm`. The GitHub Pages release workflow signs and publishes it automatically when `MEMINGO_GPG_*` Actions secrets are configured. Full setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+Both packages install the runtime under `/usr/lib/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
 
 ## Ecosystem commands
 

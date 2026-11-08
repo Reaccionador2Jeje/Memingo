@@ -4,6 +4,8 @@ import os
 import unittest
 
 from memingo.cli import banner, error, heading, key_value, success, table
+from memingo.__main__ import main as memingo_main
+from memingo.mgoa_cli import main as mgoa_main
 
 
 class CliStyleTests(unittest.TestCase):
@@ -25,6 +27,23 @@ class CliStyleTests(unittest.TestCase):
         self.assertIn("MEMINGO", output.upper())
         self.assertIn("ready", output)
         self.assertNotIn("\033[", output)
+
+    def test_shell_completion(self):
+        for command, expected in (
+            (lambda shell: memingo_main(["completion", shell]), ("complete -F _memingo_completion memingo", "stats", "completion")),
+            (lambda shell: mgoa_main(["completion", shell]), ("complete -F _mgoa_completion mgoa", "publish", "completion")),
+        ):
+            stream = io.StringIO()
+            with contextlib.redirect_stdout(stream), contextlib.redirect_stderr(stream):
+                self.assertEqual(command("bash"), 0)
+            output = stream.getvalue()
+            for text in expected:
+                self.assertIn(text, output)
+
+        fish_output = self.capture(lambda: memingo_main(["completion", "fish"]))
+        self.assertIn("complete -c memingo", fish_output)
+        zsh_output = self.capture(lambda: mgoa_main(["completion", "zsh"]))
+        self.assertIn("#compdef mgoa", zsh_output)
 
     def test_heading_key_value_and_table(self):
         output = self.capture(heading, "Package Manager")

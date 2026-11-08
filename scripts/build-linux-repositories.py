@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+import argparse
+import gzip
+import hashlib
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
+DIST = ROOT / "dist"
+DEFAULT_OUTPUT = ROOT / "site" / "linux"
+
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def sha512(path):
+    digest = hashlib.sha512()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def build_apt_repository(output, version, packages):
+    if not shutil.which("dpkg-scanpackages"):
+        print("APT repository: dpkg-scanpackages is required (install dpkg-dev)", file=sys.stderr)
+        return False
+
+    pool = output / "apt" / "pool" / "main" / "m" / "memingo"
+    pool.mkdir(parents=True, exist_ok=True)
+    for package in packages:
+        shutil.copy2(package, pool / package.name)
+
+    apt_root = output / "apt"
+    distribution = apt_root / "dists" / "stable"
+    component = distribution / "main" / "binary-amd64"
+    component.mkdir(parents=True, exist_ok=True)
+
+    packages_file = component / "Packages"
+    with packages_file.open("w", encoding="utf-8") as stream:
+        subprocess.run(["dpkg-scanpackages", "pool/", "/dev/null"], cwd=apt_root, stdout=stream, check=True)
+    with packages_file.open("rb") as source, gzip.open(str(packages_file) + ".gz", "wb") as target:
+        shutil.copyfileobj(source, target)
+
+    now = subprocess.check_output(["date", "-Ru"], text=True).strip()
+    release = distribution / "Release"
+    lines = [
+        "Origin: Memingo",
+        "Label: Memingo",
+        "Suite: stable",
+        "Codename: stable",
+        f"Date: {now}",
+        "Architectures: amd64",
+        "Components: main",
+        "Description: Memingo APT package repository",
+        "",
+    ]
+    hash_lines = []
+    for algorithm, function in (("SHA256", sha256), ("SHA512", sha512)):
+        hash_lines.append(f"{algorithm}:")
+        for relative in sorted(distribution.rglob("*")):
+            if not relative.is_file() or relative.name in {"Release", "Release.gpg", "InRelease"}:
+                continue
+            relative_path = relative.relative_to(distribution).as_posix()
+            hash_lines.append(f" {function(relative)} {relative.stat().st_size} {relative_path}")
+    lines.extend(hash_lines)
+    release.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return True
+
+
+def build_rpm_repository(output, packages):
+    if not shutil.which("createrepo_c"):
+        print("RPM repository: createrepo_c is required (install createrepo-c)", file=sys.stderr)
+        return False
+
+    rpm_root = output / "rpm"
+    rpm_packages = rpm_root / "Packages"
+    rpm_packages.mkdir(parents=True, exist_ok=True)
+    for package in packages:
+        shutil.copy2(package, rpm_packages / package.name)
+    subprocess.run(["createrepo_c", "--update", "--database", str(rpm_root)], check=True)
+    return True
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Create local APT and RPM repository metadata")
+    parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
+    parser.add_argument("--only", choices=("apt", "rpm"))
+    args = parser.parse_args(argv)
+
+    output = Path(args.output).resolve()
+    if output.exists():
+        shutil.rmtree(output)
+    output.mkdir(parents=True)
+
+    deb_packages = sorted(DIST.glob("*.deb"))
+    rpm_packages = sorted(DIST.glob("*.rpm"))
+    built = []
+
+    if args.only in (None, "apt") and deb_packages:
+        if build_apt_repository(output, None, deb_packages):
+            built.append(output / "apt")
+    if args.only in (None, "rpm") and rpm_packages:
+        if build_rpm_repository(output, rpm_packages):
+            built.append(output / "rpm")
+
+    if not built:
+        print("No repository was built. Build packages first with scripts/build-packages.py", file=sys.stderr)
+        return 1
+    for repository in built:
+        print(repository)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

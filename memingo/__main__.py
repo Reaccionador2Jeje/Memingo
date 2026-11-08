@@ -19,6 +19,7 @@ from .packages import init_project, read_manifest, resolve_entry
 from .parser import ParseError, parse
 from .server import serve
 from .cli import banner, heading, key_value, success, info, error, warning, table
+from .completion import memingo_completion
 
 
 def run_file(path: str) -> int:
@@ -484,6 +485,9 @@ def _main(argv=None) -> int:
     format_parser.add_argument("paths", nargs="+", help="Files or directories to format")
     format_parser.add_argument("--check", action="store_true", help="Check formatting without writing")
 
+    completion_parser = subparsers.add_parser("completion", help="Print shell completion scripts")
+    completion_parser.add_argument("shell", choices=("bash", "zsh", "fish"))
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -514,6 +518,13 @@ def _main(argv=None) -> int:
         return run_source(" ".join(args.code), args.project)
     if args.command == "check":
         return check_sources(args.paths)
+    if args.command == "completion":
+        try:
+            print(memingo_completion(args.shell), end="")
+            return 0
+        except ValueError as exception:
+            error(str(exception))
+            return 1
     if args.command == "stats":
         return project_stats(args.directory)
     if args.command == "info":
