@@ -312,3 +312,7 @@ greet("Team")
 ## Next steps
 
 The CLI, package manager, web-server launcher, tooling, and native runtime are tracked in [TODO.md](TODO.md).
+
+### Debugging
+
+Run `memingo debug path/to/main.mgo` to execute a source file and emit a JSON statement trace prefixed with `MEMINGO_DEBUG:`. Each event includes its source line, statement type and visible variable snapshot. Mark source lines with `--breakpoints 3,8` to flag matching trace events. The trace is capped at 10,000 statements to prevent unbounded memory use.
