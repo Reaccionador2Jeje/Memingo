@@ -12,8 +12,8 @@ from pathlib import Path
 
 from memingo.interpreter import execute
 from memingo.mgoa import (
-    PackageError, add_package, install_package, install_project,
-    publish_package, resolve_package, search_registry,
+    PackageError, add_package, install_package, install_project, list_installed,
+    package_info, publish_package, resolve_package, search_registry,
 )
 from memingo.packages import read_manifest
 
@@ -269,6 +269,51 @@ class MgoaTests(unittest.TestCase):
                 self.assertEqual(resolved.archive_sha256, digest)
                 with self.assertRaises(PackageError):
                     resolve_package(f"{url}#sha256={'0' * 64}")
+
+    def test_package_info_reads_registry_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = root / "registry.json"
+            registry.write_text(
+                json.dumps({
+                    "packages": {
+                        "demo": {
+                            "description": "demo package",
+                            "latest": "1.0.0",
+                            "versions": {
+                                "0.9.0": {"archive": "https://example.com/old.zip"},
+                                "1.0.0": {
+                                    "archive": "https://example.com/demo.zip",
+                                    "sha256": "abc123",
+                                },
+                            },
+                        }
+                    }
+                }),
+                encoding="utf-8",
+            )
+            details = package_info("demo", registry.as_uri())
+            self.assertEqual(details["name"], "demo")
+            self.assertEqual(details["latest"], "1.0.0")
+            self.assertEqual(details["source"], "community")
+            self.assertFalse(details["approved"])
+            self.assertEqual([release["version"] for release in details["versions"]], ["0.9.0", "1.0.0"])
+            self.assertEqual(details["versions"][1]["sha256"], "abc123")
+
+            with self.assertRaises(PackageError):
+                package_info("missing", registry.as_uri())
+
+    def test_list_installed_reports_manifest_and_lock_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = write_project(root)
+            package = write_package(root, "hello-url")
+            installed = add_package(project, str(package))
+            packages = list_installed(project)
+            self.assertEqual(len(packages), 1)
+            self.assertEqual(packages[0]["name"], installed["name"])
+            self.assertEqual(packages[0]["source"], "local")
+            self.assertTrue(packages[0]["installed"])
 
 
 if __name__ == "__main__":

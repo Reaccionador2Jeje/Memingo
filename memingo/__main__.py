@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -17,7 +18,7 @@ from .lexer import LexerError
 from .packages import init_project, read_manifest, resolve_entry
 from .parser import ParseError, parse
 from .server import serve
-from .cli import banner, heading, key_value, success, info, error, warning
+from .cli import banner, heading, key_value, success, info, error, warning, table
 
 
 def run_file(path: str) -> int:
@@ -41,6 +42,176 @@ def run_file(path: str) -> int:
         return 0
     except OSError as error:
         print(f"Memingo error: {error}", file=sys.stderr)
+        return 1
+
+
+def run_source(source: str, project_directory=".") -> int:
+    try:
+        for line in execute(source, project_directory=project_directory):
+            print(line)
+        return 0
+    except (LexerError, ParseError, RuntimeErrorMemingo) as error:
+        print(f"Memingo error: {error}", file=sys.stderr)
+        return 1
+    except RecursionError:
+        print("Memingo error: Maximum recursion depth exceeded", file=sys.stderr)
+        return 1
+    except UnicodeError:
+        print("Memingo error: source is not valid UTF-8", file=sys.stderr)
+        return 1
+    except BrokenPipeError:
+        return 0
+    except OSError as error:
+        print(f"Memingo error: {error}", file=sys.stderr)
+        return 1
+
+
+def check_sources(paths) -> int:
+    files = []
+    for input_path in paths:
+        path = Path(input_path)
+        if path.is_dir():
+            files.extend(sorted(path.rglob("*.mgo")))
+        elif path.exists():
+            files.append(path)
+        else:
+            print(f"Memingo error: File not found: {path}", file=sys.stderr)
+            return 1
+    if not files:
+        print("Memingo error: No .mgo files found", file=sys.stderr)
+        return 1
+    checked = 0
+    for source_file in files:
+        try:
+            parse(source_file.read_text(encoding="utf-8"))
+        except (LexerError, ParseError, UnicodeError, OSError) as error:
+            print(f"Memingo error: {source_file}: {error}", file=sys.stderr)
+            return 1
+        checked += 1
+    success(f"{checked} file(s) checked")
+    return 0
+
+
+def _dependency_rows(root):
+    data = read_manifest(root)
+    dependencies = data.get("dependencies", {})
+    if not isinstance(dependencies, dict):
+        raise ValueError("[dependencies] must be a table in memingo.toml")
+    records = {}
+    lock_path = root / "memingo.lock.json"
+    if lock_path.exists():
+        try:
+            lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError, UnicodeError):
+            lock = {}
+        if isinstance(lock, dict) and isinstance(lock.get("dependencies"), dict):
+            records = lock["dependencies"]
+    rows = []
+    for name in sorted(dependencies):
+        requested = dependencies[name]
+        record = records.get(name)
+        if not isinstance(record, dict):
+            record = {}
+        source = record.get("source")
+        if not source:
+            if record.get("url"):
+                source = "url"
+            elif record.get("path"):
+                source = "local"
+            elif record.get("registry"):
+                source = "registry"
+            else:
+                source = "manifest"
+        installed = "yes" if (root / ".memingo" / "packages" / str(name)).is_dir() else "no"
+        rows.append([
+            str(name),
+            str(requested) if requested not in (None, "") else "*",
+            str(record.get("version", "-")),
+            str(source),
+            "yes" if record.get("approved") is True else "no",
+            installed,
+        ])
+    return dependencies, records, rows
+
+
+def project_info(directory=".") -> int:
+    try:
+        root = Path(directory).resolve()
+        if not root.is_dir():
+            raise FileNotFoundError(f"Project directory does not exist: {root}")
+        manifest, entry_name, entry_path = resolve_entry(root)
+        package = manifest.get("package", {})
+        dependencies, _, rows = _dependency_rows(root)
+        heading("Project info", str(root))
+        key_value([
+            ("Name", package.get("name", "unnamed")),
+            ("Version", package.get("version", "0.0.0")),
+            ("Entry", entry_name),
+            ("Entry exists", "yes" if entry_path.is_file() else "no"),
+            ("Dependencies", str(len(dependencies))),
+            ("Lockfile", "yes" if (root / "memingo.lock.json").exists() else "no"),
+        ])
+        if rows:
+            table(["package", "requested", "locked", "source", "approved", "installed"], rows)
+        else:
+            info("No dependencies")
+        return 0
+    except (FileNotFoundError, OSError, ValueError) as exception:
+        error(f"Memingo info error: {exception}")
+        return 1
+
+
+def project_dependencies(directory=".") -> int:
+    try:
+        root = Path(directory).resolve()
+        if not root.is_dir():
+            raise FileNotFoundError(f"Project directory does not exist: {root}")
+        _, _, rows = _dependency_rows(root)
+        if not rows:
+            info("No dependencies")
+            return 0
+        heading("Dependencies", str(root))
+        table(["package", "requested", "locked", "source", "approved", "installed"], rows)
+        return 0
+    except (FileNotFoundError, OSError, ValueError) as exception:
+        error(f"Memingo deps error: {exception}")
+        return 1
+
+
+def clean_project(directory=".", dry_run=False) -> int:
+    try:
+        root = Path(directory).resolve()
+        if not root.is_dir():
+            raise FileNotFoundError(f"Project directory does not exist: {root}")
+        targets = []
+        for name in (".memingo", "dist"):
+            target = root / name
+            if target.exists() or target.is_symlink():
+                targets.append(target)
+        for cache in sorted(root.rglob("__pycache__")):
+            if cache.is_dir() and not cache.is_symlink() and root in cache.parents:
+                targets.append(cache)
+        removed = 0
+        heading("Clean", str(root))
+        for target in targets:
+            if not target.exists() and not target.is_symlink():
+                continue
+            if dry_run:
+                info(f"Would remove: {target}")
+            else:
+                if target.is_symlink() or target.is_file():
+                    target.unlink()
+                else:
+                    shutil.rmtree(target)
+                success(f"Removed: {target}")
+            removed += 1
+        if not removed:
+            info("Nothing to clean")
+        elif dry_run:
+            info(f"{removed} path(s) would be removed")
+        return 0
+    except (OSError, ValueError) as exception:
+        error(f"Memingo clean error: {exception}")
         return 1
 
 
@@ -214,7 +385,7 @@ def _main(argv=None) -> int:
         prog="memingo",
         description="Memingo programming language",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="Examples:\n  memingo init my-app\n  memingo run\n  memingo doctor\n  mgoa search",
+        epilog="Examples:\n  memingo init my-app\n  memingo run\n  memingo eval 'spill 2 + 2'\n  memingo check examples\n  memingo info\n  memingo doctor\n  mgoa search",
     )
     parser.add_argument("--version", action="version", version=f"Memingo {__version__}")
     subparsers = parser.add_subparsers(dest="command")
@@ -229,6 +400,23 @@ def _main(argv=None) -> int:
 
     run_parser = subparsers.add_parser("run", help="Run a project or .mgo file")
     run_parser.add_argument("path", nargs="?", default=None)
+
+    eval_parser = subparsers.add_parser("eval", help="Run Memingo code from the command line")
+    eval_parser.add_argument("code", nargs="+", help="Memingo source code")
+    eval_parser.add_argument("--project", default=".", help="Project directory used for borrow and .env")
+
+    check_parser = subparsers.add_parser("check", help="Parse Memingo files without running them")
+    check_parser.add_argument("paths", nargs="*", default=["."], help="Files or directories to check")
+
+    info_parser = subparsers.add_parser("info", help="Show project information")
+    info_parser.add_argument("directory", nargs="?", default=".")
+
+    deps_parser = subparsers.add_parser("deps", help="List project dependencies")
+    deps_parser.add_argument("directory", nargs="?", default=".")
+
+    clean_parser = subparsers.add_parser("clean", help="Remove generated files and caches")
+    clean_parser.add_argument("directory", nargs="?", default=".")
+    clean_parser.add_argument("--dry-run", action="store_true", help="Show what would be removed")
 
     dev_parser = subparsers.add_parser("dev", help="Run a project whenever files change")
     dev_parser.add_argument("directory", nargs="?", default=".")
@@ -290,6 +478,16 @@ def _main(argv=None) -> int:
                 return run_project(target)
             return run_file(args.path)
         return run_project(".")
+    if args.command == "eval":
+        return run_source(" ".join(args.code), args.project)
+    if args.command == "check":
+        return check_sources(args.paths)
+    if args.command == "info":
+        return project_info(args.directory)
+    if args.command == "deps":
+        return project_dependencies(args.directory)
+    if args.command == "clean":
+        return clean_project(args.directory, args.dry_run)
     if args.command == "dev":
         try:
             return run_dev(args.directory)

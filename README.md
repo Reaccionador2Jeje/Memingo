@@ -61,6 +61,22 @@ spill json_stringify(profile)
 vibe config = json_parse(env("CONFIG_JSON", "{\\\"mode\\\":\\\"dev\\\"}"))
 ```
 
+## Standard library highlights
+
+```mgo
+spill trim("  memingo  ")
+spill join(split("web,games,packages", ","), " + ")
+spill sort([3, 1, 2])
+
+ritual double(n) {
+    drop n * 2
+}
+
+spill map([1, 2, 3], double)
+```
+
+Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `now`, `sleep`, and the JSON, environment and HTTP helpers. See [LANGUAGE.md](LANGUAGE.md) for the full list.
+
 ## Run
 
 ```bash
@@ -166,16 +182,23 @@ Both packages install the runtime under `/usr/share/memingo`, the `memingo` and 
 memingo init my-app --name my-app
 memingo run
 memingo run my-app
+memingo eval 'spill 2 + 2'
+memingo check examples
 memingo dev
 memingo test
 memingo build
 memingo serve public
 memingo install
 memingo remove meme-core
+memingo info
+memingo deps
+memingo clean
 memingo doctor
 memingo update-self
 memingo fmt examples
 mgoa search
+mgoa info hello-memes
+mgoa list
 mgoa add hello-memes
 mgoa install
 mgoa update
@@ -192,6 +215,8 @@ The default registry is the curated Memingo registry, but packages do not need t
 
 ```bash
 mgoa search
+mgoa info hello-memes
+mgoa list
 mgoa add hello-memes
 mgoa add ./mypackage
 mgoa add ./mypackage.zip
@@ -202,6 +227,8 @@ mgoa update
 mgoa remove hello-memes
 mgoa publish ./mypackage
 ```
+
+`mgoa info <package>` shows the registry metadata and every published version. `mgoa list` shows the packages recorded in `memingo.toml` and `memingo.lock.json`, including source, approval and install status.
 
 Use `--registry <url>` or `MGOA_REGISTRY` to install from a different registry. The official registry remains the default.
 

@@ -508,6 +508,80 @@ def search_registry(query="", registry_url=None):
     return matches
 
 
+def package_info(name, registry_url=None):
+    name = _validate_package_name(name)
+    registry_url = _registry_url(registry_url)
+    registry = _load_registry(registry_url)
+    packages, approved_registry = _registry_packages(registry)
+    if name not in packages:
+        raise PackageError(f"Package '{name}' is not available in {registry_url}")
+    record = packages[name]
+    if not isinstance(record, dict):
+        raise PackageError(f"Package '{name}' has an invalid registry record")
+    versions = record.get("versions", {})
+    if not isinstance(versions, dict):
+        versions = {}
+    releases = []
+    for version in sorted(versions, key=str):
+        release = versions[version]
+        if not isinstance(release, dict):
+            continue
+        releases.append({
+            "version": str(version),
+            "archive": str(release.get("archive") or ""),
+            "sha256": str(release.get("sha256") or release.get("integrity") or ""),
+        })
+    approval = record.get("approved", approved_registry)
+    return {
+        "name": name,
+        "latest": record.get("latest"),
+        "description": record.get("description") or "",
+        "approved": approval is True,
+        "source": "approved" if approval is True else "community",
+        "versions": releases,
+        "registry": registry_url,
+    }
+
+
+def list_installed(project_directory="."):
+    project = Path(project_directory).resolve()
+    data = read_manifest(project)
+    dependencies = data.get("dependencies", {})
+    if not isinstance(dependencies, dict):
+        raise PackageError("[dependencies] must be a table in memingo.toml")
+    lock = _read_lock(project / LOCKFILE)
+    records = lock.get("dependencies", {})
+    if not isinstance(records, dict):
+        records = {}
+    installed = []
+    for name in sorted(dependencies):
+        _validate_package_name(name)
+        requested = dependencies[name]
+        record = records.get(name)
+        if not isinstance(record, dict):
+            record = {}
+        source = record.get("source")
+        if not source:
+            if record.get("url"):
+                source = "url"
+            elif record.get("path"):
+                source = "local"
+            elif record.get("registry"):
+                source = "registry"
+            else:
+                source = "manifest"
+        installed.append({
+            "name": name,
+            "requested": requested,
+            "version": record.get("version", requested),
+            "source": source,
+            "approved": record.get("approved") is True,
+            "installed": (project / ".memingo" / "packages" / name).is_dir(),
+            "sha256": str(record.get("sha256") or ""),
+        })
+    return installed
+
+
 def publish_package(directory=".", output="dist"):
     root = Path(directory).resolve()
     manifest_path = root / MANIFEST

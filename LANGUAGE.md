@@ -90,20 +90,63 @@ spill created
 
 ## Standard library
 
-- `len(value)` is not built-in; use `headcount(value)`
-- `headcount(value)` counts lists and objects
+### Values and collections
+
+- `headcount(value)` counts lists, objects and strings
 - `whatkind(value)` reports the Memingo type: `whole`, `caption`, `party`, `based-or-cringe`, or `ghost`
-- `json_parse(text)` parses JSON
-- `json_stringify(value)` serializes JSON
-- `env(name, default)` reads an environment variable
-- `range(end)` creates a numeric list
 - `keys(object)` lists object keys
+- `values(object)` lists object values
 - `push(list, value)` appends a value and returns the value
 - `append(list, value)` appends a value and returns the new length
 - `set_value(container, key, value)` assigns a list or object member
 - `delete_key(object, key)` removes an object member
+- `sort(list, descending?)` returns a sorted copy
+- `reverse(list)` returns a reversed copy
+- `sum(list)` adds a list of numbers
+- `min(values)` and `max(values)` accept a list or separate numbers
+- `slice(value, start, end?)` slices a list or string
+
+### Text
+
+- `upper(text)`, `lower(text)` and `trim(text)`
+- `split(text, separator?)` returns a list of parts
+- `join(list, separator?)` joins values into text
+- `replace(text, old, new)`
+- `contains(text, value)` also works on lists and object keys
+- `starts_with(text, prefix)` and `ends_with(text, suffix)`
+
+### Numbers
+
+- `abs(value)`, `floor(value)`, `ceil(value)` and `round(value)`
+- `clamp(value, low, high)` keeps a number inside a range
+- `parse_int(text)` and `parse_float(text)` convert text to numbers
 - `random()` returns a decimal between 0 and 1
 - `random_int(low, high)` returns an integer in the inclusive range
+- `range(end)`, `range(start, end)` and `range(start, end, step)`
+
+### Functions
+
+- `map(list, function)` applies a function to every item
+- `filter(list, function)` keeps items where the function returns a truthy value
+- `reduce(list, function, initial?)` combines items into one value
+
+```mgo
+ritual double(n) { drop n * 2 }
+ritual even(n) { drop n % 2 == 0 }
+ritual combine(a, b) { drop a + b }
+
+spill map([1, 2, 3], double)
+spill filter([1, 2, 3, 4], even)
+spill reduce([1, 2, 3, 4], combine, 0)
+```
+
+### Data, time and network
+
+- `json_parse(text)` parses JSON
+- `json_stringify(value)` serializes JSON
+- `env(name, default)` reads an environment variable
+- `now()` returns the current Unix timestamp
+- `sleep(seconds)` pauses execution
 - `http_get(url)` reads text or JSON
 - `http_post(url, object)` sends JSON and reads text or JSON
 

@@ -2,10 +2,10 @@ import argparse
 import sys
 
 from . import __version__
-from .cli import banner, heading, success, info, table, error
+from .cli import banner, heading, key_value, success, info, table, error
 from .mgoa import (
-    PackageError, add_package, install_project, publish_package,
-    remove_package, search_registry,
+    PackageError, add_package, install_project, list_installed, package_info,
+    publish_package, remove_package, search_registry,
 )
 
 
@@ -21,6 +21,13 @@ def main(argv=None):
     search_parser = subparsers.add_parser("search", help="Search packages in a registry")
     search_parser.add_argument("query", nargs="?", default="")
     search_parser.add_argument("--registry", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
+
+    info_parser = subparsers.add_parser("info", help="Show package metadata from a registry")
+    info_parser.add_argument("package")
+    info_parser.add_argument("--registry", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
+
+    list_parser = subparsers.add_parser("list", help="List installed project packages")
+    list_parser.add_argument("--project", default=".")
 
     add_parser = subparsers.add_parser("add", help="Install a package into a project")
     add_parser.add_argument(
@@ -64,6 +71,45 @@ def main(argv=None):
                         package["description"],
                     ]
                     for package in matches
+                ],
+            )
+            return 0
+        if args.command == "info":
+            details = package_info(args.package, args.registry)
+            heading(f"Package {details['name']}", details["registry"])
+            key_value([
+                ("Latest", details["latest"] or "unknown"),
+                ("Source", details["source"]),
+                ("Approved", "yes" if details["approved"] else "no"),
+                ("Description", details["description"] or "-"),
+            ])
+            if details["versions"]:
+                table(
+                    ["version", "sha256", "archive"],
+                    [
+                        [release["version"], release["sha256"] or "-", release["archive"] or "-"]
+                        for release in details["versions"]
+                    ],
+                )
+            return 0
+        if args.command == "list":
+            packages = list_installed(args.project)
+            if not packages:
+                info("No installed packages")
+                return 0
+            heading("Installed packages", args.project)
+            table(
+                ["package", "requested", "locked", "source", "approved", "installed"],
+                [
+                    [
+                        package["name"],
+                        str(package["requested"]),
+                        str(package["version"]),
+                        package["source"],
+                        "yes" if package["approved"] else "no",
+                        "yes" if package["installed"] else "no",
+                    ]
+                    for package in packages
                 ],
             )
             return 0

@@ -1,7 +1,9 @@
 import json
+import math
 import os
 import random
 import re
+import time
 import urllib.request
 from pathlib import Path
 
@@ -18,6 +20,9 @@ class RuntimeErrorMemingo(Exception):
 class ReturnSignal(Exception):
     def __init__(self, value):
         self.value = value
+
+
+_MISSING = object()
 
 
 class Environment:
@@ -85,12 +90,40 @@ class Interpreter:
         self.global_environment.define("env", lambda name, default=None: os.environ.get(name, default))
         self.global_environment.define("random", random.random)
         self.global_environment.define("random_int", lambda low, high: random.randint(low, high))
-        self.global_environment.define("range", lambda end: list(range(end)) if isinstance(end, int) else [])
+        self.global_environment.define("range", self._range)
         self.global_environment.define("keys", lambda value: list(value.keys()) if isinstance(value, dict) else [])
+        self.global_environment.define("values", self._values)
         self.global_environment.define("push", lambda items, value: items.append(value) or value if isinstance(items, list) else None)
         self.global_environment.define("append", lambda items, value: items.append(value) or len(items) if isinstance(items, list) else None)
         self.global_environment.define("set_value", lambda container, key, value: container.__setitem__(key, value) or value if isinstance(container, (dict, list)) else None)
         self.global_environment.define("delete_key", lambda container, key: container.pop(key, None) if isinstance(container, dict) else None)
+        self.global_environment.define("upper", self._upper)
+        self.global_environment.define("lower", self._lower)
+        self.global_environment.define("trim", self._trim)
+        self.global_environment.define("split", self._split)
+        self.global_environment.define("join", self._join)
+        self.global_environment.define("replace", self._replace)
+        self.global_environment.define("contains", self._contains)
+        self.global_environment.define("starts_with", self._starts_with)
+        self.global_environment.define("ends_with", self._ends_with)
+        self.global_environment.define("slice", self._slice)
+        self.global_environment.define("sort", self._sort)
+        self.global_environment.define("reverse", self._reverse)
+        self.global_environment.define("sum", self._sum)
+        self.global_environment.define("min", self._min)
+        self.global_environment.define("max", self._max)
+        self.global_environment.define("abs", self._abs)
+        self.global_environment.define("floor", self._floor)
+        self.global_environment.define("ceil", self._ceil)
+        self.global_environment.define("round", self._round)
+        self.global_environment.define("clamp", self._clamp)
+        self.global_environment.define("parse_int", self._parse_int)
+        self.global_environment.define("parse_float", self._parse_float)
+        self.global_environment.define("map", self._map)
+        self.global_environment.define("filter", self._filter)
+        self.global_environment.define("reduce", self._reduce)
+        self.global_environment.define("now", time.time)
+        self.global_environment.define("sleep", self._sleep)
         self.global_environment.define("http_get", self._http_get)
         self.global_environment.define("http_post", self._http_post)
 
@@ -277,6 +310,206 @@ class Interpreter:
         with urllib.request.urlopen(request, timeout=30) as response:
             data = response.read().decode("utf-8")
             return json.loads(data) if response.headers.get_content_type() == "application/json" else data
+
+    def _string_argument(self, function, value, label="value"):
+        if not isinstance(value, str):
+            raise RuntimeErrorMemingo(f"{function}() requires a string {label}")
+        return value
+
+    def _number_argument(self, function, value):
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            raise RuntimeErrorMemingo(f"{function}() requires a number")
+        return value
+
+    def _list_argument(self, function, value):
+        if not isinstance(value, list):
+            raise RuntimeErrorMemingo(f"{function}() requires a list")
+        return value
+
+    def _range(self, *arguments):
+        if not 1 <= len(arguments) <= 3:
+            raise RuntimeErrorMemingo("range() expects 1 to 3 whole numbers")
+        if any(not isinstance(value, int) or isinstance(value, bool) for value in arguments):
+            raise RuntimeErrorMemingo("range() expects whole numbers")
+        try:
+            return list(range(*arguments))
+        except ValueError as exception:
+            raise RuntimeErrorMemingo(f"range() failed: {exception}") from exception
+
+    def _values(self, container):
+        if not isinstance(container, dict):
+            return []
+        return list(container.values())
+
+    def _upper(self, text):
+        return self._string_argument("upper", text).upper()
+
+    def _lower(self, text):
+        return self._string_argument("lower", text).lower()
+
+    def _trim(self, text):
+        return self._string_argument("trim", text).strip()
+
+    def _split(self, text, separator=None):
+        text = self._string_argument("split", text)
+        if separator is None:
+            return text.split()
+        separator = self._string_argument("split", separator, "separator")
+        if separator == "":
+            raise RuntimeErrorMemingo("split() separator cannot be empty")
+        return text.split(separator)
+
+    def _join(self, items, separator=""):
+        items = self._list_argument("join", items)
+        separator = self._string_argument("join", separator, "separator")
+        return separator.join(self._display(item) for item in items)
+
+    def _replace(self, text, old, new):
+        text = self._string_argument("replace", text)
+        old = self._string_argument("replace", old, "old text")
+        new = self._string_argument("replace", new, "new text")
+        return text.replace(old, new)
+
+    def _contains(self, container, value):
+        if not isinstance(container, (str, list, dict)):
+            raise RuntimeErrorMemingo("contains() requires a string, list, or object")
+        try:
+            return value in container
+        except TypeError as exception:
+            raise RuntimeErrorMemingo(f"contains() failed: {exception}") from exception
+
+    def _starts_with(self, text, prefix):
+        text = self._string_argument("starts_with", text)
+        prefix = self._string_argument("starts_with", prefix, "prefix")
+        return text.startswith(prefix)
+
+    def _ends_with(self, text, suffix):
+        text = self._string_argument("ends_with", text)
+        suffix = self._string_argument("ends_with", suffix, "suffix")
+        return text.endswith(suffix)
+
+    def _slice(self, value, start, end=None):
+        if not isinstance(value, (str, list)):
+            raise RuntimeErrorMemingo("slice() requires a string or list")
+        if not isinstance(start, int) or isinstance(start, bool):
+            raise RuntimeErrorMemingo("slice() start must be a whole number")
+        if end is not None and (not isinstance(end, int) or isinstance(end, bool)):
+            raise RuntimeErrorMemingo("slice() end must be a whole number")
+        return value[start:end]
+
+    def _sort(self, items, descending=False):
+        items = self._list_argument("sort", items)
+        if not isinstance(descending, bool):
+            raise RuntimeErrorMemingo("sort() descending must be based or cringe")
+        try:
+            return sorted(items, reverse=descending)
+        except TypeError as exception:
+            raise RuntimeErrorMemingo(f"sort() failed: {exception}") from exception
+
+    def _reverse(self, items):
+        if isinstance(items, str):
+            return items[::-1]
+        return list(reversed(self._list_argument("reverse", items)))
+
+    def _sum(self, items):
+        items = self._list_argument("sum", items)
+        if any(not isinstance(value, (int, float)) or isinstance(value, bool) for value in items):
+            raise RuntimeErrorMemingo("sum() requires a list of numbers")
+        return sum(items)
+
+    def _numeric_arguments(self, function, values):
+        if len(values) == 1 and isinstance(values[0], list):
+            candidates = values[0]
+        else:
+            candidates = list(values)
+        if not candidates:
+            raise RuntimeErrorMemingo(f"{function}() requires at least one number")
+        if any(not isinstance(value, (int, float)) or isinstance(value, bool) for value in candidates):
+            raise RuntimeErrorMemingo(f"{function}() requires numbers")
+        return candidates
+
+    def _min(self, *values):
+        return min(self._numeric_arguments("min", values))
+
+    def _max(self, *values):
+        return max(self._numeric_arguments("max", values))
+
+    def _abs(self, value):
+        return abs(self._number_argument("abs", value))
+
+    def _floor(self, value):
+        return math.floor(self._number_argument("floor", value))
+
+    def _ceil(self, value):
+        return math.ceil(self._number_argument("ceil", value))
+
+    def _round(self, value):
+        return round(self._number_argument("round", value))
+
+    def _clamp(self, value, low, high):
+        value = self._number_argument("clamp", value)
+        low = self._number_argument("clamp", low)
+        high = self._number_argument("clamp", high)
+        if low > high:
+            raise RuntimeErrorMemingo("clamp() requires low <= high")
+        return max(low, min(value, high))
+
+    def _parse_int(self, text):
+        text = self._string_argument("parse_int", text)
+        try:
+            return int(text.strip())
+        except ValueError as exception:
+            raise RuntimeErrorMemingo(f"parse_int() failed: {exception}") from exception
+
+    def _parse_float(self, text):
+        text = self._string_argument("parse_float", text)
+        try:
+            return float(text.strip())
+        except ValueError as exception:
+            raise RuntimeErrorMemingo(f"parse_float() failed: {exception}") from exception
+
+    def _invoke(self, function, arguments, label):
+        if isinstance(function, MemingoFunction):
+            return function.call(self, arguments)
+        if callable(function):
+            try:
+                return function(*arguments)
+            except RuntimeErrorMemingo:
+                raise
+            except Exception as exception:
+                raise RuntimeErrorMemingo(f"{label}() failed: {exception}") from exception
+        raise RuntimeErrorMemingo(f"{label}() requires a function")
+
+    def _map(self, items, function):
+        items = self._list_argument("map", items)
+        return [self._invoke(function, [item], "map") for item in items]
+
+    def _filter(self, items, function):
+        items = self._list_argument("filter", items)
+        return [item for item in items if bool(self._invoke(function, [item], "filter"))]
+
+    def _reduce(self, items, function, initial=_MISSING):
+        items = self._list_argument("reduce", items)
+        if not callable(function) and not isinstance(function, MemingoFunction):
+            raise RuntimeErrorMemingo("reduce() requires a function")
+        if initial is _MISSING:
+            if not items:
+                raise RuntimeErrorMemingo("reduce() requires an initial value for an empty list")
+            accumulator = items[0]
+            remaining = items[1:]
+        else:
+            accumulator = initial
+            remaining = items
+        for item in remaining:
+            accumulator = self._invoke(function, [accumulator, item], "reduce")
+        return accumulator
+
+    def _sleep(self, seconds):
+        seconds = self._number_argument("sleep", seconds)
+        if seconds < 0:
+            raise RuntimeErrorMemingo("sleep() requires a non-negative number")
+        time.sleep(seconds)
+        return None
 
     def _whatkind(self, value):
         if value is None:

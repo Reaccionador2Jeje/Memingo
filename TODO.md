@@ -8,6 +8,7 @@
 - [x] Python package and REPL
 - [x] Dictionaries and property/index access
 - [x] Standard library for JSON, environment and collections
+- [x] Text, number, collection and higher-order standard library
 - [ ] Better error locations and source snippets
 - [ ] Modules and imports
 - [ ] Standard library for games and apps
@@ -23,6 +24,9 @@
 - [x] Linux/macOS and Windows direct installers
 - [x] Environment configuration and `.env` support
 - [x] `memingo fmt` source formatter
+- [x] `memingo eval` inline code execution
+- [x] `memingo check` syntax validation
+- [x] `memingo info`, `deps` and `clean` project tools
 - [ ] Shell completion
 
 ## Package manager
