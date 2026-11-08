@@ -75,6 +75,7 @@ class Interpreter:
     def __init__(self, project_directory="."):
         self.project_directory = Path(project_directory).resolve()
         self.output = []
+        self.debug_trace = None
         env_path = self.project_directory / ".env"
         if env_path.exists():
             for line in env_path.read_text(encoding="utf-8").splitlines():
@@ -156,6 +157,12 @@ class Interpreter:
             self.environment = previous
 
     def execute(self, node):
+        if self.debug_trace is not None:
+            self.debug_trace.append({
+                "line": getattr(node, "line", None),
+                "type": type(node).__name__,
+                "variables": self._debug_variables(),
+            })
         if isinstance(node, Let):
             value = self.evaluate(node.value)
             self.environment.define(node.name, value)
@@ -231,6 +238,24 @@ class Interpreter:
                 result = self.execute_block(node.body, Environment(self.environment))
             return result
         return self.evaluate(node)
+
+    def _debug_variables(self):
+        visible = {}
+        environment = getattr(self, "environment", self.global_environment)
+        chain = []
+        while environment is not None:
+            chain.append(environment)
+            environment = environment.parent
+        for scope in reversed(chain):
+            for name, value in scope.values.items():
+                try:
+                    rendered = self._display(value)
+                except Exception:
+                    rendered = f"<{type(value).__name__}>"
+                if len(rendered) > 160:
+                    rendered = rendered[:157] + "..."
+                visible[name] = rendered
+        return visible
 
     def evaluate(self, node):
         if isinstance(node, Literal):
