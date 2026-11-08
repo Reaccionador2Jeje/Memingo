@@ -126,6 +126,40 @@ python3 scripts/build-release.py
 
 This creates an all-platform source release in `dist/`. Linux/macOS users run `scripts/install.sh`; Windows users run `scripts/install.ps1`.
 
+## Distribution packages
+
+Build native packages for Debian/Ubuntu (`apt`) and Fedora/RHEL (`dnf`):
+
+```bash
+# Debian/Ubuntu (.deb)
+python3 scripts/build-packages.py --only deb
+# Fedora/RHEL (.rpm)
+python3 scripts/build-packages.py --only rpm
+# Both
+python3 scripts/build-packages.py
+```
+
+Artifacts are written to `dist/` as `memingo_<version>_all.deb` and `memingo-<version>-1.noarch.rpm`. On Fedora/RHEL, the RPM release may include a distribution suffix such as `1.fc41`.
+
+Building the `.deb` requires `dpkg-deb` (part of `dpkg`). Building the `.rpm` requires `rpmbuild`:
+
+```bash
+sudo apt install rpm        # Debian/Ubuntu
+sudo dnf install rpm-build  # Fedora/RHEL
+```
+
+Install the generated packages:
+
+```bash
+# Debian/Ubuntu
+sudo apt install ./dist/memingo_*_all.deb
+
+# Fedora/RHEL
+sudo dnf install ./dist/memingo-*.noarch.rpm
+```
+
+Both packages install the runtime under `/usr/share/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
+
 ## Ecosystem commands
 
 ```bash
@@ -147,17 +181,31 @@ mgoa install
 mgoa update
 ```
 
-## Memingo Approved (mgoa)
+## Package manager (mgoa)
+
+The default registry is the curated Memingo registry, but packages do not need to be approved to be installed. `mgoa` supports:
+
+- package names from the configured registry (`mgoa add hello-memes`)
+- any registry exposing either an `approved.packages` table or a plain `packages` table
+- local directories and ZIP archives
+- direct HTTP(S) package archive URLs, with optional `#sha256=<digest>` pinning
 
 ```bash
 mgoa search
 mgoa add hello-memes
+mgoa add ./mypackage
+mgoa add ./mypackage.zip
+mgoa add https://example.com/packages/mypackage-1.0.0.zip
+mgoa add https://example.com/packages/mypackage-1.0.0.zip#sha256=<digest>
 mgoa install
+mgoa update
 mgoa remove hello-memes
 mgoa publish ./mypackage
 ```
 
-The registry supports SHA-256 digests for package archives. `mgoa publish` writes an archive plus a `.sha256` checksum file, and installations verify the lockfile digest before replacing an installed package.
+Use `--registry <url>` or `MGOA_REGISTRY` to install from a different registry. The official registry remains the default.
+
+`mgoa` records the package source (URL, registry, or local path) and its checksums in `memingo.lock.json`. `mgoa install` reuses that source, so installs stay reproducible whether or not the package is approved. Safe ZIP extraction, path traversal protection, and SHA-256 verification apply to every source.
 
 Packages can export rituals and vibes using `borrow`:
 

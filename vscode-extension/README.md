@@ -11,7 +11,7 @@ VS Code language support for Memingo `.mgo` files.
 - Initialize a project
 - Open the REPL
 - Serve a project directory
-- Search and install approved `mgoa` packages
+- Search and install `mgoa` packages
 
 ## Commands
 
@@ -19,8 +19,8 @@ VS Code language support for Memingo `.mgo` files.
 - `Memingo: Initialize Project`
 - `Memingo: Open REPL`
 - `Memingo: Serve Project`
-- `Memingo: Search Approved Packages`
-- `Memingo: Install Approved Packages`
+- `Memingo: Search Packages`
+- `Memingo: Install Packages`
 
 ## Settings
 

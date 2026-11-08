@@ -8,6 +8,7 @@ import urllib.request
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urljoin
 
 from .config import DEFAULT_LOCKFILE, DEFAULT_MANIFEST, DEFAULT_REGISTRY
 
@@ -17,6 +18,7 @@ MANIFEST = DEFAULT_MANIFEST
 
 _NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _VERSION_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]*$")
+_URL_PATTERN = re.compile(r"^https?://", re.IGNORECASE)
 _IGNORED_PARTS = {".git", ".memingo", "__pycache__", "node_modules", ".venv", "dist", ".env"}
 
 
@@ -30,6 +32,8 @@ class ResolvedPackage:
     archive_sha256: str = ""
     release: dict = None
     local: bool = False
+    source: dict = None
+    approved: bool = False
 
 
 def _validate_package_name(name, kind="package name"):
@@ -103,10 +107,26 @@ def _looks_like_path(spec):
     return spec.startswith(("./", "../", "/", "~")) or spec in (".", "..") or Path(spec).exists()
 
 
+def _is_url(spec):
+    return bool(_URL_PATTERN.match(spec))
+
+
+def _split_url_checksum(url):
+    """Return the archive URL and an optional sha256 checksum from its fragment."""
+    if "#" not in url:
+        return url, None
+    base, fragment = url.split("#", 1)
+    if fragment.lower().startswith("sha256="):
+        return base, fragment[len("sha256="):]
+    return url, None
+
+
 def parse_spec(spec):
     spec = spec.strip()
     if not spec:
         raise PackageError("Package name cannot be empty")
+    if _is_url(spec):
+        return spec, "*"
     if _looks_like_path(spec):
         return spec, "*"
     if "@" in spec:
@@ -183,17 +203,32 @@ def _find_package_root(directory, package_name=None):
     raise PackageError("Package archive does not contain memingo.toml or package.toml")
 
 
-def _approved_registry(registry_url=None):
-    url = registry_url or os.environ.get("MGOA_REGISTRY") or DEFAULT_REGISTRY
+def _registry_url(registry_url=None):
+    return registry_url or os.environ.get("MGOA_REGISTRY") or DEFAULT_REGISTRY
+
+
+def _load_registry(registry_url=None):
+    url = _registry_url(registry_url)
     request = urllib.request.Request(url, headers={"User-Agent": "mgoa/0.2"})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             data = json.loads(response.read().decode("utf-8"))
     except Exception as error:
-        raise PackageError(f"Could not access approved registry {url}: {error}")
+        raise PackageError(f"Could not access package registry {url}: {error}")
     if not isinstance(data, dict):
-        raise PackageError("Approved registry returned an invalid document")
+        raise PackageError(f"Package registry returned an invalid document: {url}")
     return data
+
+
+def _registry_packages(registry):
+    """Return the package table and whether the registry is the curated one."""
+    approved = registry.get("approved")
+    if isinstance(approved, dict) and isinstance(approved.get("packages"), dict):
+        return approved["packages"], True
+    packages = registry.get("packages")
+    if isinstance(packages, dict):
+        return packages, False
+    raise PackageError("Registry must contain an 'approved.packages' or 'packages' table")
 
 
 def _verify_archive_digest(expected, actual, label):
@@ -208,6 +243,22 @@ def _verify_archive_digest(expected, actual, label):
         )
 
 
+def _resolve_archive_url(url):
+    archive_url, expected = _split_url_checksum(url)
+    temporary = Path(tempfile.mkdtemp(prefix="mgoa-"))
+    archive = temporary / "package.zip"
+    digest = _download(archive_url, archive)
+    _verify_archive_digest(expected, digest, archive_url)
+    _safe_extract(archive, temporary / "extracted")
+    return ResolvedPackage(
+        path=_find_package_root(temporary / "extracted"),
+        archive_sha256=digest,
+        release={"archive": archive_url},
+        source={"source": "url", "url": url},
+        approved=False,
+    )
+
+
 def resolve_package(spec, registry_url=None):
     local = Path(spec).expanduser()
     if local.exists():
@@ -220,33 +271,45 @@ def resolve_package(spec, registry_url=None):
                 archive_sha256=digest,
                 release={},
                 local=True,
+                source={"source": "local", "path": str(local.resolve())},
             )
-        return ResolvedPackage(path=_find_package_root(local), local=True)
+        return ResolvedPackage(
+            path=_find_package_root(local),
+            local=True,
+            source={"source": "local", "path": str(local.resolve())},
+        )
 
-    name, requested = parse_spec(spec)
-    registry = _approved_registry(registry_url)
-    packages = registry.get("approved", {}).get("packages", {})
-    if name not in packages:
-        raise PackageError(f"Package '{name}' is not approved by Memingo Approved (mgoa)")
-    package_record = packages[name]
+    package_name, requested = parse_spec(spec)
+    if _is_url(package_name):
+        return _resolve_archive_url(package_name)
+
+    registry_url = _registry_url(registry_url)
+    registry = _load_registry(registry_url)
+    packages, approved_registry = _registry_packages(registry)
+    if package_name not in packages:
+        raise PackageError(f"Package '{package_name}' is not available in {registry_url}")
+    package_record = packages[package_name]
     if not isinstance(package_record, dict):
-        raise PackageError(f"Package '{name}' has an invalid registry record")
+        raise PackageError(f"Package '{package_name}' has an invalid registry record")
 
     versions = package_record.get("versions", {})
     if not isinstance(versions, dict):
-        raise PackageError(f"Package '{name}' has no valid versions")
+        raise PackageError(f"Package '{package_name}' has no valid versions")
     if requested == "*":
         requested = package_record.get("latest")
-    if requested not in versions:
-        raise PackageError(f"Version '{requested}' is not approved for package '{name}'")
+    if not requested:
+        raise PackageError(f"Package '{package_name}' has no latest version")
     _validate_version(requested)
+    if requested not in versions:
+        raise PackageError(f"Version '{requested}' is not available for package '{package_name}'")
 
     release = versions[requested]
     if not isinstance(release, dict):
-        raise PackageError(f"Package '{name}@{requested}' has an invalid release record")
+        raise PackageError(f"Package '{package_name}@{requested}' has an invalid release record")
     archive_url = release.get("archive")
     if not archive_url:
-        raise PackageError(f"Package '{name}@{requested}' has no approved archive")
+        raise PackageError(f"Package '{package_name}@{requested}' has no archive URL")
+    archive_url = urljoin(registry_url, str(archive_url))
 
     temporary = Path(tempfile.mkdtemp(prefix="mgoa-"))
     archive = temporary / "package.zip"
@@ -254,13 +317,16 @@ def resolve_package(spec, registry_url=None):
     _verify_archive_digest(
         release.get("sha256") or release.get("integrity"),
         digest,
-        f"{name}@{requested}",
+        f"{package_name}@{requested}",
     )
     _safe_extract(archive, temporary / "extracted")
+    approval = release.get("approved", package_record.get("approved", approved_registry))
     return ResolvedPackage(
-        path=_find_package_root(temporary / "extracted", package_name=name),
+        path=_find_package_root(temporary / "extracted", package_name=package_name),
         archive_sha256=digest,
         release=release,
+        source={"source": "registry", "registry": registry_url},
+        approved=approval is True,
     )
 
 
@@ -332,13 +398,16 @@ def install_package(project_directory=".", spec="", registry_url=None, expected_
 
     lock_path = project / LOCKFILE
     lock = _read_lock(lock_path)
-    lock["dependencies"][name] = {
+    record = {
         "version": version,
         "entry": entry,
         "sha256": digest,
         "archive_sha256": resolved.archive_sha256,
-        "approved": True,
+        "approved": bool(resolved.approved),
     }
+    if resolved.source:
+        record.update(resolved.source)
+    lock["dependencies"][name] = record
     _write_lock(lock_path, lock)
 
     return {
@@ -347,6 +416,8 @@ def install_package(project_directory=".", spec="", registry_url=None, expected_
         "entry": entry,
         "sha256": digest,
         "archive_sha256": resolved.archive_sha256,
+        "source": resolved.source or {},
+        "approved": bool(resolved.approved),
     }
 
 
@@ -388,37 +459,52 @@ def install_project(project_directory=".", registry_url=None, frozen=True):
     if not isinstance(dependencies, dict):
         raise PackageError("[dependencies] must be a table in memingo.toml")
     lock = _read_lock(project / LOCKFILE)
+    locked = lock.get("dependencies", {})
     installed = []
     for name, version in dependencies.items():
         _validate_package_name(name)
         if version not in (None, "", "*") and not isinstance(version, str):
             raise PackageError(f"Dependency '{name}' must use a version string")
-        spec = name if version in (None, "", "*") else f"{name}@{version}"
-        expected = None
-        if frozen:
-            record = lock.get("dependencies", {}).get(name)
-            if isinstance(record, dict):
-                expected = record.get("sha256")
-        installed.append(install_package(project, spec, registry_url, expected_sha256=expected))
+        record = locked.get(name)
+        if not isinstance(record, dict):
+            record = {}
+        expected = record.get("sha256") if frozen else None
+        package_registry = registry_url or record.get("registry")
+        if record.get("url"):
+            spec = record["url"]
+        elif record.get("path"):
+            spec = record["path"]
+        elif isinstance(version, str) and _is_url(version):
+            spec = version
+        else:
+            spec = name if version in (None, "", "*") else f"{name}@{version}"
+        installed.append(
+            install_package(project, spec, package_registry, expected_sha256=expected)
+        )
     return installed
 
 
 def search_registry(query="", registry_url=None):
-    registry = _approved_registry(registry_url)
+    registry = _load_registry(registry_url)
+    packages, approved_registry = _registry_packages(registry)
     query = query.lower()
     matches = []
-    for name, record in registry.get("approved", {}).get("packages", {}).items():
+    for name, record in packages.items():
         if not isinstance(record, dict):
             continue
         name = str(name)
         description = record.get("description") or ""
         text = f"{name} {description}".lower()
-        if not query or query in text:
-            matches.append({
-                "name": name,
-                "latest": record.get("latest"),
-                "description": description,
-            })
+        if query and query not in text:
+            continue
+        approval = record.get("approved", approved_registry)
+        matches.append({
+            "name": name,
+            "latest": record.get("latest"),
+            "description": description,
+            "approved": approval is True,
+            "source": "approved" if approval is True else "community",
+        })
     return matches
 
 

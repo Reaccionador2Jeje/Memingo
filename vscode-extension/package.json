@@ -27,8 +27,8 @@
       { "command": "memingo.init", "title": "Memingo: Initialize Project", "category": "Memingo" },
       { "command": "memingo.repl", "title": "Memingo: Open REPL", "category": "Memingo" },
       { "command": "memingo.serve", "title": "Memingo: Serve Project", "category": "Memingo" },
-      { "command": "memingo.searchPackages", "title": "Memingo: Search Approved Packages", "category": "Memingo" },
-      { "command": "memingo.installPackages", "title": "Memingo: Install Approved Packages", "category": "Memingo" }
+      { "command": "memingo.searchPackages", "title": "Memingo: Search Packages", "category": "Memingo" },
+      { "command": "memingo.installPackages", "title": "Memingo: Install Packages", "category": "Memingo" }
     ],
     "configuration": {
       "title": "Memingo",

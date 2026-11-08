@@ -317,7 +317,7 @@ def _main(argv=None) -> int:
             if not (project_path / "memingo.toml").exists():
                 raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             installed = add_package(project_path, args.spec)
-            success(f"Added approved dependency {installed['name']}@{installed['version']}")
+            success(f"Added dependency {installed['name']}@{installed['version']}")
             return 0
         except Exception as exception:
             error(f"Memingo add error: {exception}")
@@ -344,7 +344,7 @@ def _main(argv=None) -> int:
                 return 0
             dependencies = install_project(project_path)
             heading("Dependencies installed", str(len(dependencies)))
-            success(f"{len(dependencies)} approved package(s) ready")
+            success(f"{len(dependencies)} package(s) ready")
             return 0
         except Exception as exception:
             error(f"Memingo install error: {exception}")
@@ -360,7 +360,7 @@ def _main(argv=None) -> int:
                 return 0
             dependencies = install_project(project_path, frozen=False)
             heading("Dependencies updated", str(len(dependencies)))
-            success(f"{len(dependencies)} approved package(s) ready")
+            success(f"{len(dependencies)} package(s) ready")
             return 0
         except Exception as exception:
             error(f"Memingo update error: {exception}")

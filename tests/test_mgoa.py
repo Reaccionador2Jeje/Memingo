@@ -1,11 +1,62 @@
+import contextlib
+import functools
+import hashlib
+import http.server
 import json
+import shutil
 import tempfile
+import threading
 import unittest
+import zipfile
 from pathlib import Path
 
 from memingo.interpreter import execute
-from memingo.mgoa import PackageError, add_package, install_package, publish_package
+from memingo.mgoa import (
+    PackageError, add_package, install_package, install_project,
+    publish_package, resolve_package, search_registry,
+)
 from memingo.packages import read_manifest
+
+
+class _QuietHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
+
+
+@contextlib.contextmanager
+def serve_directory(directory):
+    handler = functools.partial(_QuietHandler, directory=str(directory))
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def write_package(root, name, body='vibe greeting = "hello from package"\n'):
+    package = root / name
+    package.mkdir()
+    (package / "memingo.toml").write_text(
+        f'[package]\nname = "{name}"\nversion = "0.1.0"\nentry = "main.mgo"\n\n[dependencies]\n',
+        encoding="utf-8",
+    )
+    (package / "main.mgo").write_text(body, encoding="utf-8")
+    return package
+
+
+def write_project(root, name="app"):
+    project = root / name
+    project.mkdir()
+    (project / "memingo.toml").write_text(
+        f'[package]\nname = "{name}"\nversion = "0.1.0"\nentry = "main.mgo"\n\n[dependencies]\n',
+        encoding="utf-8",
+    )
+    (project / "main.mgo").write_text('borrow "hello-url"\nspill greeting\n', encoding="utf-8")
+    return project
 
 
 class MgoaTests(unittest.TestCase):
@@ -91,6 +142,133 @@ class MgoaTests(unittest.TestCase):
             lock_path.write_text(json.dumps(lock), encoding="utf-8")
             with self.assertRaises(PackageError):
                 install_package(project, str(package), expected_sha256="0" * 64)
+
+    def test_direct_archive_url_records_source_and_reinstalls(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            package = write_package(root, "hello-url")
+            archive = publish_package(package, root / "dist")
+            with serve_directory(root / "dist") as base:
+                url = f"{base}/{archive.name}"
+                project = write_project(root)
+                installed = add_package(project, url)
+                self.assertEqual(installed["name"], "hello-url")
+                self.assertFalse(installed["approved"])
+
+                lock = json.loads((project / "memingo.lock.json").read_text(encoding="utf-8"))
+                record = lock["dependencies"]["hello-url"]
+                self.assertEqual(record["source"], "url")
+                self.assertEqual(record["url"], url)
+                self.assertFalse(record["approved"])
+
+                output = execute(
+                    (project / "main.mgo").read_text(encoding="utf-8"),
+                    project_directory=project,
+                )
+                self.assertEqual(output, ["hello from package"])
+
+                shutil.rmtree(project / ".memingo" / "packages" / "hello-url")
+                install_project(project)
+                self.assertTrue(
+                    (project / ".memingo" / "packages" / "hello-url" / "main.mgo").exists()
+                )
+
+    def test_unapproved_registry_packages_can_be_installed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            package = write_package(root, "community-hello")
+            archive = publish_package(package, root / "dist")
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            with serve_directory(root) as base:
+                registry_url = f"{base}/registry.json"
+                (root / "registry.json").write_text(
+                    json.dumps({
+                        "schema": "memingo-registry/v1",
+                        "packages": {
+                            "community-hello": {
+                                "description": "community package",
+                                "latest": "0.1.0",
+                                "versions": {
+                                    "0.1.0": {
+                                        "archive": f"{base}/dist/{archive.name}",
+                                        "sha256": digest,
+                                    }
+                                },
+                            }
+                        },
+                    }),
+                    encoding="utf-8",
+                )
+
+                matches = search_registry("community", registry_url)
+                self.assertEqual(len(matches), 1)
+                self.assertFalse(matches[0]["approved"])
+                self.assertEqual(matches[0]["source"], "community")
+
+                project = write_project(root)
+                installed = add_package(project, "community-hello", registry_url)
+                self.assertEqual(installed["name"], "community-hello")
+                self.assertFalse(installed["approved"])
+
+                lock = json.loads((project / "memingo.lock.json").read_text(encoding="utf-8"))
+                record = lock["dependencies"]["community-hello"]
+                self.assertEqual(record["source"], "registry")
+                self.assertEqual(record["registry"], registry_url)
+                self.assertFalse(record["approved"])
+
+                shutil.rmtree(project / ".memingo" / "packages" / "community-hello")
+                install_project(project)
+                self.assertTrue(
+                    (project / ".memingo" / "packages" / "community-hello" / "main.mgo").exists()
+                )
+
+    def test_approved_registry_packages_keep_approval_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            package = write_package(root, "official-hello")
+            archive = publish_package(package, root / "dist")
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            registry_path = root / "index.json"
+            registry_path.write_text(
+                json.dumps({
+                    "schema": "memingo-approved/v1",
+                    "approved": {
+                        "packages": {
+                            "official-hello": {
+                                "latest": "0.1.0",
+                                "versions": {
+                                    "0.1.0": {
+                                        "archive": archive.as_uri(),
+                                        "sha256": digest,
+                                    }
+                                },
+                            }
+                        }
+                    },
+                }),
+                encoding="utf-8",
+            )
+
+            project = write_project(root)
+            installed = add_package(project, "official-hello", registry_path.as_uri())
+            self.assertTrue(installed["approved"])
+            lock = json.loads((project / "memingo.lock.json").read_text(encoding="utf-8"))
+            record = lock["dependencies"]["official-hello"]
+            self.assertEqual(record["source"], "registry")
+            self.assertTrue(record["approved"])
+
+    def test_direct_url_checksum_fragment_is_verified(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            package = write_package(root, "checksum-hello")
+            archive = publish_package(package, root / "dist")
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            with serve_directory(root / "dist") as base:
+                url = f"{base}/{archive.name}"
+                resolved = resolve_package(f"{url}#sha256={digest}")
+                self.assertEqual(resolved.archive_sha256, digest)
+                with self.assertRaises(PackageError):
+                    resolve_package(f"{url}#sha256={'0' * 64}")
 
 
 if __name__ == "__main__":

@@ -30,6 +30,7 @@
 - [x] `memingo add`, `remove`, `install` and `update` local workflows
 - [x] Lockfile generation and digest verification
 - [x] Package registry protocol and remote resolution
+- [x] Direct archive URLs and non-approved registries
 - [x] SHA-256 archive checksums and published `.sha256` files
 - [ ] Package signing and verification
 - [x] Secure local cache

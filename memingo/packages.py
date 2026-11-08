@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 
 from .config import DEFAULT_PROJECT_ENV_TEMPLATE
-from .version import __version__
+from . import __version__
 
 
 LOCKFILE = "memingo.lock.json"
@@ -110,8 +110,8 @@ def remove_dependency(directory=".", name=""):
 def install_dependencies(directory="."):
     """Create lightweight dependency records without contacting the registry.
 
-    Projects that use approved packages should call ``mgoa install`` so the
-    package contents are downloaded into ``.memingo/packages``.
+    Projects that use real packages should call ``mgoa install`` so the package
+    contents are downloaded into ``.memingo/packages``.
     """
     root = Path(directory)
     data = read_manifest(root)

@@ -21,7 +21,7 @@ vibe profile = {name: "Ana", role: "builder"}
 - `drop` returns a function value
 - `when / nah` creates conditions
 - `grind` repeats while a condition is true
-- `borrow` loads an installed approved package
+- `borrow` loads an installed package
 
 ## Objects and access
 

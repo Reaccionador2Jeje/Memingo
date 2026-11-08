@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 version = "0.2.0"
 
-version_file = ROOT / "memingo" / "version.py"
+version_file = ROOT / "memingo" / "__init__.py"
 match = re.search(r'__version__\s*=\s*"([^"]+)"', version_file.read_text(encoding="utf-8"))
 if match:
     version = match.group(1)

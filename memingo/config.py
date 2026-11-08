@@ -1,6 +1,6 @@
 """Shared configuration defaults for Memingo and mgoa."""
 
-from .version import __version__
+from . import __version__
 
 
 DEFAULT_REGISTRY = "https://reaccionador2jeje.github.io/Memingo/mgoa/index.json"

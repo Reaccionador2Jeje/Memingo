@@ -1,4 +1,4 @@
-vibe meme_hello = "Hello from an approved package!"
+vibe meme_hello = "Hello from a Memingo package!"
 
 ritual greet(name) {
     spill meme_hello + " " + name

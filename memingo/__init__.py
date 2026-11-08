@@ -1,4 +1,5 @@
-from .version import __version__
+__version__ = "0.2.0"
+
 from .interpreter import Interpreter, execute
 from .lexer import LexerError
 from .packages import add_dependency, init_project, install_dependencies, remove_dependency

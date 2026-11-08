@@ -2,7 +2,7 @@
 name = "hello-memes"
 version = "0.1.0"
 entry = "main.mgo"
-description = "A tiny approved Memingo package"
+description = "A tiny Memingo package"
 license = "BSD-3-Clause"
 
 [dependencies]
