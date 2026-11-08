@@ -107,8 +107,11 @@ class Interpreter:
         self.global_environment.define("starts_with", self._starts_with)
         self.global_environment.define("ends_with", self._ends_with)
         self.global_environment.define("slice", self._slice)
+        self.global_environment.define("repeat", self._repeat)
+        self.global_environment.define("lines", self._lines)
         self.global_environment.define("sort", self._sort)
         self.global_environment.define("reverse", self._reverse)
+        self.global_environment.define("unique", self._unique)
         self.global_environment.define("sum", self._sum)
         self.global_environment.define("min", self._min)
         self.global_environment.define("max", self._max)
@@ -126,6 +129,10 @@ class Interpreter:
         self.global_environment.define("sleep", self._sleep)
         self.global_environment.define("http_get", self._http_get)
         self.global_environment.define("http_post", self._http_post)
+        self.global_environment.define("read_file", self._read_file)
+        self.global_environment.define("write_file", self._write_file)
+        self.global_environment.define("file_exists", self._file_exists)
+        self.global_environment.define("list_files", self._list_files)
 
     def run(self, program):
         try:
@@ -311,6 +318,46 @@ class Interpreter:
             data = response.read().decode("utf-8")
             return json.loads(data) if response.headers.get_content_type() == "application/json" else data
 
+    def _project_path(self, function, path):
+        if not isinstance(path, str) or not path.strip():
+            raise RuntimeErrorMemingo(f"{function}() requires a non-empty relative path")
+        candidate = Path(path)
+        if candidate.is_absolute():
+            raise RuntimeErrorMemingo(f"{function}() requires a path inside the project")
+        resolved = (self.project_directory / candidate).resolve()
+        if resolved != self.project_directory and self.project_directory not in resolved.parents:
+            raise RuntimeErrorMemingo(f"{function}() cannot leave the project directory")
+        return resolved
+
+    def _read_file(self, path):
+        target = self._project_path("read_file", path)
+        if not target.is_file():
+            raise RuntimeErrorMemingo(f"read_file() could not find '{path}'")
+        try:
+            return target.read_text(encoding="utf-8")
+        except UnicodeError as exception:
+            raise RuntimeErrorMemingo(f"read_file() requires a UTF-8 file: {exception}") from exception
+
+    def _write_file(self, path, contents):
+        target = self._project_path("write_file", path)
+        if not isinstance(contents, str):
+            raise RuntimeErrorMemingo("write_file() requires string contents")
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(contents, encoding="utf-8")
+        except OSError as exception:
+            raise RuntimeErrorMemingo(f"write_file() failed: {exception}") from exception
+        return len(contents)
+
+    def _file_exists(self, path):
+        return self._project_path("file_exists", path).exists()
+
+    def _list_files(self, path="."):
+        target = self._project_path("list_files", path)
+        if not target.is_dir():
+            raise RuntimeErrorMemingo(f"list_files() could not find directory '{path}'")
+        return sorted(entry.name for entry in target.iterdir())
+
     def _string_argument(self, function, value, label="value"):
         if not isinstance(value, str):
             raise RuntimeErrorMemingo(f"{function}() requires a string {label}")
@@ -397,6 +444,17 @@ class Interpreter:
             raise RuntimeErrorMemingo("slice() end must be a whole number")
         return value[start:end]
 
+    def _repeat(self, text, count):
+        text = self._string_argument("repeat", text)
+        if not isinstance(count, int) or isinstance(count, bool):
+            raise RuntimeErrorMemingo("repeat() count must be a whole number")
+        if count < 0:
+            raise RuntimeErrorMemingo("repeat() count must be zero or greater")
+        return text * count
+
+    def _lines(self, text):
+        return self._string_argument("lines", text).splitlines()
+
     def _sort(self, items, descending=False):
         items = self._list_argument("sort", items)
         if not isinstance(descending, bool):
@@ -410,6 +468,14 @@ class Interpreter:
         if isinstance(items, str):
             return items[::-1]
         return list(reversed(self._list_argument("reverse", items)))
+
+    def _unique(self, items):
+        items = self._list_argument("unique", items)
+        result = []
+        for item in items:
+            if item not in result:
+                result.append(item)
+        return result
 
     def _sum(self, items):
         items = self._list_argument("sum", items)

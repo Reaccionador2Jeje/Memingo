@@ -9,6 +9,7 @@
 - [x] Dictionaries and property/index access
 - [x] Standard library for JSON, environment and collections
 - [x] Text, number, collection and higher-order standard library
+- [x] Project-scoped text file helpers
 - [ ] Better error locations and source snippets
 - [ ] Modules and imports
 - [ ] Standard library for games and apps
@@ -27,6 +28,7 @@
 - [x] `memingo eval` inline code execution
 - [x] `memingo check` syntax validation
 - [x] `memingo info`, `deps` and `clean` project tools
+- [x] `memingo manifest` standalone manifest creation
 - [ ] Shell completion
 
 ## Package manager
@@ -36,6 +38,7 @@
 - [x] Package registry protocol and remote resolution
 - [x] Direct archive URLs and non-approved registries
 - [x] SHA-256 archive checksums and published `.sha256` files
+- [x] Automatic project scaffolding and `memingo.toml` creation
 - [ ] Package signing and verification
 - [x] Secure local cache
 

@@ -315,6 +315,32 @@ class MgoaTests(unittest.TestCase):
             self.assertEqual(packages[0]["source"], "local")
             self.assertTrue(packages[0]["installed"])
 
+    def test_add_package_creates_missing_project_scaffold(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / "fresh-app"
+            package = write_package(root, "hello-fresh")
+            installed = add_package(project, str(package))
+
+            self.assertTrue((project / "memingo.toml").is_file())
+            self.assertTrue((project / "main.mgo").is_file())
+            self.assertTrue((project / ".memingo" / "packages" / installed["name"]).is_dir())
+            manifest = read_manifest(project)
+            self.assertEqual(manifest["package"]["name"], "fresh-app")
+            self.assertEqual(manifest["dependencies"][installed["name"]], installed["version"])
+
+    def test_install_project_creates_missing_project_scaffold(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / "fresh-install"
+            dependencies = install_project(project)
+
+            self.assertEqual(dependencies, [])
+            self.assertTrue((project / "memingo.toml").is_file())
+            self.assertTrue((project / ".memingo" / "packages").is_dir())
+            manifest = read_manifest(project)
+            self.assertEqual(manifest["package"]["name"], "fresh-install")
+
 
 if __name__ == "__main__":
     unittest.main()

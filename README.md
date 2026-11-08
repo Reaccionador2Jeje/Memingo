@@ -75,7 +75,7 @@ ritual double(n) {
 spill map([1, 2, 3], double)
 ```
 
-Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `now`, `sleep`, and the JSON, environment and HTTP helpers. See [LANGUAGE.md](LANGUAGE.md) for the full list.
+Memingo also includes `filter`, `reduce`, `sum`, `min`, `max`, `clamp`, `parse_int`, `parse_float`, `repeat`, `lines`, `unique`, `now`, `sleep`, the project-scoped file helpers `read_file`, `write_file`, `file_exists` and `list_files`, and the JSON, environment and HTTP helpers. See [LANGUAGE.md](LANGUAGE.md) for the full list.
 
 ## Run
 
@@ -193,6 +193,7 @@ memingo remove meme-core
 memingo info
 memingo deps
 memingo clean
+memingo manifest
 memingo doctor
 memingo update-self
 memingo fmt examples
@@ -203,6 +204,8 @@ mgoa add hello-memes
 mgoa install
 mgoa update
 ```
+
+`memingo install`, `memingo update`, `memingo add`, `mgoa install` and `mgoa add` create the project scaffolding and `memingo.toml` automatically when they are missing. An existing manifest is never overwritten. Use `memingo manifest` to create just the missing manifest for the current directory.
 
 ## Package manager (mgoa)
 

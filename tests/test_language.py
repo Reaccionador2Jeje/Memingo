@@ -1,4 +1,6 @@
+import tempfile
 import unittest
+from pathlib import Path
 
 from memingo.interpreter import RuntimeErrorMemingo, execute
 from memingo.parser import ParseError
@@ -141,6 +143,50 @@ class MemingoLanguageTests(unittest.TestCase):
             execute('spill reduce([], upper)')
         with self.assertRaises(RuntimeErrorMemingo):
             execute('spill parse_int("not-a-number")')
+
+    def test_text_helpers_repeat_lines_and_unique(self):
+        source = (
+            'spill repeat("ab", 3)\n'
+            'spill lines("uno\\ndos\\ntres")\n'
+            'spill unique([1, 2, 2, 3, 1])'
+        )
+        self.assertEqual(
+            execute(source),
+            ["ababab", '["uno", "dos", "tres"]', "[1, 2, 3]"],
+        )
+
+    def test_text_helpers_validate_arguments(self):
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill repeat("ab", -1)')
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill repeat(1, 2)')
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill unique("nope")')
+
+    def test_file_builtins_stay_inside_project(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            written = execute('spill write_file("notes/hello.txt", "hola")', project_directory=root)
+            self.assertEqual(written, ["4"])
+            self.assertTrue((root / "notes" / "hello.txt").is_file())
+
+            output = execute(
+                'spill read_file("notes/hello.txt")\n'
+                'spill file_exists("notes/hello.txt")\n'
+                'spill file_exists("notes/missing.txt")\n'
+                'spill list_files("notes")',
+                project_directory=root,
+            )
+            self.assertEqual(output, ["hola", "based", "cringe", '["hello.txt"]'])
+
+    def test_file_builtins_reject_escaping_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with self.assertRaises(RuntimeErrorMemingo):
+                execute('spill write_file("../escape.txt", "nope")', project_directory=root)
+            with self.assertRaises(RuntimeErrorMemingo):
+                execute('spill read_file("/etc/passwd")', project_directory=root)
+            self.assertFalse((root.parent / "escape.txt").exists())
 
 
 if __name__ == "__main__":

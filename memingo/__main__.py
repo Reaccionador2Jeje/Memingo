@@ -15,7 +15,7 @@ from .interpreter import Interpreter, RuntimeErrorMemingo, execute
 from .formatter import format_source
 from .mgoa import PackageError, add_package, install_project, remove_package
 from .lexer import LexerError
-from .packages import init_project, read_manifest, resolve_entry
+from .packages import ensure_project, init_project, read_manifest, resolve_entry
 from .parser import ParseError, parse
 from .server import serve
 from .cli import banner, heading, key_value, success, info, error, warning, table
@@ -398,6 +398,10 @@ def _main(argv=None) -> int:
     init_parser.add_argument("directory", nargs="?", default=".")
     init_parser.add_argument("--name", default="my-memingo-app")
 
+    manifest_parser = subparsers.add_parser("manifest", help="Create a missing memingo.toml")
+    manifest_parser.add_argument("directory", nargs="?", default=".")
+    manifest_parser.add_argument("--name", default=None)
+
     run_parser = subparsers.add_parser("run", help="Run a project or .mgo file")
     run_parser.add_argument("path", nargs="?", default=None)
 
@@ -471,6 +475,20 @@ def _main(argv=None) -> int:
         heading("Project created", args.name)
         success(f"Manifest: {manifest}")
         return 0
+    if args.command == "manifest":
+        try:
+            root = Path(args.directory).resolve()
+            existed = (root / "memingo.toml").exists()
+            manifest = ensure_project(root, args.name)
+        except (OSError, ValueError) as exception:
+            error(f"Memingo manifest error: {exception}")
+            return 1
+        if existed:
+            info(f"Manifest already exists: {manifest}")
+        else:
+            heading("Project manifest created", args.name or root.name)
+            success(f"Manifest: {manifest}")
+        return 0
     if args.command == "run":
         if args.path:
             target = Path(args.path)
@@ -512,8 +530,6 @@ def _main(argv=None) -> int:
     if args.command == "add":
         try:
             project_path = Path(args.project).resolve()
-            if not (project_path / "memingo.toml").exists():
-                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
             installed = add_package(project_path, args.spec)
             success(f"Added dependency {installed['name']}@{installed['version']}")
             return 0
@@ -534,13 +550,12 @@ def _main(argv=None) -> int:
     if args.command == "install":
         try:
             project_path = Path(args.directory).resolve()
-            if not (project_path / "memingo.toml").exists():
-                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
+            ensure_project(project_path)
             manifest = read_manifest(project_path)
+            dependencies = install_project(project_path)
             if not manifest.get("dependencies", {}):
                 info("No dependencies to install")
                 return 0
-            dependencies = install_project(project_path)
             heading("Dependencies installed", str(len(dependencies)))
             success(f"{len(dependencies)} package(s) ready")
             return 0
@@ -550,13 +565,12 @@ def _main(argv=None) -> int:
     if args.command == "update":
         try:
             project_path = Path(args.directory).resolve()
-            if not (project_path / "memingo.toml").exists():
-                raise FileNotFoundError(f"Missing project manifest: {project_path / 'memingo.toml'}")
+            ensure_project(project_path)
             manifest = read_manifest(project_path)
+            dependencies = install_project(project_path, frozen=False)
             if not manifest.get("dependencies", {}):
                 info("No dependencies to update")
                 return 0
-            dependencies = install_project(project_path, frozen=False)
             heading("Dependencies updated", str(len(dependencies)))
             success(f"{len(dependencies)} package(s) ready")
             return 0

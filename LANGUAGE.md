@@ -102,6 +102,7 @@ spill created
 - `delete_key(object, key)` removes an object member
 - `sort(list, descending?)` returns a sorted copy
 - `reverse(list)` returns a reversed copy
+- `unique(list)` removes duplicate values while keeping order
 - `sum(list)` adds a list of numbers
 - `min(values)` and `max(values)` accept a list or separate numbers
 - `slice(value, start, end?)` slices a list or string
@@ -114,6 +115,8 @@ spill created
 - `replace(text, old, new)`
 - `contains(text, value)` also works on lists and object keys
 - `starts_with(text, prefix)` and `ends_with(text, suffix)`
+- `repeat(text, count)` repeats text `count` times
+- `lines(text)` splits text into a list of lines
 
 ### Numbers
 
@@ -149,6 +152,22 @@ spill reduce([1, 2, 3, 4], combine, 0)
 - `sleep(seconds)` pauses execution
 - `http_get(url)` reads text or JSON
 - `http_post(url, object)` sends JSON and reads text or JSON
+
+### Files
+
+File helpers are restricted to the project directory and reject absolute paths or `..` escapes.
+
+- `read_file(path)` reads a UTF-8 text file
+- `write_file(path, text)` writes a UTF-8 text file, creating parent directories
+- `file_exists(path)` returns `based` or `cringe`
+- `list_files(path)` returns a sorted list of directory entries
+
+```mgo
+write_file("notes/hello.txt", "hola")
+spill read_file("notes/hello.txt")
+spill file_exists("notes/hello.txt")
+spill list_files("notes")
+```
 
 Errors raised inside a built-in are reported as Memingo runtime errors with the function name.
 

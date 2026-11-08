@@ -66,6 +66,11 @@ def read_manifest(directory):
     return read_simple_manifest(directory)
 
 
+def _ensure_project(directory):
+    from .packages import ensure_project
+    return ensure_project(directory)
+
+
 def _load_toml(path):
     path = Path(path)
     try:
@@ -422,6 +427,7 @@ def install_package(project_directory=".", spec="", registry_url=None, expected_
 
 
 def add_package(project_directory=".", spec="", registry_url=None):
+    _ensure_project(project_directory)
     installed = install_package(project_directory, spec, registry_url)
     project = Path(project_directory)
     from .packages import _write_simple_toml
@@ -454,10 +460,12 @@ def remove_package(project_directory=".", name=""):
 
 def install_project(project_directory=".", registry_url=None, frozen=True):
     project = Path(project_directory).resolve()
+    _ensure_project(project)
     data = read_manifest(project)
     dependencies = data.get("dependencies", {})
     if not isinstance(dependencies, dict):
         raise PackageError("[dependencies] must be a table in memingo.toml")
+    (project / ".memingo" / "packages").mkdir(parents=True, exist_ok=True)
     lock = _read_lock(project / LOCKFILE)
     locked = lock.get("dependencies", {})
     installed = []

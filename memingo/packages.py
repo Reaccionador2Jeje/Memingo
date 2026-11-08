@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import re
 
 from .config import DEFAULT_PROJECT_ENV_TEMPLATE
 from . import __version__
@@ -7,6 +8,28 @@ from . import __version__
 
 LOCKFILE = "memingo.lock.json"
 MANIFEST = "memingo.toml"
+
+
+def _project_name(directory):
+    root = Path(directory)
+    raw = root.resolve().name or "memingo-app"
+    name = re.sub(r"[^A-Za-z0-9._-]+", "-", raw).strip(".-_")
+    if not name:
+        name = "memingo-app"
+    if not name[0].isalnum():
+        name = "memingo-" + name
+    return name
+
+
+def ensure_project(directory=".", name=None):
+    """Create the project scaffolding when the manifest is missing."""
+    root = Path(directory)
+    manifest = root / MANIFEST
+    if manifest.exists():
+        return manifest
+    if root.exists() and not root.is_dir():
+        raise ValueError(f"Project path is not a directory: {root}")
+    return init_project(root, name or _project_name(root))
 
 
 def init_project(directory=".", name="my-memingo-app"):
