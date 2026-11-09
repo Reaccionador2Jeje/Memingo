@@ -202,6 +202,18 @@ python3 scripts/build-linux-repositories.py
 
 Metadata is written to `site/linux/apt` and `site/linux/rpm`. The GitHub Pages release workflow signs and publishes it automatically when `MEMINGO_GPG_*` Actions secrets are configured. Full setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md).
 
+After a signed repository release is published, Debian/Ubuntu users can add the APT source:
+
+```bash
+curl -fsSLo memingo.asc https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
+sudo install -m 0644 memingo.asc /usr/share/keyrings/memingo.asc
+echo 'deb [signed-by=/usr/share/keyrings/memingo.asc] https://reaccionador2jeje.github.io/Memingo/linux/apt stable main' | sudo tee /etc/apt/sources.list.d/memingo.list
+sudo apt update
+sudo apt install memingo
+```
+
+Fedora/RHEL users can configure DNF with the repository file shown in [DEPLOYMENT.md](DEPLOYMENT.md). Repository publication requires the signing secrets; unsigned repositories are not deployed.
+
 Both packages install the runtime under `/usr/lib/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
 
 The CLI now uses an art-directed terminal interface for every interactive subcommand: compact `MEMINGO / COMMAND` headers frame project, package, build, formatting and diagnostic workflows. `run`, `eval`, `completion`, REPL and watcher output remain clean or intentionally interactive so they can be piped safely. mgoa uses the same visual language for package commands. Run `memingo status`, `memingo doctor`, or `mgoa` without arguments for a visual overview.
