@@ -31,6 +31,27 @@ class LinuxRepositorySelectionTests(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertEqual(apt_marker.read_text(encoding="utf-8"), "keep")
 
+    def test_apt_indexes_cover_independent_and_detected_architectures(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "site" / "linux"
+            package = root / "memingo_arm64.deb"
+            package.write_bytes(b"fake deb")
+            def package_architecture(command, text=True):
+                return "arm64"
+            with mock.patch.object(MODULE.shutil, "which", return_value="/usr/bin/dpkg-scanpackages"), mock.patch.object(
+                MODULE.subprocess, "check_output", side_effect=package_architecture
+            ), mock.patch.object(MODULE.subprocess, "run") as run:
+                result = MODULE.build_apt_repository(output, None, [package])
+            self.assertTrue(result)
+            release = (output / "apt" / "dists" / "stable" / "Release").read_text(encoding="utf-8")
+            self.assertIn("Architectures: amd64 arm64 armhf i386", release)
+            self.assertTrue((output / "apt" / "dists" / "stable" / "main" / "binary-amd64" / "Packages.gz").is_file())
+            self.assertTrue((output / "apt" / "dists" / "stable" / "main" / "binary-arm64" / "Packages.gz").is_file())
+            commands = [call.args[0] for call in run.call_args_list]
+            self.assertIn("--arch", commands[0])
+            self.assertEqual(sum(1 for command in commands if command[0] == "dpkg-scanpackages"), 4)
+
     def test_apt_only_preserves_existing_rpm_repository(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
