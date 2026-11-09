@@ -2,6 +2,7 @@ name: Publish Linux Package Repositories
 
 on:
   push:
+    branches: ["feat/arch-aur-packaging"]
     tags: ["v*"]
   workflow_dispatch:
 
