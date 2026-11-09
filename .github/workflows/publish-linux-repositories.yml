@@ -78,12 +78,27 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.MEMINGO_GPG_PASSPHRASE }}
           GPG_KEY_ID: ${{ secrets.MEMINGO_GPG_KEY_ID }}
         run: |
-          echo '%_signature gpg' > "$HOME/.rpmmacros"
-          echo "%_gpg_name $GPG_KEY_ID" >> "$HOME/.rpmmacros"
-          echo '%_gpg_path /home/runner/.gnupg' >> "$HOME/.rpmmacros"
-          echo '%__gpg_sign_cmd %{__gpg} --batch --yes --pinentry-mode loopback --passphrase %{?__gpg_passphrase} --no-armor --no-secmem-warning -u "%{_gpg_name}" -sbo %{__signature_filename} %{__plaintext_filename}' >> "$HOME/.rpmmacros"
+          set -eu
+          # Use RPM's built-in signing macro so RPM expands its internal
+          # signature/plaintext filename macros correctly.
+          printf '%s\n' "$GPG_PASSPHRASE" > /tmp/memingo-gpg-passphrase
+          chmod 600 /tmp/memingo-gpg-passphrase
+          trap 'rm -f /tmp/memingo-gpg-passphrase' EXIT
+          cat > "$HOME/.rpmmacros" <<EOF
+          %_signature gpg
+          %_gpg_name $GPG_KEY_ID
+          %_gpg_path $HOME/.gnupg
+          %_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase-file /tmp/memingo-gpg-passphrase
+          EOF
+          if ! rpm --eval '%{?_gpg_sign_cmd_extra_args:available}' | grep -q available; then
+            echo "::error::This RPM version does not support _gpg_sign_cmd_extra_args."
+            exit 1
+          fi
           for package in dist/*.rpm; do
-            rpmsign --define "_gpg_passphrase $GPG_PASSPHRASE" --addsign "$package"
+            rpmsign --addsign "$package"
+          done
+          rpm --import site/linux/memingo.asc
+          for package in dist/*.rpm; do
             rpm --checksig --verbose "$package"
           done
           cp dist/*.rpm site/linux/rpm/Packages/
