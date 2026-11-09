@@ -277,8 +277,8 @@ class MemingoLanguageTests(unittest.TestCase):
     def test_http_server_dynamic_routes_and_query(self):
         interpreter = Interpreter()
         source = (
-            'vibe api = http_server()\\n'
-            'ritual user(request) { drop {body: {id: request.params.id, page: request.query.page}} }\\n'
+            'vibe api = http_server()\n'
+            'ritual user(request) { drop {body: {id: request.params.id, page: request.query.page}} }\n'
             'api.get("/users/{id}", user)'
         )
         interpreter.run(parse(source))
@@ -290,9 +290,9 @@ class MemingoLanguageTests(unittest.TestCase):
     def test_http_server_middleware_and_bearer_auth(self):
         interpreter = Interpreter()
         source = (
-            'vibe api = http_server()\\n'
-            'ritual private(request) { drop {body: {secret: "ok"}} }\\n'
-            'api.use(api.bearer("test-token"))\\n'
+            'vibe api = http_server()\n'
+            'ritual private(request) { drop {body: {secret: "ok"}} }\n'
+            'api.use(api.bearer("test-token"))\n'
             'api.get("/private", private)'
         )
         interpreter.run(parse(source))
@@ -308,10 +308,10 @@ class MemingoLanguageTests(unittest.TestCase):
     def test_sqlite_helpers_support_parameterized_queries(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = execute(
-                'vibe db = sqlite(":memory:")\\n'
-                'db.execute("CREATE TABLE people (name TEXT)")\\n'
-                'db.execute("INSERT INTO people (name) VALUES (?)", ["Cris"])\\n'
-                'spill db.query("SELECT name FROM people")[0].name\\n'
+                'vibe db = sqlite(":memory:")\n'
+                'db.execute("CREATE TABLE people (name TEXT)")\n'
+                'db.execute("INSERT INTO people (name) VALUES (?)", ["Cris"])\n'
+                'spill db.query("SELECT name FROM people")[0].name\n'
                 'db.close()',
                 project_directory=temporary,
             )
