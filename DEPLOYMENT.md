@@ -78,6 +78,38 @@ dnf info memingo
 
 La configuración activa tanto la verificación de firmas de los paquetes RPM (`gpgcheck=1`) como la verificación de metadatos del repositorio (`repo_gpgcheck=1`).
 
+## Android (Termux)
+
+Termux no usa los repositorios APT de Debian/Ubuntu ni los paquetes RPM de Fedora. Por eso, en Android se instala Memingo con el instalador compatible con Termux, que coloca los comandos dentro de `$PREFIX/bin`.
+
+Instala los requisitos y descarga el proyecto:
+
+```bash
+pkg update
+pkg install -y git python
+git clone https://github.com/Reaccionador2Jeje/Memingo.git
+cd Memingo
+sh scripts/install.sh
+hash -r
+memingo --version
+mgoa --version
+```
+
+El instalador detecta Termux automáticamente, utiliza el Python de Termux y evita modificar archivos de configuración del PATH porque `$PREFIX/bin` ya está incluido en el entorno. No ejecutes `apt install memingo` en Termux: ese paquete se publica para distribuciones Debian/Ubuntu, no para el repositorio de paquetes de Android.
+
+Para actualizar, entra en la carpeta del repositorio y ejecuta:
+
+```bash
+git pull
+sh scripts/install.sh
+```
+
+Para desinstalar desde Termux:
+
+```bash
+sh scripts/uninstall.sh
+```
+
 ## Desinstalar
 
 Debian/Ubuntu:
