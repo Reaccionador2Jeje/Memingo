@@ -1,0 +1,28 @@
+# Memingo HTTP API example
+# Run with: memingo run examples/server.mgo
+
+vibe api = http_server()
+
+ritual home(request) {
+    drop {
+        status: 200,
+        body: {
+            message: "Hello from Memingo Server",
+            method: request.method
+        }
+    }
+}
+
+ritual echo(request) {
+    drop {
+        status: 201,
+        body: {
+            received: request.body,
+            query: request.query
+        }
+    }
+}
+
+api.get("/", home)
+api.post("/echo", echo)
+api.listen("127.0.0.1", 8000)
