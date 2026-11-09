@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Guía oficial para instalar Memingo en Android usando Termux.">
+  <title>Instalar Memingo en Termux</title>
+  <link rel="icon" href="assets/memingo-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .termux-guide{max-width:900px;margin:0 auto;padding:72px 24px 96px}
+    .termux-guide h1{font-size:clamp(2.6rem,8vw,5rem);line-height:.98;margin:16px 0 24px}
+    .termux-guide h1 span{color:#d8b52b}
+    .termux-guide .intro{font-size:1.15rem;max-width:680px;line-height:1.7}
+    .guide-step{margin-top:42px;padding-top:28px;border-top:1px solid rgba(0,0,0,.16)}
+    .guide-step h2{font-size:1.8rem;margin:8px 0 14px}
+    .guide-step p,.guide-step li{line-height:1.7}
+    .termux-guide pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#171717;color:#f5f5f5;padding:20px;border-radius:12px;line-height:1.65;overflow-x:auto}
+    .termux-guide code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+    .guide-note{background:#fff4c2;border-left:4px solid #d8b52b;padding:16px 18px;margin:22px 0;line-height:1.65}
+    .guide-links{display:flex;gap:18px;flex-wrap:wrap;margin-top:28px}
+    .guide-links a{font-weight:700}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Memingo inicio">
+      <img src="assets/memingo-mark.svg" alt="">
+      <span>memingo</span>
+    </a>
+    <nav class="main-nav" aria-label="Navegación principal">
+      <a href="./">Inicio</a>
+      <a href="./#docs">Docs</a>
+      <a href="./#downloads">Descargas</a>
+      <a class="active" href="termux.html">Termux</a>
+    </nav>
+    <div class="header-actions">
+      <a class="button button-dark header-download" href="./#downloads">Descargar</a>
+    </div>
+  </header>
+
+  <main class="termux-guide">
+    <p class="eyebrow"><span class="live-dot"></span> ANDROID / GUÍA DE INSTALACIÓN</p>
+    <h1>Memingo en<br><span>Termux.</span></h1>
+    <p class="intro">Instala el lenguaje y sus dos comandos —<code>memingo</code> y <code>mgoa</code>— directamente en Android. No necesitas root ni una computadora.</p>
+
+    <div class="guide-note">
+      <strong>Importante:</strong> Termux tiene su propio entorno de paquetes. No uses <code>apt install memingo</code>: los repositorios APT de Debian/Ubuntu y RPM de Fedora no son los repositorios de Termux. Esta guía usa el instalador compatible con Android.
+    </div>
+
+    <section class="guide-step">
+      <p class="eyebrow">PASO 01</p>
+      <h2>Prepara Termux</h2>
+      <p>Abre Termux y actualiza sus paquetes. Después instala Git y Python:</p>
+      <pre><code>pkg update
+pkg install -y git python</code></pre>
+    </section>
+
+    <section class="guide-step">
+      <p class="eyebrow">PASO 02</p>
+      <h2>Descarga Memingo</h2>
+      <p>Clona el repositorio que contiene el instalador Termux y entra en la carpeta:</p>
+      <pre><code>git clone -b feat/arch-aur-packaging https://github.com/Reaccionador2Jeje/Memingo.git
+cd Memingo</code></pre>
+      <div class="guide-note">
+        <strong>Nota sobre la versión:</strong> mientras el soporte Termux se encuentre en la rama de integración, usa el comando anterior con <code>-b feat/arch-aur-packaging</code>. Cuando esos cambios se integren en la rama principal, la guía se actualizará para usar la descarga normal.
+      </div>
+    </section>
+
+    <section class="guide-step">
+      <p class="eyebrow">PASO 03</p>
+      <h2>Ejecuta el instalador</h2>
+      <p>El instalador detecta Termux automáticamente y coloca los comandos en <code>$PREFIX/bin</code>:</p>
+      <pre><code>sh scripts/install.sh
+hash -r</code></pre>
+    </section>
+
+    <section class="guide-step">
+      <p class="eyebrow">PASO 04</p>
+      <h2>Comprueba que funciona</h2>
+      <p>Ejecuta ambos comandos para comprobar la instalación:</p>
+      <pre><code>memingo --version
+mgoa --version</code></pre>
+      <p>¡Listo! Ya puedes ejecutar Memingo y usar su gestor de paquetes desde Termux.</p>
+    </section>
+
+    <section class="guide-step">
+      <p class="eyebrow">MANTENIMIENTO</p>
+      <h2>Actualizar Memingo</h2>
+      <p>Entra en la carpeta que clonaste y vuelve a ejecutar el instalador después de descargar los cambios:</p>
+      <pre><code>cd Memingo
+git pull
+sh scripts/install.sh
+hash -r</code></pre>
+    </section>
+
+    <section class="guide-step">
+      <p class="eyebrow">DESINSTALACIÓN</p>
+      <h2>Quitar Memingo</h2>
+      <p>Desde la carpeta del repositorio ejecuta:</p>
+      <pre><code>sh scripts/uninstall.sh</code></pre>
+      <p>Esto elimina los comandos y el runtime instalado de Memingo; no borra tus proyectos personales.</p>
+    </section>
+
+    <section class="guide-step">
+      <p class="eyebrow">AYUDA</p>
+      <h2>¿El comando no aparece?</h2>
+      <p>Actualiza la caché de comandos de la terminal y comprueba que Termux tiene configurada su carpeta de ejecutables:</p>
+      <pre><code>hash -r
+echo "$PREFIX/bin"
+command -v memingo
+command -v mgoa</code></pre>
+      <p>Si sigue sin funcionar, revisa que <code>pkg install -y git python</code> terminó correctamente y vuelve a ejecutar <code>sh scripts/install.sh</code>.</p>
+    </section>
+
+    <div class="guide-links">
+      <a href="./">← Volver a Memingo</a>
+      <a href="https://github.com/Reaccionador2Jeje/Memingo">Repositorio en GitHub ↗</a>
+    </div>
+  </main>
+
+  <footer>
+    <a class="brand footer-brand" href="./"><img src="assets/memingo-mark.svg" alt=""><span>memingo</span></a>
+    <p>Code the bit.</p>
+    <nav aria-label="Footer"><a href="./#docs">Docs</a><a href="./#downloads">Descargas</a><a href="termux.html">Termux</a></nav>
+    <small>© 2026 AtDev. BSD 3-Clause.</small>
+  </footer>
+</body>
+</html>
