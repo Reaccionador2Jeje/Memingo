@@ -57,7 +57,7 @@ class LanguageServerTests(unittest.TestCase):
 
     def test_hover_uses_word_under_cursor(self):
         server = MemingoLanguageServer(io.BytesIO(), io.BytesIO())
-        server.documents["file:///main.mgo"] = "spill json_parse(\\"{}\\")"
+        server.documents["file:///main.mgo"] = 'spill json_parse("{}")'
         result = server._hover({"textDocument": {"uri": "file:///main.mgo"}, "position": {"line": 0, "character": 10}})
         self.assertIn("Función integrada", result["contents"]["value"])
 
