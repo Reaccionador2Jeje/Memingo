@@ -53,6 +53,20 @@ api_post(app, "/echo", echo)
         self.assertEqual(response.status, 200)
         self.assertEqual(response.body, '{"received": "based"}')
 
+    def test_invalid_json_body_returns_bad_request(self):
+        source = '''
+vibe app = api()
+ritual echo(request) {
+    drop request_json(request)
+}
+api_post(app, "/echo", echo)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/echo", "POST", body="{broken"))
+        self.assertEqual(response.status, 400)
+        self.assertIn("Request body is not valid JSON", response.body)
+
     def test_api_listen_uses_cli_host_and_port_defaults(self):
         app = self.interpreter._api_create()
         self.interpreter.api_host = "127.0.0.1"
