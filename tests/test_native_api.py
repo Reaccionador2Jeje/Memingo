@@ -127,6 +127,25 @@ api_get(app, "/", home)
         self.assertEqual(response.status, 200)
         self.assertEqual(response.body, '{"error": "blocked"}')
 
+    def test_middleware_next_can_only_be_called_once(self):
+        source = '''
+vibe app = api()
+ritual duplicate_next(request, next) {
+    next()
+    drop next()
+}
+ritual home(request) {
+    drop {status: "ok"}
+}
+api_use(app, duplicate_next)
+api_get(app, "/", home)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/"))
+        self.assertEqual(response.status, 500)
+        self.assertIn("Internal server error", response.body)
+
     def test_response_header_rejects_line_breaks(self):
         response = {
             "__memingo_response__": True,
