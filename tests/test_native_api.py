@@ -67,6 +67,66 @@ api_post(app, "/echo", echo)
         self.assertEqual(response.status, 400)
         self.assertIn("Request body is not valid JSON", response.body)
 
+    def test_native_middleware_can_add_response_header(self):
+        source = '''
+vibe app = api()
+ritual home(request) {
+    drop {status: "ok"}
+}
+ritual add_header(request, next) {
+    vibe response = next()
+    response_header(response, "X-Powered-By", "Memingo")
+    drop response
+}
+api_use(app, add_header)
+api_get(app, "/", home)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/"))
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.headers["X-Powered-By"], "Memingo")
+        self.assertEqual(response.body, '{"status": "ok"}')
+
+    def test_native_middleware_can_change_status_and_body(self):
+        source = '''
+vibe app = api()
+ritual home(request) {
+    drop {status: "original"}
+}
+ritual customize(request, next) {
+    vibe response = next()
+    response_status(response, 202)
+    response_body(response, "accepted")
+    drop response
+}
+api_use(app, customize)
+api_get(app, "/", home)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/"))
+        self.assertEqual(response.status, 202)
+        self.assertEqual(response.body, "accepted")
+
+    def test_native_middleware_can_short_circuit_route(self):
+        source = '''
+vibe app = api()
+ritual blocked(request, next) {
+    drop {error: "blocked"}
+}
+ritual home(request) {
+    drop {status: "should not run"}
+}
+api_use(app, blocked)
+api_get(app, "/", home)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/"))
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.body, '{"error": "blocked"}')
+
     def test_api_listen_uses_cli_host_and_port_defaults(self):
         app = self.interpreter._api_create()
         self.interpreter.api_host = "127.0.0.1"
