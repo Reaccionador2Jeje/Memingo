@@ -38,7 +38,7 @@ api_listen(app)
 Available built-ins:
 
 - `api()` creates a server application.
-- `api_get(app, path, ritual)`, `api_post(...)`, `api_put(...)`, and `api_delete(...)` register routes.
+- `api_get(app, path, ritual)`, `api_post(...)`, `api_put(...)`, `api_patch(...)`, and `api_delete(...)` register routes.
 - `api_route(app, methods, path, ritual)` registers one or more HTTP methods.
 - `request_json(request)` parses the incoming JSON body.
 - `api_use(app, ritual)` registers middleware. The ritual receives `(request, next)`.
