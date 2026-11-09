@@ -14,7 +14,10 @@ class ProjectToolsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
 
-            self.assertEqual(main(["init", temporary, "--name", "skibidi-app"]), 0)
+            init_output = io.StringIO()
+            with contextlib.redirect_stdout(init_output), contextlib.redirect_stderr(init_output):
+                init_result = main(["init", temporary, "--name", "skibidi-app"])
+            self.assertEqual(init_result, 0, init_output.getvalue())
             manifest = read_manifest(root)
             self.assertEqual(manifest["package"]["name"], "skibidi-app")
             self.assertTrue((root / "main.mgo").exists())
@@ -38,7 +41,10 @@ class ProjectToolsTests(unittest.TestCase):
     def test_run_directory_and_build_assets(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            self.assertEqual(main(["init", temporary, "--name", "run-app"]), 0)
+            init_output = io.StringIO()
+            with contextlib.redirect_stdout(init_output), contextlib.redirect_stderr(init_output):
+                init_result = main(["init", temporary, "--name", "run-app"])
+            self.assertEqual(init_result, 0, init_output.getvalue())
             (root / "main.mgo").write_text('spill "from project"\n', encoding="utf-8")
             (root / "assets").mkdir()
             (root / "assets" / "data.txt").write_text("asset", encoding="utf-8")
@@ -62,7 +68,10 @@ class ProjectToolsTests(unittest.TestCase):
     def test_commands_auto_create_project_files(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            self.assertEqual(main(["install", temporary]), 0)
+            install_output = io.StringIO()
+            with contextlib.redirect_stdout(install_output), contextlib.redirect_stderr(install_output):
+                install_result = main(["install", temporary])
+            self.assertEqual(install_result, 0, install_output.getvalue())
             self.assertTrue((root / "memingo.toml").exists())
             self.assertTrue((root / "main.mgo").exists())
             self.assertTrue((root / ".env").exists())
