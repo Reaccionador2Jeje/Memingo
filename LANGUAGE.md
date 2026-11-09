@@ -194,3 +194,20 @@ spill missing_value
 ```
 
 The CLI reports the undefined variable together with its source location, making larger projects easier to debug.
+
+
+## Modules and imports
+
+Use `import` to load a project module. Module files are resolved relative to the project directory. A module can be a single `.mgo` file or a folder containing `main.mgo`.
+
+```mgo
+import "math"
+spill math.sqrt(81)
+
+import "helpers/text" as text
+spill text.title_case("hello memingo")
+```
+
+Imported project modules execute once per interpreter and expose their top-level variables and rituals through a module namespace. Imports cannot use absolute paths or escape the project directory. Circular imports are rejected with a runtime error.
+
+The built-in `math` module currently exposes `sqrt`, `pow`, `sin`, `cos`, `tan`, `pi`, `e`, `floor` and `ceil`.
