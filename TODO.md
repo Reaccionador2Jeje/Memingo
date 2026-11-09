@@ -15,7 +15,8 @@
 - [x] Project-scoped text file helpers
 - [x] Better runtime error locations (line and column)
 - [ ] Better parser error snippets and source excerpts
-- [ ] Modules and imports
+- [x] Basic project modules and imports (file/folder entry, aliases, cache and cycle detection)
+- [ ] Package registry integration and versioned module dependencies
 - [ ] Standard library for games and apps
 - [ ] Native compiler or bytecode VM
 
