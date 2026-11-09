@@ -46,6 +46,10 @@ Lists and objects can span multiple lines, including trailing commas.
 
 Memingo includes an original playable voxel game inspired by block-building sandboxes. Play it at `site/game.html` or add the `.mgo` world configuration from [examples/minecraft.mgo](examples/minecraft.mgo).
 
+## Memingo 1.0 direction
+
+The long-term architecture and phased plan for building concise apps, servers, web projects and games is documented in [ARCHITECTURE.md](ARCHITECTURE.md). The roadmap is tracked in [TODO.md](TODO.md).
+
 ## Language reference
 
 See the complete syntax and standard library in [LANGUAGE.md](LANGUAGE.md).
