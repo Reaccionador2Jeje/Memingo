@@ -440,9 +440,14 @@ class Interpreter:
     def _response_header(self, response, name, value):
         if not isinstance(response, dict) or response.get("__memingo_response__") is not True:
             raise RuntimeErrorMemingo("response_header() requires the response returned by next()")
-        if not isinstance(name, str) or not isinstance(value, (str, int, float)):
-            raise RuntimeErrorMemingo("Response header name and value must be text or numbers")
-        response.setdefault("headers", {})[name] = str(value)
+        if not isinstance(name, str) or not re.fullmatch(r"[!#$%&'*+.^_\u0060|~0-9A-Za-z-]+", name):
+            raise RuntimeErrorMemingo("Response header name is invalid")
+        if not isinstance(value, (str, int, float)):
+            raise RuntimeErrorMemingo("Response header value must be text or a number")
+        rendered = str(value)
+        if "\\r" in rendered or "\\n" in rendered:
+            raise RuntimeErrorMemingo("Response header value cannot contain line breaks")
+        response.setdefault("headers", {})[name] = rendered
         return response
 
     def _response_status(self, response, status):
