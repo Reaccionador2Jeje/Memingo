@@ -46,6 +46,10 @@ Lists and objects can span multiple lines, including trailing commas.
 
 Memingo includes an original playable voxel game inspired by block-building sandboxes. Play it at `site/game.html` or add the `.mgo` world configuration from [examples/minecraft.mgo](examples/minecraft.mgo).
 
+## Memingo HTTP API
+
+Memingo also provides a route-based HTTP application API in Python. It supports GET/POST/PUT/DELETE routes, path parameters, request/response helpers, JSON responses and middleware. See [docs/SERVER.md](docs/SERVER.md) for a complete example. The static-file command `memingo serve` remains available.
+
 ## Language reference
 
 See the complete syntax and standard library in [LANGUAGE.md](LANGUAGE.md).
