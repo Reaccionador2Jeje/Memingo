@@ -2,7 +2,7 @@
 vibe app = api()
 
 ritual upload_page(request) {
-    drop response_html("<!doctype html><html><body><h1>Upload to Memingo</h1><form action='/upload' method='post' enctype='multipart/form-data'><label>Title <input name='title'></label><br><input type='file' name='asset' required><button type='submit'>Upload</button></form></body></html>")
+    drop response_html("<!doctype html><html><body><h1>Upload to Memingo</h1><form action='/upload' method='post' enctype='multipart/form-data'><label>Title <input name='title' required></label><br><input type='file' name='asset' required><button type='submit'>Upload</button></form></body></html>")
 }
 
 ritual upload_file(request) {
