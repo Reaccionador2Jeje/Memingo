@@ -62,28 +62,16 @@ def build_apt_repository(output, version, packages):
         with packages_file.open("rb") as source, gzip.open(str(packages_file) + ".gz", "wb") as target:
             shutil.copyfileobj(source, target)
 
+    # Let apt-ftparchive generate the canonical Release hash sections
+    # (MD5Sum, SHA1, SHA256 and SHA512) instead of hand-rolling them.
+    apt_ftparchive = shutil.which("apt-ftparchive")
+    if not apt_ftparchive:
+        print("APT repository: apt-ftparchive is required (install apt-utils)", file=sys.stderr)
+        return False
+
     release = distribution / "Release"
-    lines = [
-        "Origin: Memingo",
-        "Label: Memingo",
-        "Suite: stable",
-        "Codename: stable",
-        f"Date: {format_datetime(datetime.now(timezone.utc), usegmt=True)}",
-        f"Architectures: {' '.join(sorted(architectures))}",
-        "Components: main",
-        "Description: Memingo APT package repository",
-        "",
-    ]
-    hash_lines = []
-    for algorithm, function in (("SHA256", sha256), ("SHA512", sha512)):
-        hash_lines.append(f"{algorithm}:")
-        for relative in sorted(distribution.rglob("*")):
-            if not relative.is_file() or relative.name in {"Release", "Release.gpg", "InRelease"}:
-                continue
-            relative_path = relative.relative_to(distribution).as_posix()
-            hash_lines.append(f" {function(relative)} {relative.stat().st_size} {relative_path}")
-    lines.extend(hash_lines)
-    release.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    with release.open("w", encoding="utf-8") as stream:
+        subprocess.run([apt_ftparchive, "release", "."], cwd=distribution, stdout=stream, check=True)
     return True
 
 def build_rpm_repository(output, packages):
