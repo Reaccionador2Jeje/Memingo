@@ -57,7 +57,7 @@ gpg --armor --export-secret-keys "$GPG_KEY_ID" | base64 -w0 > memingo-private-ke
 Add these GitHub Actions repository secrets under Settings > Secrets and variables > Actions:
 
 - `MEMINGO_GPG_KEY_ID`: the long key fingerprint or key ID.
-- `MEMINGO_GPG_PASSPHRASE`: the key passphrase. Use an empty passphrase for a noninteractive CI-only key.
+- `MEMINGO_GPG_PASSPHRASE`: the key passphrase. Prefer a strong passphrase stored only as this Actions secret; never commit it or paste it into issues, pull requests, or chat.
 - `MEMINGO_GPG_PRIVATE_KEY`: the Base64 content of `memingo-private-key.base64`.
 
 To publish a release:
