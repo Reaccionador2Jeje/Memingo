@@ -141,14 +141,11 @@ class MemingoAPIServer:
         address = self.start(host, port)
         print(f"Memingo API listening at http://{address['host']}:{address['port']}")
         try:
-            self.httpd.serve_forever()
+            self.thread.join()
         except KeyboardInterrupt:
             pass
         finally:
-            self.httpd.server_close()
-            self.httpd = None
-            self.thread = None
-        return None
+            self.stop()
 
     def api(self):
         return {
