@@ -219,15 +219,15 @@ def _hover(self, params: dict):
 
     def run(self) -> int:
         while True:
-            header = self.reader.readline()
-            if not header:
+            first = self.reader.readline()
+            if not first:
                 return 0
-            if header in (b"\\r\\n", b"\\n"):
+            if first in (b"\r\n", b"\n"):
                 continue
             try:
                 headers = {}
-                current = header
-                while current not in (b"\\r\\n", b"\\n", b""):
+                current = first
+                while current not in (b"\r\n", b"\n", b""):
                     if b":" in current:
                         name, value = current.split(b":", 1)
                         headers[name.strip().lower()] = value.strip()
@@ -248,7 +248,6 @@ def _hover(self, params: dict):
                     return 0
             except (ValueError, UnicodeError, json.JSONDecodeError):
                 continue
-
 
 def run_language_server() -> int:
     return MemingoLanguageServer().run()
