@@ -79,7 +79,7 @@ class ApiCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             app_file = Path(directory) / "app.py"
             app_file.write_text(
-                "from memingo import MemingoApp\\napp = MemingoApp()\\n",
+                "from memingo import MemingoApp\napp = MemingoApp()\n",
                 encoding="utf-8",
             )
             with patch("memingo.__main__.serve_app") as start_server:
@@ -93,7 +93,7 @@ class ApiCliTests(unittest.TestCase):
     def test_serve_api_requires_memingo_app_export(self):
         with tempfile.TemporaryDirectory() as directory:
             app_file = Path(directory) / "app.py"
-            app_file.write_text("app = object()\\n", encoding="utf-8")
+            app_file.write_text("app = object()\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "must export 'app = MemingoApp"):
                 serve_api(str(app_file))
 
