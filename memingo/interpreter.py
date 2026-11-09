@@ -4,6 +4,7 @@ import os
 import random
 import re
 import time
+import threading
 import urllib.request
 import uuid
 from pathlib import Path
@@ -150,6 +151,7 @@ class Interpreter:
         self.api_host = "127.0.0.1"
         self.api_port = 8000
         self.api_server_started = False
+        self._api_execution_lock = threading.RLock()
 
     def run(self, program):
         try:
@@ -377,9 +379,11 @@ class Interpreter:
                 "headers": request.headers,
                 "body": request.text(),
             }
-            if isinstance(handler, MemingoFunction):
-                return handler.call(self, [request_data])
-            return handler(request_data)
+            # The HTTP server is threaded; protect the interpreter's shared scope.
+            with self._api_execution_lock:
+                if isinstance(handler, MemingoFunction):
+                    return handler.call(self, [request_data])
+                return handler(request_data)
 
         app.route(path, tuple(methods), dispatch)
         return app
