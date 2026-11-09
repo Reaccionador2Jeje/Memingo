@@ -44,7 +44,7 @@ Lists and objects can span multiple lines, including trailing commas.
 
 ## Memingo Language Server
 
-Memingo includes a dependency-free Language Server Protocol server. Start it with `memingo lsp --stdio` after installing the runtime. It provides parser diagnostics, keyword and standard-library completions, hover documentation, go-to-definition and document symbols. See [docs/LANGUAGE_SERVER.md](docs/LANGUAGE_SERVER.md).
+Memingo includes a dependency-free Language Server Protocol server. Start it with `memingo lsp --stdio` after installing the runtime. It provides parser diagnostics, keyword and standard-library completions, hover documentation, go-to-definition, references, safe local symbol rename and document symbols. See [docs/LANGUAGE_SERVER.md](docs/LANGUAGE_SERVER.md).
 
 ## MemeCraft
 
