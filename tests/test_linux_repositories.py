@@ -40,13 +40,13 @@ class LinuxRepositorySelectionTests(unittest.TestCase):
             package.write_bytes(b"fake deb")
             def package_architecture(command, text=True):
                 return "arm64"
-            with mock.patch.object(MODULE.shutil, "which", return_value="/usr/bin/dpkg-scanpackages"), mock.patch.object(
+            with mock.patch.object(MODULE.shutil, "which", side_effect=lambda name: f"/usr/bin/{name}"), mock.patch.object(
                 MODULE.subprocess, "check_output", side_effect=package_architecture
             ), mock.patch.object(MODULE.subprocess, "run") as run:
                 def fake_run(command, **kwargs):
-                    if command[0] == "/usr/bin/dpkg-scanpackages":
+                    if command[0].endswith("dpkg-scanpackages"):
                         return SimpleNamespace(stdout="")
-                    return SimpleNamespace(stdout="MD5Sum:\\n abc 1 sample\\nSHA1:\\n def 1 sample\\nSHA256:\\n ghi 1 sample\\nSHA512:\\n jkl 1 sample\\n")
+                    return SimpleNamespace(stdout="MD5Sum:\n abc 1 sample\nSHA1:\n def 1 sample\nSHA256:\n ghi 1 sample\nSHA512:\n jkl 1 sample\n")
                 run.side_effect = fake_run
                 result = MODULE.build_apt_repository(output, None, [package])
             self.assertTrue(result)
