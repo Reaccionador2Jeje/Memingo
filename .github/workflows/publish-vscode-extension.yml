@@ -16,17 +16,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Package VSIX
+      - name: Package Web VSIX
         working-directory: vscode-extension
         run: |
-          npx --yes @vscode/vsce package
+          npx --yes @vscode/vsce package --target web
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
         with:
-          name: memingo-vscode-extension
+          name: memingo-vscode-extension-web
           path: vscode-extension/*.vsix
           if-no-files-found: error
-      - name: Publish to Visual Studio Marketplace with OIDC
+      - name: Publish Web Extension to Visual Studio Marketplace with OIDC
         working-directory: vscode-extension
         run: |
-          npx --yes @vscode/vsce publish --oidc
+          npx --yes @vscode/vsce publish --target web --oidc
