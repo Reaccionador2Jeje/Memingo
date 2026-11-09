@@ -252,7 +252,7 @@ api_get(app, "/missing", missing)
         with self.assertRaisesRegex(RuntimeErrorMemingo, "Redirect status"):
             self.interpreter._response_redirect("/new", 200)
         with self.assertRaisesRegex(RuntimeErrorMemingo, "line breaks"):
-            self.interpreter._response_redirect("/new\\r\\nX-Evil: yes")
+            self.interpreter._response_redirect("/new\r\nX-Evil: yes")
 
     def test_api_listen_uses_cli_host_and_port_defaults(self):
         app = self.interpreter._api_create()
