@@ -8,7 +8,7 @@ url="https://github.com/Reaccionador2Jeje/Memingo"
 license=('BSD-3-Clause')
 depends=('python>=3.10')
 makedepends=('git' 'python-build' 'python-installer' 'python-setuptools' 'python-wheel')
-source=("git+https://github.com/Reaccionador2Jeje/Memingo.git")
+source=("git+https://github.com/Reaccionador2Jeje/Memingo.git#tag=v${pkgver}")
 sha256sums=('SKIP')
 
 build() {
