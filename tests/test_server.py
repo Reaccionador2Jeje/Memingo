@@ -105,14 +105,14 @@ class MemingoServerTests(unittest.TestCase):
     def test_multipart_request_parses_fields_and_sanitizes_filename(self):
         boundary = "MGO-BOUNDARY"
         body = (
-            f"--{boundary}\\r\\n"
-            'Content-Disposition: form-data; name="title"\\r\\n\\r\\n'
-            "hello\\r\\n"
-            f"--{boundary}\\r\\n"
-            'Content-Disposition: form-data; name="asset"; filename="../folder\\\\unsafe.txt"\\r\\n'
-            "Content-Type: text/plain\\r\\n\\r\\n"
-            "sample bytes\\r\\n"
-            f"--{boundary}--\\r\\n"
+            f"--{boundary}\r\n"
+            'Content-Disposition: form-data; name="title"\r\n\r\n'
+            "hello\r\n"
+            f"--{boundary}\r\n"
+            'Content-Disposition: form-data; name="asset"; filename="../folder\\\\unsafe.txt"\r\n'
+            "Content-Type: text/plain\r\n\r\n"
+            "sample bytes\r\n"
+            f"--{boundary}--\r\n"
         ).encode("utf-8")
         handler = type("Handler", (), {
             "command": "POST",
@@ -132,10 +132,10 @@ class MemingoServerTests(unittest.TestCase):
         boundary = "MGO-LIMIT"
         payload = b"x" * (5 * 1024 * 1024 + 1)
         body = (
-            f"--{boundary}\\r\\n"
-            'Content-Disposition: form-data; name="asset"; filename="large.bin"\\r\\n'
-            "Content-Type: application/octet-stream\\r\\n\\r\\n"
-        ).encode() + payload + f"\\r\\n--{boundary}--\\r\\n".encode()
+            f"--{boundary}\r\n"
+            'Content-Disposition: form-data; name="asset"; filename="large.bin"\r\n'
+            "Content-Type: application/octet-stream\r\n\r\n"
+        ).encode() + payload + f"\r\n--{boundary}--\r\n".encode()
         handler = type("Handler", (), {
             "command": "POST",
             "path": "/upload",
