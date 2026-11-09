@@ -104,7 +104,14 @@ class MemingoLanguageServer:
                  for label in dict.fromkeys(labels)]
         return {"isIncomplete": False, "items": items[:200]}
 
-    def _hover(self, params: dict):
+    def _word_at(line_text: str, character: int):
+    for match in re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", line_text):
+        if match.start() <= character <= match.end():
+            return match.group(0)
+    return None
+
+
+def _hover(self, params: dict):
         uri, source = self._document(params)
         position = (params.get("position") or {})
         line = int(position.get("line", 0))
@@ -137,13 +144,9 @@ class MemingoLanguageServer:
         if line < 0 or line >= len(lines):
             return None
         segment = lines[line]
-        before = segment[:character]
-        match = re.search(r"([A-Za-z_][A-Za-z0-9_]*)$", before)
-        if not match:
-            match = re.search(r"[A-Za-z_][A-Za-z0-9_]*", segment[character:])
-        if not match:
+        name = _word_at(segment, character)
+        if not name:
             return None
-        name = match.group(1)
         symbol = next((s for s in _symbols(source) if s["name"] == name), None)
         if not symbol:
             return None
