@@ -107,13 +107,16 @@ api_listen(app)
 - `api_get(app, path, ritual)`, `api_post(...)`, `api_put(...)`, `api_patch(...)`, and `api_delete(...)` register routes.
 - `api_route(app, methods, path, ritual)` registers custom methods.
 - `request_json(request)` parses a request's JSON body.
+- `request_form(request)` parses URL-encoded and multipart form fields.
+- `request_files(request)` returns uploaded file records, including binary data and metadata.
+- `save_upload(file, directory?)` stores an uploaded file safely inside the project using a generated filename.
 - `response_json(data, status?, headers?)`, `response_text(text, status?, headers?)`, and `response_html(html, status?, headers?)` create explicit HTTP responses.
 - `response_redirect(location, status?)` creates a redirect; `response_error(status, message)` creates a JSON error response.
 - `api_use(app, ritual)` registers middleware with `(request, next)` parameters.
 - `response_header(response, name, value)`, `response_status(response, status)`, and `response_body(response, body)` modify a response returned by `next()`.
 - `api_listen(app, host?, port?)` starts listening. The default host is `127.0.0.1` and port is `8000`.
 
-The route ritual receives a request object with `method`, `path`, `query`, `params`, `headers`, and `body`. Return an object or list for JSON, a string for text, or `ghost` for an empty 204 response. Middleware runs in registration order; call `next()` to continue, or return an object to stop the chain early. `next()` returns a response that can be changed with the response helpers. Run a server with `memingo api server.mgo`. See [docs/SERVER.md](docs/SERVER.md).
+The route ritual receives a request object with `method`, `path`, `query`, `params`, `headers`, `body`, `form`, and `files`. Request bodies are limited to 10 MB and individual uploaded files to 5 MB. Upload storage stays inside the project directory. See the upload example at `examples/native_uploads.mgo`. Return an object or list for JSON, a string for text, or `ghost` for an empty 204 response. Middleware runs in registration order; call `next()` to continue, or return an object to stop the chain early. `next()` returns a response that can be changed with the response helpers. Run a server with `memingo api server.mgo`. See [docs/SERVER.md](docs/SERVER.md).
 
 ## Standard library
 
