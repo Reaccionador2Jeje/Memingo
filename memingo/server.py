@@ -1,9 +1,15 @@
 """Memingo HTTP application server with routes, request/response helpers and middleware."""
 import json
 import re
+from email.parser import BytesParser
+from email.policy import default as email_policy
 from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
+
+
+MAX_REQUEST_BODY_SIZE = 10 * 1024 * 1024
+MAX_UPLOAD_FILE_SIZE = 5 * 1024 * 1024
 
 
 class Request:
@@ -18,9 +24,75 @@ class Request:
         self.params = dict(params or {})
         self.headers = dict(handler.headers.items())
         self.body = handler.rfile.read(int(handler.headers.get("Content-Length", "0") or 0))
+        self._form_cache = None
+        self._files_cache = None
 
-    def text(self, encoding="utf-8"):
-        return self.body.decode(encoding)
+    def text(self, encoding="utf-8", errors="strict"):
+        return self.body.decode(encoding, errors=errors)
+
+    def form(self):
+        """Parse URL-encoded or multipart form fields."""
+        if self._form_cache is not None:
+            return self._form_cache
+        content_type = self.headers.get("Content-Type", "")
+        if content_type.lower().startswith("application/x-www-form-urlencoded"):
+            parsed = parse_qs(self.text(errors="replace"), keep_blank_values=True)
+            self._form_cache = {
+                key: values[-1] if len(values) == 1 else values
+                for key, values in parsed.items()
+            }
+            self._files_cache = []
+            return self._form_cache
+        if not content_type.lower().startswith("multipart/form-data"):
+            self._form_cache = {}
+            self._files_cache = []
+            return self._form_cache
+
+        header = (
+            "Content-Type: " + content_type + "\r\n"
+            "MIME-Version: 1.0\r\n\r\n"
+        ).encode("utf-8")
+        message = BytesParser(policy=email_policy).parsebytes(header + self.body)
+        if not message.is_multipart():
+            raise ValueError("Malformed multipart form data")
+
+        fields = {}
+        files = []
+        for part in message.iter_parts():
+            if part.get_content_disposition() != "form-data":
+                continue
+            field_name = part.get_param("name", header="content-disposition")
+            if not isinstance(field_name, str) or not field_name:
+                continue
+            raw_filename = part.get_filename()
+            payload = part.get_payload(decode=True) or b""
+            if raw_filename is not None:
+                filename = raw_filename.replace("\\", "/").split("/")[-1]
+                files.append({
+                    "field": field_name,
+                    "filename": filename,
+                    "content_type": part.get_content_type(),
+                    "size": len(payload),
+                    "data": payload,
+                })
+                continue
+            charset = part.get_content_charset() or "utf-8"
+            value = payload.decode(charset, errors="replace")
+            if field_name in fields:
+                if not isinstance(fields[field_name], list):
+                    fields[field_name] = [fields[field_name]]
+                fields[field_name].append(value)
+            else:
+                fields[field_name] = value
+
+        self._form_cache = fields
+        self._files_cache = files
+        return fields
+
+    def files(self):
+        if self._files_cache is None:
+            self.form()
+        return list(self._files_cache or [])
 
     def json(self):
         if not self.body:
@@ -170,8 +242,22 @@ def serve_app(app, host="127.0.0.1", port=8000):
         def do_HEAD(self): self._dispatch()
 
         def _dispatch(self):
+            try:
+                content_length = int(self.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                self._send_response(Response.json({"error": "Invalid Content-Length"}, 400))
+                return
+            if content_length < 0:
+                self._send_response(Response.json({"error": "Invalid Content-Length"}, 400))
+                return
+            if content_length > MAX_REQUEST_BODY_SIZE:
+                self._send_response(Response.json({"error": "Request body too large"}, 413))
+                return
             request = Request(self)
             response = app.dispatch(request)
+            self._send_response(response)
+
+        def _send_response(self, response):
             payload = response.body if isinstance(response.body, bytes) else str(response.body).encode("utf-8")
             self.send_response(response.status)
             self.send_header("Content-Type", response.content_type)
