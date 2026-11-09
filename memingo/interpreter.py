@@ -9,7 +9,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-from .server import MemingoApp, serve_app
+from .server import MemingoApp, Response, serve_app
 from .parser import (
     Assign, Binary, Borrow, Call, Function, Get, If, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
@@ -146,6 +146,10 @@ class Interpreter:
         self.global_environment.define("api_post", lambda app, path, handler: self._api_route(app, ("POST",), path, handler))
         self.global_environment.define("api_put", lambda app, path, handler: self._api_route(app, ("PUT",), path, handler))
         self.global_environment.define("api_delete", lambda app, path, handler: self._api_route(app, ("DELETE",), path, handler))
+        self.global_environment.define("api_use", self._api_use)
+        self.global_environment.define("response_header", self._response_header)
+        self.global_environment.define("response_status", self._response_status)
+        self.global_environment.define("response_body", self._response_body)
         self.global_environment.define("request_json", self._request_json)
         self.global_environment.define("api_listen", self._api_listen)
         self.api_host = "127.0.0.1"
@@ -392,6 +396,68 @@ class Interpreter:
 
         app.route(path, tuple(methods), dispatch)
         return app
+
+    def _api_use(self, app, middleware):
+        if not isinstance(app, MemingoApp):
+            raise RuntimeErrorMemingo("api_use() requires an app created by api()")
+        if not isinstance(middleware, MemingoFunction):
+            raise RuntimeErrorMemingo("api_use() requires a ritual with parameters (request, next)")
+
+        def middleware_adapter(request, next_handler):
+            request_data = {
+                "method": request.method,
+                "path": request.path,
+                "query": request.query,
+                "params": request.params,
+                "headers": request.headers,
+                "body": request.text(),
+            }
+
+            def next_adapter():
+                response = next_handler()
+                return {
+                    "__memingo_response__": True,
+                    "status": response.status,
+                    "body": response.body.decode("utf-8", errors="replace") if isinstance(response.body, bytes) else response.body,
+                    "headers": dict(response.headers),
+                    "content_type": response.content_type,
+                }
+
+            with self._api_execution_lock:
+                result = middleware.call(self, [request_data, next_adapter])
+            if isinstance(result, dict) and result.get("__memingo_response__") is True:
+                return Response(
+                    result.get("body", ""),
+                    status=result.get("status", 200),
+                    headers=result.get("headers", {}),
+                    content_type=result.get("content_type", "text/plain; charset=utf-8"),
+                )
+            return result
+
+        app.use(middleware_adapter)
+        return app
+
+    def _response_header(self, response, name, value):
+        if not isinstance(response, dict) or response.get("__memingo_response__") is not True:
+            raise RuntimeErrorMemingo("response_header() requires the response returned by next()")
+        if not isinstance(name, str) or not isinstance(value, (str, int, float)):
+            raise RuntimeErrorMemingo("Response header name and value must be text or numbers")
+        response.setdefault("headers", {})[name] = str(value)
+        return response
+
+    def _response_status(self, response, status):
+        if not isinstance(response, dict) or response.get("__memingo_response__") is not True:
+            raise RuntimeErrorMemingo("response_status() requires the response returned by next()")
+        if not isinstance(status, int) or isinstance(status, bool) or not 100 <= status <= 599:
+            raise RuntimeErrorMemingo("Response status must be an integer from 100 to 599")
+        response["status"] = status
+        return response
+
+    def _response_body(self, response, body):
+        if not isinstance(response, dict) or response.get("__memingo_response__") is not True:
+            raise RuntimeErrorMemingo("response_body() requires the response returned by next()")
+        response["body"] = body if isinstance(body, (str, bytes)) else json.dumps(body, ensure_ascii=False)
+        return response
 
     def _request_json(self, request):
         if not isinstance(request, dict) or "body" not in request:
