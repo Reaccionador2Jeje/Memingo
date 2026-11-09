@@ -45,10 +45,10 @@ class Response:
             value = str(value)
             if not re.fullmatch(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+", name):
                 raise ValueError("Invalid HTTP response header name")
-            if "\\r" in value or "\\n" in value:
+            if "\r" in value or "\n" in value:
                 raise ValueError("HTTP response header values cannot contain line breaks")
             safe_headers[name] = value
-        if not isinstance(content_type, str) or "\\r" in content_type or "\\n" in content_type:
+        if not isinstance(content_type, str) or "\r" in content_type or "\n" in content_type:
             raise ValueError("Invalid HTTP response content type")
         self.body = body
         self.status = status
