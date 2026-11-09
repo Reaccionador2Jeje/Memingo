@@ -84,7 +84,10 @@ class Request:
                 })
                 continue
             charset = part.get_content_charset() or "utf-8"
-            value = payload.decode(charset, errors="replace")
+            try:
+                value = payload.decode(charset, errors="replace")
+            except LookupError:
+                value = payload.decode("utf-8", errors="replace")
             if field_name in fields:
                 if not isinstance(fields[field_name], list):
                     fields[field_name] = [fields[field_name]]
