@@ -27,6 +27,25 @@ from .completion import memingo_completion
 from .lsp import run_language_server
 
 
+def run_ide_web(host="127.0.0.1", port=3000) -> int:
+    """Launch the separately installed Memingo IDE Web server."""
+    executable = shutil.which("memingo-ide-web")
+    if not executable:
+        print(
+            "Memingo IDE Web no está instalado o no está disponible en PATH.\n"
+            "Desde el repositorio Memingo-IDE ejecuta: npm install && npm link",
+            file=sys.stderr,
+        )
+        return 127
+    print(f"Memingo IDE Web: http://127.0.0.1:{port}")
+    print("Presiona Ctrl+C para detener el servidor.")
+    try:
+        return subprocess.call([executable, "--host", host, "--port", str(port)])
+    except OSError as exception:
+        print(f"Memingo IDE Web error: {exception}", file=sys.stderr)
+        return 1
+
+
 def serve_api(path="app.py", host="127.0.0.1", port=8000) -> int:
     """Run a native .mgo API or a Python module exporting a MemingoApp."""
     source_path = Path(path).resolve()
@@ -616,12 +635,16 @@ def _main(argv=None) -> int:
     completion_parser = subparsers.add_parser("completion", help="Print shell completion scripts")
     completion_parser.add_argument("shell", choices=("bash", "zsh", "fish"))
 
+    ide_parser = subparsers.add_parser("ide", help="Launch Memingo IDE Web on localhost")
+    ide_parser.add_argument("--host", default="127.0.0.1", help="Local interface (loopback only)")
+    ide_parser.add_argument("--port", type=int, default=3000, help="HTTP port (default: 3000)")
+
     lsp_parser = subparsers.add_parser("lsp", help="Start the Memingo Language Server Protocol server")
     lsp_parser.add_argument("--stdio", action="store_true", help="Use the standard LSP stdio transport")
 
     args = parser.parse_args(argv)
 
-    raw_output_commands = {"completion", "lsp", "run", "debug", "eval", "repl", "dev", "serve", "api", "test"}
+    raw_output_commands = {"completion", "ide", "lsp", "run", "debug", "eval", "repl", "dev", "serve", "api", "test"}
     if args.command not in raw_output_commands and args.command is not None:
         command_header("memingo", args.command)
 
@@ -680,6 +703,14 @@ def _main(argv=None) -> int:
         return check_sources(args.paths)
     if args.command == "lsp":
         return run_language_server()
+    if args.command == "ide":
+        if not 1 <= args.port <= 65535:
+            error("Memingo IDE Web port must be between 1 and 65535.")
+            return 2
+        if args.host not in ("127.0.0.1", "localhost", "::1"):
+            error("Memingo IDE Web solo permite interfaces localhost por seguridad.")
+            return 2
+        return run_ide_web(args.host, args.port)
     if args.command == "completion":
         try:
             print(memingo_completion(args.shell), end="")
