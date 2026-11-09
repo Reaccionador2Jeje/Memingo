@@ -48,7 +48,7 @@ Memingo includes a dependency-free Language Server Protocol server. Start it wit
 
 ## Memingo IDE Web
 
-Memingo can launch the browser edition of the IDE on your device with `memingo ide` (default: `http://127.0.0.1:3000`). Install/link the Memingo IDE Web command once from the [Memingo-IDE repository](https://github.com/Reaccionador2Jeje/Memingo-IDE) using `npm install && npm link`, then run:
+Memingo can launch the browser edition of the IDE on your device with `memingo ide` (default: `http://127.0.0.1:3000`). Install/link the Memingo IDE Web command once from the [Memingo-IDE repository](https://github.com/Reaccionador2Jeje/Memingo-IDE) using `npm link` (the web server itself has no npm runtime dependencies), then run:
 
 ```bash
 memingo ide
