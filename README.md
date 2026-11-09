@@ -42,6 +42,10 @@ Operators include arithmetic, comparison, equality, `&&`, `||`, and `!`.
 Built-ins include `headcount()`, `whatkind()`, `json_parse()`, `json_stringify()`, `env()`, `range()`, `keys()`, `push()`, `append()`, `set_value()`, `delete_key()`, `random()`, `random_int()`, `http_get()`, and `http_post()`.
 Lists and objects can span multiple lines, including trailing commas.
 
+## Memingo Language Server
+
+Memingo includes a dependency-free Language Server Protocol server. Start it with `memingo lsp --stdio` after installing the runtime. It provides parser diagnostics, keyword and standard-library completions, hover documentation, go-to-definition and document symbols. See [docs/LANGUAGE_SERVER.md](docs/LANGUAGE_SERVER.md).
+
 ## MemeCraft
 
 Memingo includes an original playable voxel game inspired by block-building sandboxes. Play it at `site/game.html` or add the `.mgo` world configuration from [examples/minecraft.mgo](examples/minecraft.mgo).
