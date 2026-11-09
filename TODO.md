@@ -55,12 +55,18 @@
 - [x] Static HTTP serving
 - [x] `memingo serve` launcher
 - [x] HTTP client GET/POST and JSON helpers
-- [ ] Memingo HTTP server API
-- [ ] Routes, methods and middleware
-- [ ] Request and response objects
+- [x] Memingo HTTP server API
+- [x] GET/POST/PUT/PATCH/DELETE routes, dynamic route parameters and middleware
+- [x] Request and response objects
 - [ ] Templates
-- [ ] JSON and file uploads
+- [x] JSON request and response support
+- [ ] File uploads
 - [ ] Hot reload
+
+## Data
+- [x] Project-scoped SQLite database helper
+- [ ] PostgreSQL adapter and connection pooling
+- [ ] Database migrations and schema tools
 
 ## Tooling
 - [x] Syntax highlighter
