@@ -8,6 +8,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+from .http_api import MemingoAPIServer
 from .parser import (
     Assign, Binary, Borrow, Call, Function, Get, If, ImportModule, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
@@ -100,6 +101,7 @@ class Interpreter:
                 name, value = line.split("=", 1)
                 os.environ.setdefault(name.strip(), value.strip().strip('"').strip("'"))
         self.global_environment = Environment()
+        self.global_environment.define("http_server", lambda: MemingoAPIServer(self).api())
         self.global_environment.define("math", {
             "sqrt": math.sqrt, "pow": pow, "sin": math.sin, "cos": math.cos,
             "tan": math.tan, "pi": math.pi, "e": math.e,
