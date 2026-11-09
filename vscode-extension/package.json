@@ -2,7 +2,7 @@
   "name": "memingo",
   "displayName": "Memingo",
   "description": "Memingo language support, commands and project tooling for Visual Studio Code.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "atdev",
   "icon": "./branding/memingo-icon.png",
   "engines": {
@@ -132,5 +132,6 @@
     "color": "#FFCF3A",
     "theme": "light"
   },
-  "changelog": "CHANGELOG.md"
+  "changelog": "CHANGELOG.md",
+  "browser": "./extension.web.js"
 }
