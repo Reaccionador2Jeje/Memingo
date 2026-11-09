@@ -15,7 +15,20 @@ from .parser import (
 
 
 class RuntimeErrorMemingo(Exception):
-    pass
+    """Runtime error with optional source location."""
+
+    def __init__(self, message, line=None, column=None):
+        super().__init__(message)
+        self.line = line
+        self.column = column
+
+    def __str__(self):
+        message = super().__str__()
+        if self.line is None:
+            return message
+        if self.column is None:
+            return f"{message} at line {self.line}"
+        return f"{message} at line {self.line}, column {self.column}"
 
 
 class ReturnSignal(Exception):
@@ -151,7 +164,14 @@ class Interpreter:
         try:
             result = None
             for statement in statements:
-                result = self.execute(statement)
+                try:
+                    result = self.execute(statement)
+                except RuntimeErrorMemingo as error:
+                    # Keep the innermost source location while errors bubble up.
+                    if error.line is None:
+                        error.line = getattr(statement, "line", None)
+                        error.column = getattr(statement, "column", None)
+                    raise
             return result
         finally:
             self.environment = previous
