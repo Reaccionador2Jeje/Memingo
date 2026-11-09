@@ -26,7 +26,14 @@ class MemingoAPIServer:
         names = re.findall(r"\{([A-Za-z_][A-Za-z0-9_]*)\}", path)
         if len(names) != len(set(names)):
             raise ValueError("Route parameter names must be unique")
-        pattern = re.sub(r"\{[A-Za-z_][A-Za-z0-9_]*\}", r"([^/]+)", path)
+        parts = re.split(r"(\{[A-Za-z_][A-Za-z0-9_]*\})", path)
+        pattern_parts = []
+        for part in parts:
+            if part.startswith("{") and part.endswith("}"):
+                pattern_parts.append("([^/]+)")
+            else:
+                pattern_parts.append(re.escape(part))
+        pattern = "".join(pattern_parts)
         self.routes[(method, path)] = (re.compile("^" + pattern + "$"), names, handler)
         return self
 
