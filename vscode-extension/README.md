@@ -43,3 +43,9 @@ code vscode-extension
 Press `F5` to open an Extension Development Host.
 
 Install Memingo on your system before running commands. Use `memingo doctor` for diagnostics.
+
+## VS Code for the Web
+
+Memingo supports `vscode.dev` and `github.dev` for syntax highlighting, file icons and snippets.
+
+Commands that require the Memingo CLI or a local shell (`Run`, `REPL`, `Serve` and package management) are not available in the browser editor. Use desktop VS Code to run those commands.
