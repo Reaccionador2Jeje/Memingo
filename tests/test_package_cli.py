@@ -51,8 +51,10 @@ class PackageCliTests(unittest.TestCase):
                 '[package]\nname = "empty"\nversion = "0.1.0"\nentry = "main.mgo"\n\n[dependencies]\n',
                 encoding="utf-8",
             )
-            self.assertEqual(main(["install", temporary]), 0)
-            self.assertEqual(main(["update", temporary]), 0)
+            install_code, install_output = run_cli(["install", temporary])
+            self.assertEqual(install_code, 0, install_output)
+            update_code, update_output = run_cli(["update", temporary])
+            self.assertEqual(update_code, 0, update_output)
 
     def test_manifest_command_creates_missing_manifest(self):
         with tempfile.TemporaryDirectory() as temporary:
