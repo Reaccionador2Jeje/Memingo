@@ -2,6 +2,16 @@
 
 Memingo 0.3 adds a small Python application API alongside the existing static-file server.
 
+## Quick start
+
+A runnable example is included in `examples/api.py`. From the repository root, start it with:
+
+```bash
+python -m memingo api examples/api.py
+```
+
+Then open `http://127.0.0.1:8000/` or try `/hello/Cris`.
+
 ## Create an API
 
 Create `app.py`:
