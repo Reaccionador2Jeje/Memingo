@@ -1,5 +1,6 @@
 import importlib.util
 import tempfile
+from types import SimpleNamespace
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -42,6 +43,11 @@ class LinuxRepositorySelectionTests(unittest.TestCase):
             with mock.patch.object(MODULE.shutil, "which", return_value="/usr/bin/dpkg-scanpackages"), mock.patch.object(
                 MODULE.subprocess, "check_output", side_effect=package_architecture
             ), mock.patch.object(MODULE.subprocess, "run") as run:
+                def fake_run(command, **kwargs):
+                    if command[0] == "/usr/bin/dpkg-scanpackages":
+                        return SimpleNamespace(stdout="")
+                    return SimpleNamespace(stdout="MD5Sum:\\n abc 1 sample\\nSHA1:\\n def 1 sample\\nSHA256:\\n ghi 1 sample\\nSHA512:\\n jkl 1 sample\\n")
+                run.side_effect = fake_run
                 result = MODULE.build_apt_repository(output, None, [package])
             self.assertTrue(result)
             release = (output / "apt" / "dists" / "stable" / "Release").read_text(encoding="utf-8")
