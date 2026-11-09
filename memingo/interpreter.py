@@ -9,6 +9,7 @@ import uuid
 from pathlib import Path
 
 from .http_api import MemingoAPIServer
+from .database import MemingoSQLite
 from .parser import (
     Assign, Binary, Borrow, Call, Function, Get, If, ImportModule, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
@@ -102,6 +103,7 @@ class Interpreter:
                 os.environ.setdefault(name.strip(), value.strip().strip('"').strip("'"))
         self.global_environment = Environment()
         self.global_environment.define("http_server", lambda: MemingoAPIServer(self).api())
+        self.global_environment.define("sqlite", lambda filename: MemingoSQLite(self.project_directory, filename).api())
         self.global_environment.define("math", {
             "sqrt": math.sqrt, "pow": pow, "sin": math.sin, "cos": math.cos,
             "tan": math.tan, "pi": math.pi, "e": math.e,
