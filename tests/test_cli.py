@@ -90,6 +90,21 @@ class ApiCliTests(unittest.TestCase):
                 self.assertEqual(port, 8123)
                 self.assertEqual(type(app).__name__, "MemingoApp")
 
+    def test_serve_api_runs_native_mgo_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app_file = Path(directory) / "server.mgo"
+            app_file.write_text(
+                'vibe app = api()\napi_listen(app)\n',
+                encoding="utf-8",
+            )
+            with patch("memingo.interpreter.serve_app") as start_server:
+                self.assertEqual(serve_api(str(app_file), "127.0.0.1", 8124), 0)
+                start_server.assert_called_once()
+                app, host, port = start_server.call_args.args
+                self.assertEqual(type(app).__name__, "MemingoApp")
+                self.assertEqual(host, "127.0.0.1")
+                self.assertEqual(port, 8124)
+
     def test_serve_api_requires_memingo_app_export(self):
         with tempfile.TemporaryDirectory() as directory:
             app_file = Path(directory) / "app.py"
