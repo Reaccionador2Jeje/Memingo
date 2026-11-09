@@ -2,8 +2,9 @@ import contextlib
 import io
 import os
 import unittest
+from unittest import mock
 
-from memingo.cli import banner, command_header, error, heading, key_value, panel, status_bar, success, table, tip
+from memingo.cli import _safe_console_text, banner, command_header, error, heading, key_value, panel, status_bar, success, table, tip
 from memingo.__main__ import main as memingo_main
 from memingo.mgoa_cli import main as mgoa_main
 
@@ -32,6 +33,16 @@ class CliStyleTests(unittest.TestCase):
         output = self.capture(mgoa_main, [])
         self.assertIn("MEMINGO", output.upper())
         self.assertIn("PACKAGE CONSOLE", output.upper())
+
+    def test_legacy_windows_console_encoding(self):
+        output = _safe_console_text("┌─ MEMINGO ✓", "cp1252")
+        self.assertEqual(output, "+- MEMINGO +")
+        self.assertTrue(output.encode("cp1252"))
+
+    def test_mgoa_discover_alias(self):
+        with mock.patch("memingo.mgoa_cli.search_registry", return_value=[]):
+            output = self.capture(lambda: mgoa_main(["discover", "sample"]))
+        self.assertIn("No packages found", output)
 
     def test_shell_completion(self):
         for command, expected in (
