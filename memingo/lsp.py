@@ -104,32 +104,28 @@ class MemingoLanguageServer:
                  for label in dict.fromkeys(labels)]
         return {"isIncomplete": False, "items": items[:200]}
 
+    @staticmethod
     def _word_at(line_text: str, character: int):
-    for match in re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", line_text):
-        if match.start() <= character <= match.end():
-            return match.group(0)
-    return None
+        for match in re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", line_text):
+            if match.start() <= character <= match.end():
+                return match.group(0)
+        return None
 
-
-def _hover(self, params: dict):
-        uri, source = self._document(params)
-        position = (params.get("position") or {})
+    def _hover(self, params: dict):
+        _, source = self._document(params)
+        position = params.get("position") or {}
         line = int(position.get("line", 0))
         character = int(position.get("character", 0))
         lines = source.splitlines()
         if line < 0 or line >= len(lines):
             return None
-        tokens = list(re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", lines[line]))
-        match = next((item for item in tokens if item.start() <= character <= item.end()), None)
-        if match is None and tokens:
-            match = min(tokens, key=lambda item: min(abs(character-item.start()), abs(character-item.end())))
-        if not match:
+        word = self._word_at(lines[line], character)
+        if not word:
             return None
-        word = match.group(0)
         if word in WORDS:
             text = f"**{word}**\n\n{WORDS[word]}"
         else:
-            symbol = next((s for s in _symbols(source) if s["name"] == word), None)
+            symbol = next((item for item in _symbols(source) if item["name"] == word), None)
             if not symbol:
                 return None
             text = f"**{word}**\n\nSímbolo declarado en la línea {symbol['line'] + 1}."
@@ -143,11 +139,10 @@ def _hover(self, params: dict):
         lines = source.splitlines()
         if line < 0 or line >= len(lines):
             return None
-        segment = lines[line]
-        name = _word_at(segment, character)
+        name = self._word_at(lines[line], character)
         if not name:
             return None
-        symbol = next((s for s in _symbols(source) if s["name"] == name), None)
+        symbol = next((item for item in _symbols(source) if item["name"] == name), None)
         if not symbol:
             return None
         start = {"line": symbol["line"], "character": symbol["character"]}
