@@ -46,6 +46,17 @@ Lists and objects can span multiple lines, including trailing commas.
 
 Memingo includes a dependency-free Language Server Protocol server. Start it with `memingo lsp --stdio` after installing the runtime. It provides parser diagnostics, keyword and standard-library completions, hover documentation, go-to-definition, references, safe local symbol rename and document symbols. See [docs/LANGUAGE_SERVER.md](docs/LANGUAGE_SERVER.md).
 
+## Memingo IDE Web
+
+Memingo can launch the browser edition of the IDE on your device with `memingo ide` (default: `http://127.0.0.1:3000`). Install/link the Memingo IDE Web command once from the [Memingo-IDE repository](https://github.com/Reaccionador2Jeje/Memingo-IDE) using `npm install && npm link`, then run:
+
+```bash
+memingo ide
+memingo ide --port 8080
+```
+
+The web server uses Node.js built-ins and binds only to localhost. For direct startup from the IDE repository, use `npm run web`. See [Memingo IDE Web documentation](https://github.com/Reaccionador2Jeje/Memingo-IDE/blob/main/docs/WEB.md).
+
 ## MemeCraft
 
 Memingo includes an original playable voxel game inspired by block-building sandboxes. Play it at `site/game.html` or add the `.mgo` world configuration from [examples/minecraft.mgo](examples/minecraft.mgo).
