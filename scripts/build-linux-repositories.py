@@ -2,9 +2,9 @@
 import argparse
 import gzip
 import hashlib
+import shutil
 from datetime import datetime, timezone
 from email.utils import format_datetime
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -69,7 +69,7 @@ def build_apt_repository(output, version, packages):
         "Suite: stable",
         "Codename: stable",
         f"Date: {format_datetime(datetime.now(timezone.utc), usegmt=True)}",
-        f"Architectures: {" ".join(sorted(architectures))}",
+        f"Architectures: {' '.join(sorted(architectures))}",
         "Components: main",
         "Description: Memingo APT package repository",
         "",
