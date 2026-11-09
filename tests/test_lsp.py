@@ -41,6 +41,12 @@ class LanguageServerTests(unittest.TestCase):
         result = server._hover({"textDocument": {"uri": "file:///main.mgo"}, "position": {"line": 0, "character": 10}})
         self.assertIn("Función integrada", result["contents"]["value"])
 
+    def test_hover_uses_word_under_cursor(self):
+        server = MemingoLanguageServer(io.BytesIO(), io.BytesIO())
+        server.documents["file:///main.mgo"] = "spill json_parse(\\"{}\\")"
+        result = server._hover({"textDocument": {"uri": "file:///main.mgo"}, "position": {"line": 0, "character": 10}})
+        self.assertIn("Función integrada", result["contents"]["value"])
+
     def test_definition_finds_declared_vibe(self):
         server = MemingoLanguageServer(io.BytesIO(), io.BytesIO())
         server.documents["file:///main.mgo"] = "vibe score = 4\nspill score"
