@@ -19,7 +19,7 @@ jobs:
       - name: Package VSIX
         working-directory: vscode-extension
         run: |
-          npx --yes @vscode/vsce@4.0.2 package
+          npx --yes @vscode/vsce package
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
         with:
@@ -29,4 +29,4 @@ jobs:
       - name: Publish to Visual Studio Marketplace with OIDC
         working-directory: vscode-extension
         run: |
-          npx --yes @vscode/vsce@4.0.2 publish --oidc
+          npx --yes @vscode/vsce publish --oidc
