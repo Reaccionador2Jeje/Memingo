@@ -26,6 +26,20 @@ class LanguageServerTests(unittest.TestCase):
         diagnostics = next(item for item in messages if item.get("method") == "textDocument/publishDiagnostics")
         self.assertEqual(diagnostics["params"]["diagnostics"], [])
 
+    def test_stdio_accepts_content_type_before_content_length(self):
+        body = json.dumps({"jsonrpc": "2.0", "id": 7, "method": "initialize", "params": {}}).encode()
+        framed = b"Content-Type: application/vscode-jsonrpc; charset=utf-8\\r\\nContent-Length: " + str(len(body)).encode() + b"\\r\\n\\r\\n" + body
+        output = io.BytesIO()
+        self.assertEqual(MemingoLanguageServer(io.BytesIO(framed), output).run(), 0)
+        self.assertIn(b'"id":7', output.getvalue())
+
+    def test_invalid_document_publishes_diagnostic(self):
+        server = MemingoLanguageServer(io.BytesIO(), io.BytesIO())
+        server.documents["file:///bad.mgo"] = "vibe value ="
+        result = server._diagnostics(server.documents["file:///bad.mgo"])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["severity"], 1)
+
     def test_completion_includes_memingo_keywords_and_builtins(self):
         server = MemingoLanguageServer(io.BytesIO(), io.BytesIO())
         server.documents["file:///main.mgo"] = "vibe score = 4"
