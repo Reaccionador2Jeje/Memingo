@@ -60,7 +60,9 @@
 - [x] HTTP response header and status validation
 - [x] Request and response objects (headers, query, text and JSON helpers)
 - [ ] Templates
-- [ ] JSON and file uploads
+- [x] URL-encoded and multipart form parsing
+- [x] Native file uploads with generated safe filenames and project-scoped storage
+- [x] Request and per-file upload size limits
 - [ ] Hot reload
 
 ## Tooling
