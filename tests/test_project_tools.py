@@ -56,7 +56,7 @@ class ProjectToolsTests(unittest.TestCase):
             stream = io.StringIO()
             with contextlib.redirect_stdout(stream), contextlib.redirect_stderr(stream):
                 self.assertEqual(project_stats(root), 0)
-            self.assertIn("MGO files", stream.getvalue())
+            self.assertIn("MGO FILES", stream.getvalue().upper())
             self.assertEqual(main(["stats", str(root)]), 0)
 
     def test_commands_auto_create_project_files(self):
