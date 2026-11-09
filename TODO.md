@@ -50,9 +50,9 @@
 - [x] Static HTTP serving
 - [x] `memingo serve` launcher
 - [x] HTTP client GET/POST and JSON helpers
-- [ ] Memingo HTTP server API
-- [ ] Routes, methods and middleware
-- [ ] Request and response objects
+- [x] Memingo HTTP server API (Python application API v0.3)
+- [x] Routes, methods and middleware (GET/POST/PUT/DELETE, path parameters)
+- [x] Request and response objects (headers, query, text and JSON helpers)
 - [ ] Templates
 - [ ] JSON and file uploads
 - [ ] Hot reload
