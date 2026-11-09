@@ -140,6 +140,23 @@ mgoa --version
 
 The default command location is `~/.local/bin`. Add that directory to `PATH` if the shell does not find `memingo`.
 
+### Android (Termux)
+
+Termux tiene su propio sistema de paquetes: los paquetes APT de Debian/Ubuntu y RPM de Fedora no se instalan directamente allí. Usa el instalador de Memingo compatible con Termux:
+
+```bash
+pkg update
+pkg install -y git python
+git clone https://github.com/Reaccionador2Jeje/Memingo.git
+cd Memingo
+sh scripts/install.sh
+hash -r
+memingo --version
+mgoa --version
+```
+
+El instalador detecta Termux y coloca `memingo` y `mgoa` en `$PREFIX/bin`. Para actualizar, ejecuta `git pull` y luego `sh scripts/install.sh` desde la carpeta del proyecto. Para desinstalar, ejecuta `sh scripts/uninstall.sh`.
+
 ### Windows
 
 ```powershell
