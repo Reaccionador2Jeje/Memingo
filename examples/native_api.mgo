@@ -22,6 +22,14 @@ ritual echo(request) {
     }
 }
 
+ritual powered_by(request, next) {
+    vibe response = next()
+    response_header(response, "X-Powered-By", "Memingo")
+    drop response
+}
+
+api_use(app, powered_by)
+
 api_get(app, "/", home)
 api_get(app, "/hello/<name>", greet)
 api_post(app, "/echo", echo)
