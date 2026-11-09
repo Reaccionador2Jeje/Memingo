@@ -25,7 +25,32 @@ def supports_color():
     return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
 
 
+def _safe_console_text(value, encoding=None):
+    """Keep decorative CLI output printable on legacy Windows code pages."""
+    text = str(value)
+    encoding = encoding or getattr(sys.stdout, "encoding", None)
+    if not encoding:
+        return text
+    try:
+        text.encode(encoding)
+        return text
+    except (UnicodeEncodeError, LookupError):
+        replacements = str.maketrans({
+            "╭": "+", "╮": "+", "╰": "+", "╯": "+",
+            "┌": "+", "┐": "+", "└": "+", "┘": "+",
+            "─": "-", "│": "|", "┬": "+", "┴": "+",
+            "├": "+", "┤": "+", "◆": "*", "✓": "+",
+            "×": "x", "•": "*", "↳": "->",
+            "█": "#", "░": "-", "⠋": ".", "⠙": ".",
+            "⠹": ".", "⠸": ".", "⠼": ".", "⠴": ".",
+            "⠦": ".", "⠧": ".", "⠇": ".", "⠏": ".",
+        })
+        text = text.translate(replacements)
+        return text.encode(encoding, errors="replace").decode(encoding, errors="replace")
+
+
 def color(text, code):
+    text = _safe_console_text(text)
     return f"{code}{text}{RESET}" if supports_color() else text
 
 
