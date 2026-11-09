@@ -90,7 +90,7 @@ jobs:
           %_gpg_path $HOME/.gnupg
           %_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase-file /tmp/memingo-gpg-passphrase
           EOF
-          if ! rpm --eval '%{?_gpg_sign_cmd_extra_args:available}' | grep -q available; then
+          if ! rpm --eval '%{__gpg_sign_cmd}' | grep -q -- '--passphrase-file'; then
             echo "::error::This RPM version does not support _gpg_sign_cmd_extra_args."
             exit 1
           fi
