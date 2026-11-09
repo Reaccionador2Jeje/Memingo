@@ -152,6 +152,11 @@ class Interpreter:
         self.global_environment.define("response_status", self._response_status)
         self.global_environment.define("response_body", self._response_body)
         self.global_environment.define("request_json", self._request_json)
+        self.global_environment.define("response_json", self._response_json)
+        self.global_environment.define("response_text", self._response_text)
+        self.global_environment.define("response_html", self._response_html)
+        self.global_environment.define("response_redirect", self._response_redirect)
+        self.global_environment.define("response_error", self._response_error)
         self.global_environment.define("api_listen", self._api_listen)
         self.api_host = "127.0.0.1"
         self.api_port = 8000
@@ -470,6 +475,47 @@ class Interpreter:
             raise RuntimeErrorMemingo("response_body() requires the response returned by next()")
         response["body"] = body if isinstance(body, (str, bytes)) else json.dumps(body, ensure_ascii=False)
         return response
+
+    def _response_json(self, value, status=200, headers=None):
+        self._validate_response_status(status)
+        if headers is not None and not isinstance(headers, dict):
+            raise RuntimeErrorMemingo("Response headers must be an object")
+        return Response.json(value, status=status, headers=headers)
+
+    def _response_text(self, value, status=200, headers=None):
+        self._validate_response_status(status)
+        if headers is not None and not isinstance(headers, dict):
+            raise RuntimeErrorMemingo("Response headers must be an object")
+        return Response.text(value, status=status, headers=headers)
+
+    def _response_html(self, value, status=200, headers=None):
+        self._validate_response_status(status)
+        if headers is not None and not isinstance(headers, dict):
+            raise RuntimeErrorMemingo("Response headers must be an object")
+        return Response(str(value), status=status, headers=headers,
+                        content_type="text/html; charset=utf-8")
+
+    def _response_redirect(self, location, status=302):
+        self._validate_response_status(status)
+        if status not in (301, 302, 303, 307, 308):
+            raise RuntimeErrorMemingo("Redirect status must be 301, 302, 303, 307, or 308")
+        if not isinstance(location, str) or not location.strip():
+            raise RuntimeErrorMemingo("Redirect location must be non-empty text")
+        if "\r" in location or "\n" in location:
+            raise RuntimeErrorMemingo("Redirect location cannot contain line breaks")
+        return Response("", status=status, headers={"Location": location})
+
+    def _response_error(self, status, message):
+        self._validate_response_status(status)
+        if status < 400:
+            raise RuntimeErrorMemingo("Error response status must be 400 or higher")
+        if not isinstance(message, str) or not message:
+            raise RuntimeErrorMemingo("Error message must be non-empty text")
+        return Response.json({"error": message, "status": status}, status=status)
+
+    def _validate_response_status(self, status):
+        if not isinstance(status, int) or isinstance(status, bool) or not 100 <= status <= 599:
+            raise RuntimeErrorMemingo("Response status must be an integer from 100 to 599")
 
     def _request_json(self, request):
         if not isinstance(request, dict) or "body" not in request:
