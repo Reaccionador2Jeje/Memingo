@@ -234,3 +234,40 @@ api.listen("127.0.0.1", 8000)
 ```
 
 Available methods: `get(path, ritual)`, `post(path, ritual)`, `put(path, ritual)`, `delete(path, ritual)`, `start(host, port)`, `stop()` and `listen(host, port)`. `start` runs in a background thread and returns the bound host and port; `listen` blocks until interrupted. Request bodies are limited to 1 MiB. The default host is localhost. This is a lightweight development API server, not a production deployment stack.
+
+
+## HTTP middleware, route parameters and authentication
+
+Dynamic route segments use braces. Their values are available in `request.params`:
+
+```mgo
+ritual show_user(request) {
+    drop {body: {user_id: request.params.id}}
+}
+api.get("/users/{id}", show_user)
+```
+
+Middleware is registered with `api.use(ritual)`. It receives the request before the route. Return `ghost` to continue, return an object containing `status` or `body` to end the request, or return an object of request fields to add/update them.
+
+Bearer authentication is available as a middleware helper:
+
+```mgo
+vibe api = http_server()
+api.use(api.bearer(env("API_TOKEN", "")))
+```
+
+Store secrets in the project's `.env` file and never commit real credentials. A missing or incorrect token receives HTTP 401. This helper is a basic bearer-token gate; production applications should use HTTPS and a carefully managed identity/session system.
+
+## SQLite database
+
+The built-in `sqlite(path)` opens a SQLite database inside the project directory. Use `:memory:` for an in-memory database. The returned object has `execute(sql, parameters?)`, `query(sql, parameters?)` and `close()`.
+
+```mgo
+vibe db = sqlite("data/app.db")
+db.execute("CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, text TEXT)")
+db.execute("INSERT INTO notes (text) VALUES (?)", ["Hello"])
+spill db.query("SELECT id, text FROM notes")
+db.close()
+```
+
+Pass user-provided values through the parameters list or object (SQLite placeholders such as `?`), not by concatenating them into SQL. Database paths are confined to the project directory.
