@@ -77,6 +77,18 @@ class MemingoServerTests(unittest.TestCase):
         self.assertEqual(response.status, 400)
         self.assertIn("invalid input", response.body)
 
+    def test_response_rejects_invalid_status(self):
+        with self.assertRaises(ValueError):
+            Response("bad", status=700)
+
+    def test_response_rejects_header_injection(self):
+        with self.assertRaisesRegex(ValueError, "line breaks"):
+            Response("ok", headers={"X-Test": "safe\\r\\nInjected: yes"})
+
+    def test_response_rejects_invalid_header_name(self):
+        with self.assertRaisesRegex(ValueError, "header name"):
+            Response("ok", headers={"X-Test\\r\\nInjected": "value"})
+
     def test_route_validation(self):
         with self.assertRaises(ValueError):
             self.app.get("missing-slash")
