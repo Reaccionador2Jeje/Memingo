@@ -147,6 +147,20 @@ api_get(app, "/", home)
         with self.assertRaisesRegex(RuntimeErrorMemingo, "name is invalid"):
             self.interpreter._response_header(response, "X-Test\r\nInjected", "value")
 
+    def test_patch_route_is_available_natively(self):
+        source = '''
+vibe app = api()
+ritual update(request) {
+    drop {method: request.method, id: request.params.id}
+}
+api_patch(app, "/items/<id>", update)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/items/42", "PATCH"))
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.body, '{"method": "PATCH", "id": "42"}')
+
     def test_api_listen_uses_cli_host_and_port_defaults(self):
         app = self.interpreter._api_create()
         self.interpreter.api_host = "127.0.0.1"
