@@ -1,9 +1,18 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from memingo.interpreter import RuntimeErrorMemingo, execute
+from memingo.interpreter import Interpreter, RuntimeErrorMemingo, execute
+from memingo.parser import parse
+from memingo.http_api import MemingoAPIServer
 from memingo.parser import ParseError
+
+
+
+
+def api_server_dispatch(api, method, path, body=b""):
+    return api["get"].__self__._dispatch(method, path, {}, body)
 
 
 class MemingoLanguageTests(unittest.TestCase):
@@ -237,6 +246,32 @@ class MemingoLanguageTests(unittest.TestCase):
             with self.assertRaises(RuntimeErrorMemingo) as context:
                 execute('import "a"', project_directory=root)
             self.assertIn("Circular module import", str(context.exception))
+
+
+    def test_http_server_dispatches_get_and_json_post(self):
+        interpreter = Interpreter()
+        source = (
+            'vibe api = http_server()\\n'
+            'ritual home(request) { drop {status: 200, body: {message: "Memingo"}} }\\n'
+            'ritual echo(request) { drop {status: 201, body: request.body} }\\n'
+            'api.get("/", home)\\n'
+            'api.post("/echo", echo)'
+        )
+        interpreter.run(parse(source))
+        api = interpreter.global_environment.get("api")
+        status, headers, body = api_server_dispatch(api, "GET", "/")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"message": "Memingo"})
+        status, headers, body = api_server_dispatch(api, "POST", "/echo", b'{"ok":true}')
+        self.assertEqual(status, 201)
+        self.assertEqual(json.loads(body), {"ok": True})
+
+    def test_http_server_rejects_invalid_routes(self):
+        api = MemingoAPIServer(Interpreter()).api()
+        with self.assertRaises(ValueError):
+            api["get"]("hello", lambda request: request)
+        with self.assertRaises(ValueError):
+            api["get"]("/", "not a ritual")
 
     def test_file_builtins_stay_inside_project(self):
         with tempfile.TemporaryDirectory() as temporary:
