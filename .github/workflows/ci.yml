@@ -2,7 +2,7 @@ name: Memingo CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, feat/arch-aur-packaging]
   pull_request:
   workflow_dispatch:
 
