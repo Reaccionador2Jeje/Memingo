@@ -9,7 +9,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-from .server import MemingoApp, Response, serve_app
+from .server import MAX_UPLOAD_FILE_SIZE, MemingoApp, Response, serve_app
 from .parser import (
     Assign, Binary, Borrow, Call, Function, Get, If, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
@@ -152,6 +152,9 @@ class Interpreter:
         self.global_environment.define("response_status", self._response_status)
         self.global_environment.define("response_body", self._response_body)
         self.global_environment.define("request_json", self._request_json)
+        self.global_environment.define("request_form", self._request_form)
+        self.global_environment.define("request_files", self._request_files)
+        self.global_environment.define("save_upload", self._save_upload)
         self.global_environment.define("response_json", self._response_json)
         self.global_environment.define("response_text", self._response_text)
         self.global_environment.define("response_html", self._response_html)
@@ -387,7 +390,9 @@ class Interpreter:
                 "query": request.query,
                 "params": request.params,
                 "headers": request.headers,
-                "body": request.text(),
+                "body": request.text(errors="replace"),
+                "form": request.form(),
+                "files": request.files(),
             }
             # The HTTP server is threaded; protect the interpreter's shared scope.
             with self._api_execution_lock:
@@ -416,7 +421,9 @@ class Interpreter:
                 "query": request.query,
                 "params": request.params,
                 "headers": request.headers,
-                "body": request.text(),
+                "body": request.text(errors="replace"),
+                "form": request.form(),
+                "files": request.files(),
             }
 
             next_called = False
@@ -516,6 +523,49 @@ class Interpreter:
     def _validate_response_status(self, status):
         if not isinstance(status, int) or isinstance(status, bool) or not 100 <= status <= 599:
             raise RuntimeErrorMemingo("Response status must be an integer from 100 to 599")
+
+    def _request_form(self, request):
+        if not isinstance(request, dict) or not isinstance(request.get("form", {}), dict):
+            raise RuntimeErrorMemingo("request_form() requires a request object")
+        return request.get("form", {})
+
+    def _request_files(self, request):
+        if not isinstance(request, dict) or not isinstance(request.get("files", []), list):
+            raise RuntimeErrorMemingo("request_files() requires a request object")
+        return request.get("files", [])
+
+    def _save_upload(self, upload, directory="uploads"):
+        if not isinstance(upload, dict) or not isinstance(upload.get("data"), bytes):
+            raise RuntimeErrorMemingo("save_upload() requires a file from request_files()")
+        data = upload["data"]
+        if len(data) > MAX_UPLOAD_FILE_SIZE:
+            raise RuntimeErrorMemingo("save_upload() file exceeds the 5 MB limit")
+        original_name = upload.get("filename", "upload")
+        if not isinstance(original_name, str) or not original_name:
+            original_name = "upload"
+        original_name = original_name.replace("\\", "/").split("/")[-1]
+        suffix = Path(original_name).suffix.lower()
+        if not re.fullmatch(r"\.[a-z0-9]{1,10}", suffix):
+            suffix = ""
+        target_dir = self._project_path("save_upload", directory)
+        try:
+            target_dir.mkdir(parents=True, exist_ok=True)
+            stored_name = uuid.uuid4().hex + suffix
+            target = (target_dir / stored_name).resolve()
+            if target_dir.resolve() not in target.parents:
+                raise RuntimeErrorMemingo("save_upload() target must remain inside its directory")
+            with target.open("xb") as stream:
+                stream.write(data)
+        except OSError as error:
+            raise RuntimeErrorMemingo(f"save_upload() failed: {error}") from error
+        relative_path = target.relative_to(self.project_directory).as_posix()
+        return {
+            "filename": stored_name,
+            "original_name": original_name,
+            "path": relative_path,
+            "size": len(data),
+            "content_type": str(upload.get("content_type", "application/octet-stream")),
+        }
 
     def _request_json(self, request):
         if not isinstance(request, dict) or "body" not in request:
