@@ -55,6 +55,9 @@
 - [x] Native `.mgo` API routes, request objects and JSON body parsing
 - [x] Routes, methods and middleware (GET/POST/PUT/DELETE, path parameters)
 - [x] Native `.mgo` middleware and response modification helpers
+- [x] Native JSON, text and HTML responses with custom status codes and headers
+- [x] Redirect responses and structured HTTP error responses
+- [x] HTTP response header and status validation
 - [x] Request and response objects (headers, query, text and JSON helpers)
 - [ ] Templates
 - [ ] JSON and file uploads
