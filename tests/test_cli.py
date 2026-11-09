@@ -113,5 +113,32 @@ class ApiCliTests(unittest.TestCase):
                 serve_api(str(app_file))
 
 
+
+class IdeWebCliTests(unittest.TestCase):
+    def test_ide_web_launches_installed_server(self):
+        with patch("memingo.__main__.shutil.which", return_value="/usr/local/bin/memingo-ide-web"), patch("memingo.__main__.subprocess.call", return_value=0) as launch:
+            self.assertEqual(memingo_main(["ide", "--port", "8123"]), 0)
+        launch.assert_called_once_with(["/usr/local/bin/memingo-ide-web", "--host", "127.0.0.1", "--port", "8123"])
+
+    def test_ide_web_reports_missing_ide_command(self):
+        with patch("memingo.__main__.shutil.which", return_value=None):
+            stream = io.StringIO()
+            with contextlib.redirect_stderr(stream):
+                self.assertEqual(memingo_main(["ide"]), 127)
+            self.assertIn("no está instalado", stream.getvalue())
+
+    def test_ide_web_rejects_non_loopback_host(self):
+        stream = io.StringIO()
+        with contextlib.redirect_stderr(stream):
+            self.assertEqual(memingo_main(["ide", "--host", "0.0.0.0"]), 2)
+        self.assertIn("localhost", stream.getvalue())
+
+    def test_ide_web_rejects_invalid_port(self):
+        stream = io.StringIO()
+        with contextlib.redirect_stderr(stream):
+            self.assertEqual(memingo_main(["ide", "--port", "70000"]), 2)
+        self.assertIn("port", stream.getvalue().lower())
+
+
 if __name__ == "__main__":
     unittest.main()
