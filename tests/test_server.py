@@ -145,6 +145,17 @@ class MemingoServerTests(unittest.TestCase):
         with self.assertRaises(RequestTooLargeError):
             Request(handler).form()
 
+    def test_upload_limit_exception_maps_to_http_413(self):
+        app = MemingoApp()
+
+        @app.post("/upload")
+        def upload(request):
+            raise RequestTooLargeError("Uploaded file exceeds the 5 MB limit")
+
+        response = app.dispatch(FakeRequest("/upload", "POST"))
+        self.assertEqual(response.status, 413)
+        self.assertIn("5 MB", response.body)
+
     def test_route_validation(self):
         with self.assertRaises(ValueError):
             self.app.get("missing-slash")
