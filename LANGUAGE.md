@@ -211,3 +211,26 @@ spill text.title_case("hello memingo")
 Imported project modules execute once per interpreter and expose their top-level variables and rituals through a module namespace. Imports cannot use absolute paths or escape the project directory. Circular imports are rejected with a runtime error.
 
 The built-in `math` module currently exposes `sqrt`, `pow`, `sin`, `cos`, `tan`, `pi`, `e`, `floor` and `ceil`.
+
+
+## Memingo Server: HTTP APIs
+
+Create an HTTP API directly in a `.mgo` project. Route handlers receive a request object with `method`, `path`, `query`, `headers` and `body`. Return an object with optional `status`, `headers` and `body`.
+
+```mgo
+vibe api = http_server()
+
+ritual home(request) {
+    drop {status: 200, body: {message: "Hello from Memingo"}}
+}
+
+ritual create_echo(request) {
+    drop {status: 201, body: {received: request.body}}
+}
+
+api.get("/", home)
+api.post("/echo", create_echo)
+api.listen("127.0.0.1", 8000)
+```
+
+Available methods: `get(path, ritual)`, `post(path, ritual)`, `put(path, ritual)`, `delete(path, ritual)`, `start(host, port)`, `stop()` and `listen(host, port)`. `start` runs in a background thread and returns the bound host and port; `listen` blocks until interrupted. Request bodies are limited to 1 MiB. The default host is localhost. This is a lightweight development API server, not a production deployment stack.
