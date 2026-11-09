@@ -45,13 +45,19 @@ if __name__ == "__main__":
     serve_app(app, host="127.0.0.1", port=8000)
 ```
 
-Run it:
+Run it with Python:
 
 ```bash
 python app.py
 ```
 
-The API listens on `http://127.0.0.1:8000`. Use `host="0.0.0.0"` only when you intentionally want other devices on your network to reach the server; use an appropriate firewall and do not expose development services to the public internet.
+Or use the Memingo launcher from the project directory:
+
+```bash
+memingo api app.py --host 127.0.0.1 --port 8000
+```
+
+The launcher imports `app.py`, checks that it exports an `app` instance of `MemingoApp`, and starts the API. The default bind address is local-only (`127.0.0.1`). The API listens on `http://127.0.0.1:8000`. Use `host="0.0.0.0"` only when you intentionally want other devices on your network to reach the server; use an appropriate firewall and do not expose development services to the public internet.
 
 ## Routes
 
