@@ -1,10 +1,55 @@
 # Memingo HTTP Server API
 
-Memingo 0.3 adds a small Python application API alongside the existing static-file server.
+Memingo provides a native `.mgo` API and a Python application API, alongside the static-file server.
 
-## Quick start
+## Native Memingo API
 
-A runnable example is included in `examples/api.py`. From the repository root, start it with:
+Start the included native example from the repository root:
+
+```bash
+python -m memingo api examples/native_api.mgo
+```
+
+Open `http://127.0.0.1:8000/`, try `/hello/Cris`, or send JSON to `POST /echo`.
+
+Create a server in any `.mgo` file:
+
+```mgo
+vibe app = api()
+
+ritual home(request) {
+    drop {name: "Memingo", status: "ready"}
+}
+
+ritual greet(request) {
+    drop {message: "Hello " + request.params.name}
+}
+
+ritual echo(request) {
+    drop {received: request_json(request)}
+}
+
+api_get(app, "/", home)
+api_get(app, "/hello/<name>", greet)
+api_post(app, "/echo", echo)
+api_listen(app)
+```
+
+Available built-ins:
+
+- `api()` creates a server application.
+- `api_get(app, path, ritual)`, `api_post(...)`, `api_put(...)`, and `api_delete(...)` register routes.
+- `api_route(app, methods, path, ritual)` registers one or more HTTP methods.
+- `request_json(request)` parses the incoming JSON body.
+- `api_listen(app, host?, port?)` starts the server.
+
+The request passed to a ritual is an object with `method`, `path`, `query`, `params`, `headers`, and `body` fields. Route handlers may return an object or list for a JSON response, text for a text response, or `ghost` for HTTP 204. Invalid request JSON returns HTTP 400.
+
+The default host is `127.0.0.1`. CLI flags `--host` and `--port` override the defaults supplied by `api_listen(app)`. Route-ritual execution is serialized to protect shared interpreter state across concurrent HTTP requests.
+
+## Python API quick start
+
+A runnable Python example is included in `examples/api.py`. Start it with:
 
 ```bash
 python -m memingo api examples/api.py
@@ -118,4 +163,4 @@ The existing static server remains available:
 memingo serve public --host 127.0.0.1 --port 8000
 ```
 
-The route-based API and static-file serving are separate entry points in this first release. Templates, uploads, hot reload, and direct `.mgo` route declarations are still planned.
+The route-based API and static-file serving are separate entry points. Templates, uploads, and hot reload are still planned.
