@@ -12,6 +12,11 @@ MAX_REQUEST_BODY_SIZE = 10 * 1024 * 1024
 MAX_UPLOAD_FILE_SIZE = 5 * 1024 * 1024
 
 
+class RequestTooLargeError(Exception):
+    """Raised when a request or uploaded file exceeds its configured limit."""
+
+
+
 class Request:
     """An incoming HTTP request."""
 
@@ -68,6 +73,8 @@ class Request:
             payload = part.get_payload(decode=True) or b""
             if raw_filename is not None:
                 filename = raw_filename.replace("\\", "/").split("/")[-1]
+                if len(payload) > MAX_UPLOAD_FILE_SIZE:
+                    raise RequestTooLargeError("Uploaded file exceeds the 5 MB limit")
                 files.append({
                     "field": field_name,
                     "filename": filename,
@@ -218,6 +225,8 @@ class MemingoApp:
 
         try:
             return invoke(0)
+        except RequestTooLargeError as exc:
+            return Response.json({"error": str(exc)}, 413)
         except ValueError as exc:
             return Response.json({"error": str(exc)}, 400)
         except Exception:
