@@ -22,7 +22,7 @@ def main(argv=None):
     parser.add_argument("--registry", help="Package registry URL (defaults to the official registry)")
     subparsers = parser.add_subparsers(dest="command")
 
-    search_parser = subparsers.add_parser("search", help="Search packages in a registry")
+    search_parser = subparsers.add_parser("search", aliases=["discover"], help="Search or discover packages in a registry")
     search_parser.add_argument("query", nargs="?", default="")
     search_parser.add_argument("--registry", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
 
@@ -83,7 +83,7 @@ def main(argv=None):
         if args.command == "completion":
             print(mgoa_completion(args.shell), end="")
             return 0
-        if args.command == "search":
+        if args.command in {"search", "discover"}:
             matches = search_registry(args.query, args.registry)
             if not matches:
                 info("No packages found")
