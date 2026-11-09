@@ -11,7 +11,7 @@ pkgbase = memingo
 	makedepends = python-setuptools
 	makedepends = python-wheel
 	depends = python>=3.10
-	source = git+https://github.com/Reaccionador2Jeje/Memingo.git#tag=v0.2.0
+	source = git+https://github.com/Reaccionador2Jeje/Memingo.git#commit=e94dd60288304707d4a83bced02ce985eb7d56a4
 	sha256sums = SKIP
 
 pkgname = memingo
