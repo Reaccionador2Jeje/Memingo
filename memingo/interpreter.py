@@ -381,9 +381,14 @@ class Interpreter:
             }
             # The HTTP server is threaded; protect the interpreter's shared scope.
             with self._api_execution_lock:
-                if isinstance(handler, MemingoFunction):
-                    return handler.call(self, [request_data])
-                return handler(request_data)
+                try:
+                    if isinstance(handler, MemingoFunction):
+                        return handler.call(self, [request_data])
+                    return handler(request_data)
+                except RuntimeErrorMemingo as error:
+                    if "request_json() failed: Request body is not valid JSON" in str(error):
+                        raise ValueError("Request body is not valid JSON") from error
+                    raise
 
         app.route(path, tuple(methods), dispatch)
         return app
