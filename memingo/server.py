@@ -39,7 +39,7 @@ class Request:
         """Parse URL-encoded or multipart form fields."""
         if self._form_cache is not None:
             return self._form_cache
-        content_type = self.headers.get("Content-Type", "")
+        content_type = next((value for key, value in self.headers.items() if key.lower() == "content-type"), "")
         if content_type.lower().startswith("application/x-www-form-urlencoded"):
             parsed = parse_qs(self.text(errors="replace"), keep_blank_values=True)
             self._form_cache = {
