@@ -69,6 +69,17 @@ class LanguageServerTests(unittest.TestCase):
         result = server._hover({"textDocument": {"uri": "file:///main.mgo"}, "position": {"line": 0, "character": 10}})
         self.assertIn("Función integrada", result["contents"]["value"])
 
+    def test_references_and_rename_use_identifier_tokens(self):
+        server = MemingoLanguageServer(io.BytesIO(), io.BytesIO())
+        server.documents["file:///main.mgo"] = "vibe score = 2\nspill score"
+        params = {"textDocument": {"uri": "file:///main.mgo"}, "position": {"line": 1, "character": 8}}
+        references = server._references(params)
+        self.assertEqual(len(references), 2)
+        renamed = server._rename({**params, "newName": "points"})
+        edits = renamed["changes"]["file:///main.mgo"]
+        self.assertEqual(len(edits), 2)
+        self.assertTrue(all(item["newText"] == "points" for item in edits))
+
     def test_definition_finds_declared_vibe(self):
         server = MemingoLanguageServer(io.BytesIO(), io.BytesIO())
         server.documents["file:///main.mgo"] = "vibe score = 4\nspill score"
