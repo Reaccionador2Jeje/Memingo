@@ -29,7 +29,7 @@ class CliStyleTests(unittest.TestCase):
         self.assertNotIn("\033[", output)
 
     def test_mgoa_dashboard(self):
-        output = self.capture(mgoa_main)
+        output = self.capture(mgoa_main, [])
         self.assertIn("MEMINGO", output.upper())
         self.assertIn("PACKAGE CONSOLE", output.upper())
 
