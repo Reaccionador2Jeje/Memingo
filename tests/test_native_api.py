@@ -1,4 +1,6 @@
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from memingo.interpreter import Interpreter, RuntimeErrorMemingo
@@ -7,16 +9,24 @@ from memingo.server import MemingoApp
 
 
 class FakeRequest:
-    def __init__(self, path, method="GET", query=None, body=""):
+    def __init__(self, path, method="GET", query=None, body="", form=None, files=None):
         self.path = path
         self.method = method
         self.query = query or {}
         self.params = {}
         self.headers = {}
-        self.body = body.encode("utf-8")
+        self.body = body if isinstance(body, bytes) else body.encode("utf-8")
+        self._form = form or {}
+        self._files = files or []
 
-    def text(self):
-        return self.body.decode("utf-8")
+    def text(self, encoding="utf-8", errors="strict"):
+        return self.body.decode(encoding, errors=errors)
+
+    def form(self):
+        return self._form
+
+    def files(self):
+        return self._files
 
 
 class NativeApiTests(unittest.TestCase):
@@ -253,6 +263,46 @@ api_get(app, "/missing", missing)
             self.interpreter._response_redirect("/new", 200)
         with self.assertRaisesRegex(RuntimeErrorMemingo, "line breaks"):
             self.interpreter._response_redirect("/new\r\nX-Evil: yes")
+
+    def test_native_request_form_and_file_storage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            interpreter = Interpreter(project_directory=directory)
+            source = '''
+vibe app = api()
+ritual upload(request) {
+    vibe fields = request_form(request)
+    vibe files = request_files(request)
+    vibe saved = save_upload(files[0], "uploads")
+    drop {title: fields.title, path: saved.path, original: saved.original_name}
+}
+api_post(app, "/upload", upload)
+'''
+            interpreter.run(parse(source))
+            app = interpreter.global_environment.get("app")
+            uploaded = {
+                "field": "asset",
+                "filename": "photo.png",
+                "content_type": "image/png",
+                "size": 7,
+                "data": b"PNGDATA",
+            }
+            response = app.dispatch(FakeRequest(
+                "/upload", "POST", form={"title": "My image"}, files=[uploaded]
+            ))
+            self.assertEqual(response.status, 200)
+            self.assertIn('"title": "My image"', response.body)
+            self.assertIn('"original": "photo.png"', response.body)
+            saved_path = Path(directory) / "uploads"
+            files = list(saved_path.iterdir())
+            self.assertEqual(len(files), 1)
+            self.assertEqual(files[0].read_bytes(), b"PNGDATA")
+
+    def test_save_upload_rejects_paths_outside_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            interpreter = Interpreter(project_directory=directory)
+            upload = {"filename": "file.txt", "data": b"data"}
+            with self.assertRaisesRegex(RuntimeErrorMemingo, "leave the project"):
+                interpreter._save_upload(upload, "../outside")
 
     def test_api_listen_uses_cli_host_and_port_defaults(self):
         app = self.interpreter._api_create()
