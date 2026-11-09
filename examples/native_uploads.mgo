@@ -1,0 +1,25 @@
+# Native Memingo multipart upload example.
+vibe app = api()
+
+ritual upload_page(request) {
+    drop response_html("<!doctype html><html><body><h1>Upload to Memingo</h1><form action='/upload' method='post' enctype='multipart/form-data'><label>Title <input name='title'></label><br><input type='file' name='asset' required><button type='submit'>Upload</button></form></body></html>")
+}
+
+ritual upload_file(request) {
+    vibe files = request_files(request)
+    when headcount(files) == 0 {
+        drop response_error(400, "Choose a file to upload")
+    }
+    vibe fields = request_form(request)
+    vibe saved = save_upload(files[0], "uploads")
+    drop response_json({
+        uploaded: true,
+        title: fields.title,
+        file: saved
+    }, 201)
+}
+
+api_get(app, "/", upload_page)
+api_post(app, "/upload", upload_file)
+
+api_listen(app)
