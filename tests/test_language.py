@@ -179,6 +179,20 @@ class MemingoLanguageTests(unittest.TestCase):
         with self.assertRaises(RuntimeErrorMemingo):
             execute('spill unique("nope")')
 
+
+    def test_runtime_errors_include_source_location(self):
+        with self.assertRaises(RuntimeErrorMemingo) as context:
+            execute('vibe answer = 42\nspill missing_value')
+        self.assertEqual(context.exception.line, 2)
+        self.assertIn("line 2", str(context.exception))
+
+    def test_runtime_error_in_function_keeps_inner_location(self):
+        source = 'ritual fail() {\n  spill missing_value\n}\nfail()'
+        with self.assertRaises(RuntimeErrorMemingo) as context:
+            execute(source)
+        self.assertEqual(context.exception.line, 2)
+        self.assertIn("line 2", str(context.exception))
+
     def test_file_builtins_stay_inside_project(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
