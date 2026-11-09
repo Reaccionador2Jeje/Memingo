@@ -5,12 +5,12 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: write
-
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,17 +19,14 @@ jobs:
       - name: Package VSIX
         working-directory: vscode-extension
         run: |
-          npx --yes @vscode/vsce package
+          npx --yes @vscode/vsce@4.0.2 package
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
         with:
           name: memingo-vscode-extension
           path: vscode-extension/*.vsix
           if-no-files-found: error
-      - name: Publish Marketplace package
-        if: ${{ secrets.VSCE_PAT != '' }}
+      - name: Publish to Visual Studio Marketplace with OIDC
         working-directory: vscode-extension
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
-          npx --yes @vscode/vsce publish --pat "$VSCE_PAT"
+          npx --yes @vscode/vsce@4.0.2 publish --oidc
