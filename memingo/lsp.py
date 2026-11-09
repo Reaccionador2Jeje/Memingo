@@ -152,10 +152,17 @@ class MemingoLanguageServer:
     def _identifier_at(self, source: str, position: dict):
         line = int(position.get("line", 0))
         character = int(position.get("character", 0))
-        lines = source.splitlines()
-        if line < 0 or line >= len(lines):
+        try:
+            tokens = Lexer(source).tokenize()
+        except LexerError:
             return None
-        return self._word_at(lines[line], character)
+        for token in tokens:
+            if token.kind != "IDENTIFIER" or token.line - 1 != line:
+                continue
+            start = token.column - 1
+            if start <= character <= start + len(str(token.value)):
+                return str(token.value)
+        return None
 
     def _references(self, params: dict) -> list[dict]:
         uri, source = self._document(params)
