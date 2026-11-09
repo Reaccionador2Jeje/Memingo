@@ -206,6 +206,8 @@ A route receives a `Request` object:
 - `request.body`
 - `request.text()`
 - `request.json()`
+- `request.form()` for URL-encoded or multipart fields
+- `request.files()` for uploaded file metadata and binary data
 
 Invalid JSON returns an HTTP 400 response.
 
