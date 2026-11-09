@@ -54,6 +54,7 @@
 - [x] Memingo HTTP server API (Python application API v0.3)
 - [x] Native `.mgo` API routes, request objects and JSON body parsing
 - [x] Routes, methods and middleware (GET/POST/PUT/DELETE, path parameters)
+- [x] Native `.mgo` middleware and response modification helpers
 - [x] Request and response objects (headers, query, text and JSON helpers)
 - [ ] Templates
 - [ ] JSON and file uploads
