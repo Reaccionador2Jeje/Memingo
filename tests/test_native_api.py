@@ -180,6 +180,80 @@ api_patch(app, "/items/<id>", update)
         self.assertEqual(response.status, 200)
         self.assertEqual(response.body, '{"method": "PATCH", "id": "42"}')
 
+    def test_native_response_json_custom_status_and_headers(self):
+        source = '''
+vibe app = api()
+ritual created(request) {
+    drop response_json({id: 7, state: "created"}, 201, {"X-Source": "Memingo"})
+}
+api_post(app, "/items", created)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/items", "POST"))
+        self.assertEqual(response.status, 201)
+        self.assertEqual(response.content_type, "application/json; charset=utf-8")
+        self.assertEqual(response.headers["X-Source"], "Memingo")
+        self.assertEqual(response.body, '{"id": 7, "state": "created"}')
+
+    def test_native_response_text_and_html(self):
+        source = '''
+vibe app = api()
+ritual plain(request) {
+    drop response_text("created", 202)
+}
+ritual page(request) {
+    drop response_html("<h1>Hi</h1>")
+}
+api_get(app, "/plain", plain)
+api_get(app, "/page", page)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        plain = app.dispatch(FakeRequest("/plain"))
+        page = app.dispatch(FakeRequest("/page"))
+        self.assertEqual((plain.status, plain.body), (202, "created"))
+        self.assertEqual(page.content_type, "text/html; charset=utf-8")
+        self.assertEqual(page.body, "<h1>Hi</h1>")
+
+    def test_native_redirect_response(self):
+        source = '''
+vibe app = api()
+ritual old_page(request) {
+    drop response_redirect("/new-page", 308)
+}
+api_get(app, "/old-page", old_page)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/old-page"))
+        self.assertEqual(response.status, 308)
+        self.assertEqual(response.headers["Location"], "/new-page")
+        self.assertEqual(response.body, "")
+
+    def test_native_error_response(self):
+        source = '''
+vibe app = api()
+ritual missing(request) {
+    drop response_error(404, "Item not found")
+}
+api_get(app, "/missing", missing)
+'''
+        self.interpreter.run(parse(source))
+        app = self.interpreter.global_environment.get("app")
+        response = app.dispatch(FakeRequest("/missing"))
+        self.assertEqual(response.status, 404)
+        self.assertEqual(response.content_type, "application/json; charset=utf-8")
+        self.assertEqual(response.body, '{"error": "Item not found", "status": 404}')
+
+    def test_response_helpers_validate_status_and_redirect(self):
+        with self.assertRaisesRegex(RuntimeErrorMemingo, "100 to 599"):
+            self.interpreter._response_json({}, 700)
+        with self.assertRaisesRegex(RuntimeErrorMemingo, "Redirect status"):
+            self.interpreter._response_redirect("/new", 200)
+        with self.assertRaisesRegex(RuntimeErrorMemingo, "line breaks"):
+            self.interpreter._response_redirect("/new\\r\\nX-Evil: yes")
+
     def test_api_listen_uses_cli_host_and_port_defaults(self):
         app = self.interpreter._api_create()
         self.interpreter.api_host = "127.0.0.1"
