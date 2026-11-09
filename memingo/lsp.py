@@ -222,16 +222,22 @@ def _hover(self, params: dict):
             header = self.reader.readline()
             if not header:
                 return 0
-            if not header.lower().startswith(b"content-length:"):
+            if header in (b"\\r\\n", b"\\n"):
                 continue
             try:
-                length = int(header.split(b":", 1)[1].strip())
+                headers = {}
+                current = header
+                while current not in (b"\\r\\n", b"\\n", b""):
+                    if b":" in current:
+                        name, value = current.split(b":", 1)
+                        headers[name.strip().lower()] = value.strip()
+                    current = self.reader.readline()
+                raw_length = headers.get(b"content-length")
+                if raw_length is None:
+                    continue
+                length = int(raw_length)
                 if length < 0 or length > 8 * 1024 * 1024:
                     return 2
-                while True:
-                    line = self.reader.readline()
-                    if line in (b"\r\n", b"\n", b""):
-                        break
                 body = self.reader.read(length)
                 if len(body) != length:
                     return 2
