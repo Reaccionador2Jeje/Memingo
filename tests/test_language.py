@@ -193,6 +193,51 @@ class MemingoLanguageTests(unittest.TestCase):
         self.assertEqual(context.exception.line, 2)
         self.assertIn("line 2", str(context.exception))
 
+
+    def test_import_math_module(self):
+        self.assertEqual(execute('import "math"\nspill math.sqrt(81)\nspill math.pi > 3'), ["9.0", "based"])
+
+    def test_import_project_module_and_alias(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "mathkit.mgo").write_text(
+                'ritual double(n) { drop n * 2 }\nvibe label = "MathKit"',
+                encoding="utf-8",
+            )
+            output = execute(
+                'import "mathkit" as kit\nspill kit.double(21)\nspill kit.label',
+                project_directory=root,
+            )
+            self.assertEqual(output, ["42", "MathKit"])
+
+    def test_import_module_directory_entry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            package = root / "tools"
+            package.mkdir()
+            (package / "main.mgo").write_text('vibe answer = 42', encoding="utf-8")
+            self.assertEqual(
+                execute('import "tools"\nspill tools.answer', project_directory=root),
+                ["42"],
+            )
+
+    def test_import_rejects_path_escape_and_missing_module(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with self.assertRaises(RuntimeErrorMemingo):
+                execute('import "../outside"', project_directory=root)
+            with self.assertRaises(RuntimeErrorMemingo):
+                execute('import "missing"', project_directory=root)
+
+    def test_import_detects_circular_dependency(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "a.mgo").write_text('import "b"', encoding="utf-8")
+            (root / "b.mgo").write_text('import "a"', encoding="utf-8")
+            with self.assertRaises(RuntimeErrorMemingo) as context:
+                execute('import "a"', project_directory=root)
+            self.assertIn("Circular module import", str(context.exception))
+
     def test_file_builtins_stay_inside_project(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
