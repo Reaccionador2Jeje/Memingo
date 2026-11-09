@@ -1,0 +1,31 @@
+# Explicit HTTP responses in native Memingo.
+vibe app = api()
+
+ritual home(request) {
+    drop response_json({name: "Memingo", status: "ready"})
+}
+
+ritual create_item(request) {
+    vibe data = request_json(request)
+    drop response_json({created: true, item: data}, 201, {"X-API": "Memingo"})
+}
+
+ritual old_page(request) {
+    drop response_redirect("/new-page", 308)
+}
+
+ritual new_page(request) {
+    drop response_html("<main><h1>Welcome</h1></main>")
+}
+
+ritual missing(request) {
+    drop response_error(404, "Item not found")
+}
+
+api_get(app, "/", home)
+api_post(app, "/items", create_item)
+api_get(app, "/old-page", old_page)
+api_get(app, "/new-page", new_page)
+api_get(app, "/missing", missing)
+
+api_listen(app)
