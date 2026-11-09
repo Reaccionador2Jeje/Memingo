@@ -127,6 +127,26 @@ api_get(app, "/", home)
         self.assertEqual(response.status, 200)
         self.assertEqual(response.body, '{"error": "blocked"}')
 
+    def test_response_header_rejects_line_breaks(self):
+        response = {
+            "__memingo_response__": True,
+            "status": 200,
+            "body": "ok",
+            "headers": {},
+        }
+        with self.assertRaisesRegex(RuntimeErrorMemingo, "cannot contain line breaks"):
+            self.interpreter._response_header(response, "X-Test", "safe\\r\\nInjected: yes")
+
+    def test_response_header_rejects_invalid_names(self):
+        response = {
+            "__memingo_response__": True,
+            "status": 200,
+            "body": "ok",
+            "headers": {},
+        }
+        with self.assertRaisesRegex(RuntimeErrorMemingo, "name is invalid"):
+            self.interpreter._response_header(response, "X-Test\\r\\nInjected", "value")
+
     def test_api_listen_uses_cli_host_and_port_defaults(self):
         app = self.interpreter._api_create()
         self.interpreter.api_host = "127.0.0.1"
