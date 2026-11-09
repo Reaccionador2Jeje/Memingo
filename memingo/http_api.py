@@ -64,9 +64,13 @@ class MemingoAPIServer:
         return authenticate
 
     def _find_route(self, method, path):
-        for (route_method, route_path), (pattern, names, handler) in self.routes.items():
-            if route_method != method:
-                continue
+        matching = [
+            (route_path, pattern, names, handler)
+            for (route_method, route_path), (pattern, names, handler) in self.routes.items()
+            if route_method == method
+        ]
+        matching.sort(key=lambda item: item[0].count("{"))
+        for route_path, pattern, names, handler in matching:
             match = pattern.match(path)
             if match:
                 return handler, {
