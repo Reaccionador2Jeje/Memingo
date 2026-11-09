@@ -37,8 +37,8 @@ def run_ide_web(host="127.0.0.1", port=3000) -> int:
             file=sys.stderr,
         )
         return 127
-    print(f"Memingo IDE Web: http://127.0.0.1:{port}")
-    print("Presiona Ctrl+C para detener el servidor.")
+    # El proceso Node.js imprime la URL cuando el socket ya está escuchando.
+    # subprocess.call mantiene este comando en primer plano hasta Ctrl+C.
     try:
         return subprocess.call([executable, "--host", host, "--port", str(port)])
     except OSError as exception:
