@@ -151,7 +151,7 @@ class Parser:
             if self._match("AS"):
                 alias = self._consume("IDENTIFIER", "Expected module alias after as").value
             if alias is None:
-                alias = path.replace("\\\\", "/").rsplit("/", 1)[-1].removesuffix(".mgo")
+                alias = path.replace("\\", "/").rsplit("/", 1)[-1].removesuffix(".mgo")
             if not alias.isidentifier():
                 raise ParseError(f"Invalid module alias {alias!r}")
             return ImportModule(Literal(path), alias)
