@@ -35,9 +35,24 @@ class Response:
     """An HTTP response returned by a Memingo route."""
 
     def __init__(self, body="", status=200, headers=None, content_type="text/plain; charset=utf-8"):
+        if not isinstance(status, int) or isinstance(status, bool) or not 100 <= status <= 599:
+            raise ValueError("Response status must be an integer from 100 to 599")
+        if headers is not None and not isinstance(headers, dict):
+            raise TypeError("Response headers must be a dictionary")
+        safe_headers = {}
+        for name, value in (headers or {}).items():
+            name = str(name)
+            value = str(value)
+            if not re.fullmatch(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+", name):
+                raise ValueError("Invalid HTTP response header name")
+            if "\\r" in value or "\\n" in value:
+                raise ValueError("HTTP response header values cannot contain line breaks")
+            safe_headers[name] = value
+        if not isinstance(content_type, str) or "\\r" in content_type or "\\n" in content_type:
+            raise ValueError("Invalid HTTP response content type")
         self.body = body
-        self.status = int(status)
-        self.headers = dict(headers or {})
+        self.status = status
+        self.headers = safe_headers
         self.content_type = content_type
 
     @classmethod
