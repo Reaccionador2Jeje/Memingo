@@ -115,22 +115,27 @@ class MemingoApp:
         function, params = selected
         request.params = params
 
+        def normalize(result):
+            if isinstance(result, Response):
+                return result
+            if isinstance(result, (dict, list)):
+                return Response.json(result)
+            if result is None:
+                return Response("", 204)
+            return Response.text(result)
+
         def invoke(index):
             if index >= len(self.middleware):
-                return function(request)
-            return self.middleware[index](request, lambda: invoke(index + 1))
+                return normalize(function(request))
+            return normalize(self.middleware[index](request, lambda: invoke(index + 1)))
 
         try:
-            result = invoke(0)
+            return invoke(0)
         except ValueError as exc:
             return Response.json({"error": str(exc)}, 400)
-        if isinstance(result, Response):
-            return result
-        if isinstance(result, (dict, list)):
-            return Response.json(result)
-        if result is None:
-            return Response("", 204)
-        return Response.text(result)
+        except Exception:
+            # Do not leak application internals or tracebacks to HTTP clients.
+            return Response.json({"error": "Internal server error"}, 500)
 
 
 def serve_app(app, host="127.0.0.1", port=8000):
