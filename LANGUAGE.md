@@ -182,3 +182,15 @@ greet("Team")
 ```
 
 `borrow` loads the installed package entry point from `.memingo/packages/<name>`. Package names may contain letters, digits, dots, dashes, and underscores.
+
+
+## Runtime diagnostics
+
+Runtime errors include the source line and column of the statement that caused the failure when that location is available. Errors inside a ritual preserve the innermost failing statement location.
+
+```mgo
+vibe answer = 42
+spill missing_value
+```
+
+The CLI reports the undefined variable together with its source location, making larger projects easier to debug.
