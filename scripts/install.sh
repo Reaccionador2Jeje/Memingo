@@ -3,7 +3,17 @@ set -eu
 
 SOURCE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 INSTALL_DIR=${MEMINGO_INSTALL_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/memingo}
-BIN_DIR=${MEMINGO_BIN_DIR:-$HOME/.local/bin}
+IS_TERMUX=0
+if [ -n "${TERMUX_VERSION:-}" ] || { [ -n "${PREFIX:-}" ] && [ -d "$PREFIX/etc/termux" ]; }; then
+  IS_TERMUX=1
+fi
+if [ -n "${MEMINGO_BIN_DIR:-}" ]; then
+  BIN_DIR=$MEMINGO_BIN_DIR
+elif [ "$IS_TERMUX" -eq 1 ] && [ -n "${PREFIX:-}" ]; then
+  BIN_DIR=$PREFIX/bin
+else
+  BIN_DIR=$HOME/.local/bin
+fi
 PYTHON=${MEMINGO_PYTHON:-}
 
 if [ -z "$PYTHON" ]; then
@@ -42,7 +52,9 @@ EOF
 chmod +x "$BIN_DIR/mgoa"
 
 PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
-if [ "$BIN_DIR" != "$HOME/.local/bin" ]; then
+if [ "$IS_TERMUX" -eq 1 ]; then
+  PATH_LINE=""
+elif [ "$BIN_DIR" != "$HOME/.local/bin" ]; then
   PATH_LINE="export PATH=\"$BIN_DIR:\$PATH\""
 fi
 
@@ -55,19 +67,31 @@ add_path_line() {
   fi
 }
 
-add_path_line "$HOME/.profile"
-add_path_line "$HOME/.bashrc"
+if [ -n "$PATH_LINE" ]; then
+  add_path_line "$HOME/.profile"
+  add_path_line "$HOME/.bashrc"
+fi
 case "${SHELL:-}" in
-  */zsh) add_path_line "$HOME/.zprofile" ;;
+  */zsh) [ -z "$PATH_LINE" ] || add_path_line "$HOME/.zprofile" ;;
   */fish)
-    mkdir -p "$HOME/.config/fish"
-    if ! grep -Fq "$BIN_DIR" "$HOME/.config/fish/config.fish" 2>/dev/null; then
-      printf '\n# Memingo\nfish_add_path %s\n' "$BIN_DIR" >> "$HOME/.config/fish/config.fish"
+    if [ -n "$PATH_LINE" ]; then
+      mkdir -p "$HOME/.config/fish"
+      if ! grep -Fq "$BIN_DIR" "$HOME/.config/fish/config.fish" 2>/dev/null; then
+        printf '\n# Memingo\nfish_add_path %s\n' "$BIN_DIR" >> "$HOME/.config/fish/config.fish"
+      fi
     fi
     ;;
 esac
 
-printf 'Memingo installed successfully.\n'
+if [ "$IS_TERMUX" -eq 1 ]; then
+  printf 'Memingo installed for Termux.\n'
+else
+  printf 'Memingo installed successfully.\n'
+fi
 printf 'Runtime: %s\n' "$INSTALL_DIR"
 printf 'Commands: %s/memingo, %s/mgoa\n' "$BIN_DIR" "$BIN_DIR"
-printf 'Run this now if memingo or mgoa is not found:\n  export PATH="%s:$PATH"\n  hash -r\n  memingo --version\n  mgoa --version\n' "$BIN_DIR"
+if [ "$IS_TERMUX" -eq 1 ]; then
+  printf 'Run: hash -r && memingo --version && mgoa --version\n'
+else
+  printf 'Run this now if memingo or mgoa is not found:\n  export PATH="%s:$PATH"\n  hash -r\n  memingo --version\n  mgoa --version\n' "$BIN_DIR"
+fi
