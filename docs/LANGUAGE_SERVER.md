@@ -30,7 +30,7 @@ Incoming JSON-RPC messages are limited to 8 MiB. The server uses only the Python
 
 The desktop Memingo IDE starts this server automatically for `.mgo` and `.mgoa` files when the Memingo runtime is installed and available in PATH. Other language servers remain optional external tools.
 
-The Android WebView edition cannot spawn the Python runtime directly. It provides local Memingo keyword and standard-library suggestions; native Android LSP transport and runtime execution remain future work.
+The Android WebView edition cannot spawn the Python runtime directly. It now bundles an offline mobile language-intelligence module with delimiter/string diagnostics, keyword and standard-library completion, hover documentation, and local `vibe`/`ritual` symbol discovery. This is an embedded mobile implementation of the core editor features, not a subprocess running the stdio server. Native Android runtime execution and full JSON-RPC transport remain future work.
 
 ## Current limitations
 
