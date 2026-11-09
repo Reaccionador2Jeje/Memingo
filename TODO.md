@@ -48,7 +48,8 @@
 
 ## Web server
 - [x] Static HTTP serving
-- [x] `memingo serve` launcher
+- [x] `memingo serve` static-file launcher
+- [x] `memingo api` route-based application launcher
 - [x] HTTP client GET/POST and JSON helpers
 - [x] Memingo HTTP server API (Python application API v0.3)
 - [x] Routes, methods and middleware (GET/POST/PUT/DELETE, path parameters)
