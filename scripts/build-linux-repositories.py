@@ -96,7 +96,7 @@ def build_apt_repository(output, version, packages):
     else:
         print("APT repository: apt-ftparchive produced no checksum sections", file=sys.stderr)
         return False
-    release.write_text("\\n".join(metadata) + hash_metadata, encoding="utf-8")
+    release.write_text("\n".join(metadata) + hash_metadata, encoding="utf-8")
     return True
 
 def build_rpm_repository(output, packages):
