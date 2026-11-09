@@ -97,9 +97,15 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     output = Path(args.output).resolve()
-    if output.exists():
-        shutil.rmtree(output)
-    output.mkdir(parents=True)
+    output.mkdir(parents=True, exist_ok=True)
+
+    # Preserve the other repository when building only APT or RPM.
+    # A full build intentionally refreshes both repositories.
+    repositories_to_refresh = ("apt", "rpm") if args.only is None else (args.only,)
+    for repository_name in repositories_to_refresh:
+        repository_path = output / repository_name
+        if repository_path.exists():
+            shutil.rmtree(repository_path)
 
     deb_packages = sorted(DIST.glob("*.deb"))
     rpm_packages = sorted(DIST.glob("*.rpm"))
