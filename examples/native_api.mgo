@@ -1,0 +1,29 @@
+# A native Memingo HTTP API — no Python application required.
+vibe app = api()
+
+ritual home(request) {
+    drop {
+        name: "Memingo",
+        status: "ready",
+        language: "mgo"
+    }
+}
+
+ritual greet(request) {
+    drop {
+        message: "Hello " + request.params.name + "!"
+    }
+}
+
+ritual echo(request) {
+    vibe data = request_json(request)
+    drop {
+        received: data
+    }
+}
+
+api_get(app, "/", home)
+api_get(app, "/hello/<name>", greet)
+api_post(app, "/echo", echo)
+
+api_listen(app)
