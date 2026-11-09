@@ -2,7 +2,7 @@ import io
 import json
 import unittest
 
-from memingo.lsp import MemingoLanguageServer, _completion if False else MemingoLanguageServer
+from memingo.lsp import MemingoLanguageServer
 
 
 class LanguageServerTests(unittest.TestCase):
