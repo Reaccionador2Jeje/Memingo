@@ -1,4 +1,5 @@
 import argparse
+import importlib.util
 import json
 import os
 import shutil
@@ -17,12 +18,29 @@ from .mgoa import PackageError, add_package, install_project, remove_package
 from .lexer import LexerError
 from .packages import ensure_project, init_project, read_manifest, resolve_entry
 from .parser import ParseError, parse
-from .server import serve
+from .server import MemingoApp, serve, serve_app
 from .cli import (
     banner, heading, key_value, success, info, error, warning, table, panel,
     status_bar, tip, command_header, CYAN, GREEN, YELLOW,
 )
 from .completion import memingo_completion
+
+
+def serve_api(path="app.py", host="127.0.0.1", port=8000) -> int:
+    """Load a Python module exporting a MemingoApp named app and serve it."""
+    source_path = Path(path).resolve()
+    if not source_path.is_file():
+        raise FileNotFoundError(f"API application file does not exist: {source_path}")
+    spec = importlib.util.spec_from_file_location("memingo_user_api", source_path)
+    if spec is None or spec.loader is None:
+        raise ValueError(f"Cannot load API application: {source_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    app = getattr(module, "app", None)
+    if not isinstance(app, MemingoApp):
+        raise ValueError(f"{source_path.name} must export 'app = MemingoApp()'")
+    serve_app(app, host, port)
+    return 0
 
 
 def run_file(path: str) -> int:
@@ -560,6 +578,11 @@ def _main(argv=None) -> int:
     serve_parser.add_argument("--host", default="127.0.0.1")
     serve_parser.add_argument("--port", type=int, default=8000)
 
+    api_parser = subparsers.add_parser("api", help="Run a route-based HTTP application")
+    api_parser.add_argument("file", nargs="?", default="app.py")
+    api_parser.add_argument("--host", default="127.0.0.1")
+    api_parser.add_argument("--port", type=int, default=8000)
+
     add_parser = subparsers.add_parser("add", help="Add a package dependency")
     add_parser.add_argument("spec")
     add_parser.add_argument("--project", default=".")
@@ -583,7 +606,7 @@ def _main(argv=None) -> int:
 
     args = parser.parse_args(argv)
 
-    raw_output_commands = {"completion", "run", "debug", "eval", "repl", "dev", "serve", "test"}
+    raw_output_commands = {"completion", "run", "debug", "eval", "repl", "dev", "serve", "api", "test"}
     if args.command not in raw_output_commands and args.command is not None:
         command_header("memingo", args.command)
 
@@ -676,6 +699,12 @@ def _main(argv=None) -> int:
             error(f"Memingo serve error: {exception}")
             return 1
         return 0
+    if args.command == "api":
+        try:
+            return serve_api(args.file, args.host, args.port)
+        except (OSError, ValueError, ImportError) as exception:
+            error(f"Memingo API error: {exception}")
+            return 1
     if args.command == "add":
         try:
             project_path = Path(args.project).resolve()
@@ -756,6 +785,13 @@ def _main(argv=None) -> int:
 
 
 def main(argv=None) -> int:
+    # Replace unsupported terminal glyphs on legacy Windows consoles.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(errors="replace")
+            except (OSError, ValueError):
+                pass
     try:
         code = _main(argv)
         try:
