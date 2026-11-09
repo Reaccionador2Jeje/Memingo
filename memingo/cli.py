@@ -41,6 +41,7 @@ def banner(version="0.2.0", subtitle="CODE THE BIT"):
     print()
     print(color("  ╭────────────────────╮", YELLOW))
     print(color("  │  M  E  M  I  N  G  O  │", BOLD + YELLOW))
+    print(color("  │       MEMINGO        │", BOLD + YELLOW))
     print(color("  ╰───┬────────────┬───╯", YELLOW))
     print(color("      │  " + subtitle[:18].upper().ljust(18) + "  │  " + f"v{version}", BOLD + CYAN))
     print(color("      ╰──────────────╯", DIM))
