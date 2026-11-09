@@ -62,6 +62,8 @@ Add these GitHub Actions repository secrets under Settings > Secrets and variabl
 - `MEMINGO_GPG_PASSPHRASE`: the key passphrase. Prefer a strong passphrase stored only as this Actions secret; never commit it or paste it into issues, pull requests, or chat.
 - `MEMINGO_GPG_PRIVATE_KEY`: the Base64 content of `memingo-private-key.base64`.
 
+Before publishing, the workflow performs a test signature with the configured key, verifies `InRelease` and `Release.gpg`, checks each RPM package signature, and verifies the RPM repository metadata signature. A failed verification stops deployment.
+
 To publish a release:
 
 ```bash
