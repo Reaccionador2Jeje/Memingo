@@ -573,7 +573,7 @@ class Interpreter:
         try:
             return json.loads(request["body"]) if request["body"] else {}
         except (TypeError, json.JSONDecodeError) as error:
-            raise RuntimeErrorMemingo("Request body is not valid JSON") from error
+            raise ValueError("Request body is not valid JSON") from error
 
     def _api_listen(self, app, host=None, port=None):
         if not isinstance(app, MemingoApp):
