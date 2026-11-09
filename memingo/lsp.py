@@ -112,7 +112,10 @@ class MemingoLanguageServer:
         lines = source.splitlines()
         if line < 0 or line >= len(lines):
             return None
-        match = re.search(r"[A-Za-z_][A-Za-z0-9_]*", lines[line][max(0, character-80):character+80])
+        tokens = list(re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", lines[line]))
+        match = next((item for item in tokens if item.start() <= character <= item.end()), None)
+        if match is None and tokens:
+            match = min(tokens, key=lambda item: min(abs(character-item.start()), abs(character-item.end())))
         if not match:
             return None
         word = match.group(0)
