@@ -1,5 +1,7 @@
 # Deploy Memingo to GitHub Pages
 
+Memingo publica paquetes nativos únicamente para distribuciones basadas en APT (DEB) y DNF (RPM). La publicación en AUR queda fuera del alcance del proyecto.
+
 ## Automatic deployment
 
 1. Open the repository settings on GitHub.
