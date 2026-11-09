@@ -115,9 +115,11 @@
     }
   },
   "scripts": {
-    "check": "node --check extension.js",
+    "check": "node --check extension.js && node --check extension.web.js",
     "package": "npx @vscode/vsce package",
-    "publish": "npx @vscode/vsce publish"
+    "publish": "npx @vscode/vsce publish",
+    "package-web": "npx --yes esbuild extension.web.js --bundle --platform=browser --format=cjs --external:vscode --outfile=dist/web/extension.js",
+    "vscode:prepublish": "npm run package-web"
   },
   "license": "BSD-3-Clause",
   "homepage": "https://reaccionador2jeje.github.io/Memingo/",
@@ -133,5 +135,5 @@
     "theme": "light"
   },
   "changelog": "CHANGELOG.md",
-  "browser": "./extension.web.js"
+  "browser": "./dist/web/extension.js"
 }
