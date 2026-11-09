@@ -54,6 +54,29 @@ class MemingoServerTests(unittest.TestCase):
         self.assertEqual(seen, ["before", "after"])
         self.assertEqual(response.headers["X-Memingo"], "middleware")
 
+    def test_handler_errors_return_safe_500_response(self):
+        app = MemingoApp()
+
+        @app.get("/broken")
+        def broken(request):
+            raise RuntimeError("private implementation detail")
+
+        response = app.dispatch(FakeRequest("/broken"))
+        self.assertEqual(response.status, 500)
+        self.assertEqual(response.body, '{"error": "Internal server error"}')
+        self.assertNotIn("private implementation detail", response.body)
+
+    def test_value_error_returns_bad_request(self):
+        app = MemingoApp()
+
+        @app.get("/invalid")
+        def invalid(request):
+            raise ValueError("invalid input")
+
+        response = app.dispatch(FakeRequest("/invalid"))
+        self.assertEqual(response.status, 400)
+        self.assertIn("invalid input", response.body)
+
     def test_route_validation(self):
         with self.assertRaises(ValueError):
             self.app.get("missing-slash")
