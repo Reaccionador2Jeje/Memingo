@@ -88,6 +88,29 @@ vibe created = http_post("https://example.com/api/items", {name: "meme"})
 spill created
 ```
 
+## Native HTTP servers
+
+Memingo programs can define HTTP APIs directly in `.mgo`:
+
+```mgo
+vibe app = api()
+
+ritual greet(request) {
+    drop {message: "Hello " + request.params.name}
+}
+
+api_get(app, "/hello/<name>", greet)
+api_listen(app)
+```
+
+- `api()` creates an application.
+- `api_get(app, path, ritual)`, `api_post(...)`, `api_put(...)`, and `api_delete(...)` register routes.
+- `api_route(app, methods, path, ritual)` registers custom methods.
+- `request_json(request)` parses a request's JSON body.
+- `api_listen(app, host?, port?)` starts listening. The default host is `127.0.0.1` and port is `8000`.
+
+The route ritual receives a request object with `method`, `path`, `query`, `params`, `headers`, and `body`. Return an object or list for JSON, a string for text, or `ghost` for an empty 204 response. Run a server with `memingo api server.mgo`. See [docs/SERVER.md](docs/SERVER.md).
+
 ## Standard library
 
 ### Values and collections
