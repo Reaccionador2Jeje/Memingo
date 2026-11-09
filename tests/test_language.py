@@ -11,8 +11,8 @@ from memingo.parser import ParseError
 
 
 
-def api_server_dispatch(api, method, path, body=b""):
-    return api["get"].__self__._dispatch(method, path, {}, body)
+def api_server_dispatch(api, method, path, body=b"", headers=None):
+    return api["get"].__self__._dispatch(method, path, headers or {}, body)
 
 
 class MemingoLanguageTests(unittest.TestCase):
@@ -272,6 +272,55 @@ class MemingoLanguageTests(unittest.TestCase):
             api["get"]("hello", lambda request: request)
         with self.assertRaises(ValueError):
             api["get"]("/", "not a ritual")
+
+
+    def test_http_server_dynamic_routes_and_query(self):
+        interpreter = Interpreter()
+        source = (
+            'vibe api = http_server()\\n'
+            'ritual user(request) { drop {body: {id: request.params.id, page: request.query.page}} }\\n'
+            'api.get("/users/{id}", user)'
+        )
+        interpreter.run(parse(source))
+        api = interpreter.global_environment.get("api")
+        status, headers, body = api_server_dispatch(api, "GET", "/users/42?page=3")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"id": "42", "page": "3"})
+
+    def test_http_server_middleware_and_bearer_auth(self):
+        interpreter = Interpreter()
+        source = (
+            'vibe api = http_server()\\n'
+            'ritual private(request) { drop {body: {secret: "ok"}} }\\n'
+            'api.use(api.bearer("test-token"))\\n'
+            'api.get("/private", private)'
+        )
+        interpreter.run(parse(source))
+        api = interpreter.global_environment.get("api")
+        status, headers, body = api_server_dispatch(api, "GET", "/private")
+        self.assertEqual(status, 401)
+        status, headers, body = api_server_dispatch(
+            api, "GET", "/private", headers={"Authorization": "Bearer test-token"}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"secret": "ok"})
+
+    def test_sqlite_helpers_support_parameterized_queries(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = execute(
+                'vibe db = sqlite(":memory:")\\n'
+                'db.execute("CREATE TABLE people (name TEXT)")\\n'
+                'db.execute("INSERT INTO people (name) VALUES (?)", ["Cris"])\\n'
+                'spill db.query("SELECT name FROM people")[0].name\\n'
+                'db.close()',
+                project_directory=temporary,
+            )
+            self.assertEqual(output, ["Cris"])
+
+    def test_sqlite_rejects_paths_outside_project(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaises(RuntimeErrorMemingo):
+                execute('vibe db = sqlite("../outside.db")', project_directory=temporary)
 
     def test_file_builtins_stay_inside_project(self):
         with tempfile.TemporaryDirectory() as temporary:
