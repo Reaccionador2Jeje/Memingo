@@ -2,6 +2,8 @@
 import argparse
 import gzip
 import hashlib
+from datetime import datetime, timezone
+from email.utils import format_datetime
 import shutil
 import subprocess
 import sys
@@ -41,24 +43,33 @@ def build_apt_repository(output, version, packages):
 
     apt_root = output / "apt"
     distribution = apt_root / "dists" / "stable"
-    component = distribution / "main" / "binary-amd64"
-    component.mkdir(parents=True, exist_ok=True)
+    distribution.mkdir(parents=True, exist_ok=True)
 
-    packages_file = component / "Packages"
-    with packages_file.open("w", encoding="utf-8") as stream:
-        subprocess.run(["dpkg-scanpackages", "pool/", "/dev/null"], cwd=apt_root, stdout=stream, check=True)
-    with packages_file.open("rb") as source, gzip.open(str(packages_file) + ".gz", "wb") as target:
-        shutil.copyfileobj(source, target)
+    # Discover package architectures and also publish architecture-independent
+    # packages in the common Debian client architectures.
+    architectures = {"amd64", "arm64", "armhf", "i386"}
+    for package in packages:
+        architecture = subprocess.check_output(["dpkg-deb", "-f", str(package), "Architecture"], text=True).strip()
+        if architecture and architecture != "all":
+            architectures.add(architecture)
 
-    now = subprocess.check_output(["date", "-Ru"], text=True).strip()
+    for architecture in sorted(architectures):
+        component = distribution / "main" / f"binary-{architecture}"
+        component.mkdir(parents=True, exist_ok=True)
+        packages_file = component / "Packages"
+        with packages_file.open("w", encoding="utf-8") as stream:
+            subprocess.run(["dpkg-scanpackages", "--arch", architecture, "pool/", "/dev/null"], cwd=apt_root, stdout=stream, check=True)
+        with packages_file.open("rb") as source, gzip.open(str(packages_file) + ".gz", "wb") as target:
+            shutil.copyfileobj(source, target)
+
     release = distribution / "Release"
     lines = [
         "Origin: Memingo",
         "Label: Memingo",
         "Suite: stable",
         "Codename: stable",
-        f"Date: {now}",
-        "Architectures: amd64",
+        f"Date: {format_datetime(datetime.now(timezone.utc), usegmt=True)}",
+        f"Architectures: {" ".join(sorted(architectures))}",
         "Components: main",
         "Description: Memingo APT package repository",
         "",
@@ -74,7 +85,6 @@ def build_apt_repository(output, version, packages):
     lines.extend(hash_lines)
     release.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return True
-
 
 def build_rpm_repository(output, packages):
     if not shutil.which("createrepo_c"):
