@@ -2,52 +2,135 @@
   "name": "memingo",
   "displayName": "Memingo",
   "description": "Memingo language support, commands and project tooling for Visual Studio Code.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "atdev",
   "icon": "./branding/memingo-icon.png",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Programming Languages", "Snippets", "Other"],
-  "keywords": ["memingo", "meme", "language", "web", "mgo"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "memingo",
+    "meme",
+    "language",
+    "web",
+    "mgo"
+  ],
   "main": "./extension.js",
   "contributes": {
-    "languages": [{
-      "id": "memingo",
-      "aliases": ["Memingo", "mgo"],
-      "extensions": [".mgo"],
-      "configuration": "./language-configuration.json",
-      "icon": { "light": "./branding/memingo-file-light.svg", "dark": "./branding/memingo-file-dark.svg" }
-    }],
-    "grammars": [{
-      "language": "memingo",
-      "scopeName": "source.memingo",
-      "path": "./syntaxes/memingo.tmLanguage.json"
-    }],
-    "snippets": [{ "language": "memingo", "path": "./snippets/memingo.json" }],
+    "languages": [
+      {
+        "id": "memingo",
+        "aliases": [
+          "Memingo",
+          "mgo"
+        ],
+        "extensions": [
+          ".mgo"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./branding/memingo-file-light.svg",
+          "dark": "./branding/memingo-file-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "memingo",
+        "scopeName": "source.memingo",
+        "path": "./syntaxes/memingo.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "memingo",
+        "path": "./snippets/memingo.json"
+      }
+    ],
     "commands": [
-      { "command": "memingo.run", "title": "Memingo: Run Current File", "category": "Memingo" },
-      { "command": "memingo.init", "title": "Memingo: Initialize Project", "category": "Memingo" },
-      { "command": "memingo.repl", "title": "Memingo: Open REPL", "category": "Memingo" },
-      { "command": "memingo.serve", "title": "Memingo: Serve Project", "category": "Memingo" },
-      { "command": "memingo.searchPackages", "title": "Memingo: Search Packages", "category": "Memingo" },
-      { "command": "memingo.installPackages", "title": "Memingo: Install Packages", "category": "Memingo" }
+      {
+        "command": "memingo.run",
+        "title": "Memingo: Run Current File",
+        "category": "Memingo"
+      },
+      {
+        "command": "memingo.init",
+        "title": "Memingo: Initialize Project",
+        "category": "Memingo"
+      },
+      {
+        "command": "memingo.repl",
+        "title": "Memingo: Open REPL",
+        "category": "Memingo"
+      },
+      {
+        "command": "memingo.serve",
+        "title": "Memingo: Serve Project",
+        "category": "Memingo"
+      },
+      {
+        "command": "memingo.searchPackages",
+        "title": "Memingo: Search Packages",
+        "category": "Memingo"
+      },
+      {
+        "command": "memingo.installPackages",
+        "title": "Memingo: Install Packages",
+        "category": "Memingo"
+      }
     ],
     "configuration": {
       "title": "Memingo",
       "properties": {
-        "memingo.executable": { "type": "string", "default": "memingo", "description": "Installed Memingo executable command. Leave empty to run the source package through Python." },
-        "memingo.packageManagerExecutable": { "type": "string", "default": "mgoa", "description": "Installed mgoa executable command. Leave empty to run the package manager through Python." },
-        "memingo.pythonExecutable": { "type": "string", "default": "python3", "description": "Python executable used when running Memingo from source." }
+        "memingo.executable": {
+          "type": "string",
+          "default": "memingo",
+          "description": "Installed Memingo executable command. Leave empty to run the source package through Python."
+        },
+        "memingo.packageManagerExecutable": {
+          "type": "string",
+          "default": "mgoa",
+          "description": "Installed mgoa executable command. Leave empty to run the package manager through Python."
+        },
+        "memingo.pythonExecutable": {
+          "type": "string",
+          "default": "python3",
+          "description": "Python executable used when running Memingo from source."
+        }
       }
     },
     "menus": {
-      "editor/title/run": [{ "when": "resourceLangId == memingo", "command": "memingo.run", "group": "navigation" }]
+      "editor/title/run": [
+        {
+          "when": "resourceLangId == memingo",
+          "command": "memingo.run",
+          "group": "navigation"
+        }
+      ]
     }
   },
-  "scripts": { "check": "node --check extension.js", "package": "npx @vscode/vsce package", "publish": "npx @vscode/vsce publish" },
+  "scripts": {
+    "check": "node --check extension.js",
+    "package": "npx @vscode/vsce package",
+    "publish": "npx @vscode/vsce publish"
+  },
   "license": "BSD-3-Clause",
   "homepage": "https://reaccionador2jeje.github.io/Memingo/",
-  "repository": { "type": "git", "url": "https://github.com/Reaccionador2Jeje/Memingo.git" },
-  "bugs": { "url": "https://github.com/Reaccionador2Jeje/Memingo/issues" },
-  "galleryBanner": { "color": "#FFCF3A", "theme": "light" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Reaccionador2Jeje/Memingo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Reaccionador2Jeje/Memingo/issues"
+  },
+  "galleryBanner": {
+    "color": "#FFCF3A",
+    "theme": "light"
+  },
   "changelog": "CHANGELOG.md"
 }
