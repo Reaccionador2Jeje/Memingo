@@ -83,11 +83,11 @@ class MemingoServerTests(unittest.TestCase):
 
     def test_response_rejects_header_injection(self):
         with self.assertRaisesRegex(ValueError, "line breaks"):
-            Response("ok", headers={"X-Test": "safe\\r\\nInjected: yes"})
+            Response("ok", headers={"X-Test": "safe\r\nInjected: yes"})
 
     def test_response_rejects_invalid_header_name(self):
         with self.assertRaisesRegex(ValueError, "header name"):
-            Response("ok", headers={"X-Test\\r\\nInjected": "value"})
+            Response("ok", headers={"X-Test\r\nInjected": "value"})
 
     def test_route_validation(self):
         with self.assertRaises(ValueError):
