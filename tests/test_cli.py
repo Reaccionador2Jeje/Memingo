@@ -1,10 +1,13 @@
 import contextlib
 import io
 import os
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from memingo.cli import banner, command_header, error, heading, key_value, panel, status_bar, success, table, tip
-from memingo.__main__ import main as memingo_main
+from memingo.__main__ import main as memingo_main, serve_api
 from memingo.mgoa_cli import main as mgoa_main
 
 
@@ -69,6 +72,30 @@ class CliStyleTests(unittest.TestCase):
         output += self.capture(table, ["package", "latest"], [["hello-memes", "0.1.0"]])
         self.assertIn("PACKAGE MANAGER", output.upper())
         self.assertIn("hello-memes", output)
+
+
+class ApiCliTests(unittest.TestCase):
+    def test_serve_api_loads_exported_app(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app_file = Path(directory) / "app.py"
+            app_file.write_text(
+                "from memingo import MemingoApp\\napp = MemingoApp()\\n",
+                encoding="utf-8",
+            )
+            with patch("memingo.__main__.serve_app") as start_server:
+                self.assertEqual(serve_api(str(app_file), "127.0.0.1", 8123), 0)
+                start_server.assert_called_once()
+                app, host, port = start_server.call_args.args
+                self.assertEqual(host, "127.0.0.1")
+                self.assertEqual(port, 8123)
+                self.assertEqual(type(app).__name__, "MemingoApp")
+
+    def test_serve_api_requires_memingo_app_export(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app_file = Path(directory) / "app.py"
+            app_file.write_text("app = object()\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "must export 'app = MemingoApp"):
+                serve_api(str(app_file))
 
 
 if __name__ == "__main__":
