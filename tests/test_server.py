@@ -47,7 +47,7 @@ class MemingoServerTests(unittest.TestCase):
 
         @app.get("/ping")
         def ping(request):
-            return "pong"
+            return Response.text("pong")
 
         response = app.dispatch(FakeRequest("/ping"))
         self.assertEqual(response.body, "pong")
