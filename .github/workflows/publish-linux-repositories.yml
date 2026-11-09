@@ -97,9 +97,14 @@ jobs:
           for package in dist/*.rpm; do
             rpmsign --addsign "$package"
           done
-          rpm --import site/linux/memingo.asc
+          # Use an isolated RPM database: GitHub-hosted runners do not
+          # grant write access to the system database under /var/lib/rpm.
+          RPM_DB="$RUNNER_TEMP/memingo-rpmdb"
+          mkdir -p "$RPM_DB"
+          rpm --dbpath "$RPM_DB" --initdb
+          rpm --dbpath "$RPM_DB" --import site/linux/memingo.asc
           for package in dist/*.rpm; do
-            rpm --checksig --verbose "$package"
+            rpm --dbpath "$RPM_DB" --checksig --verbose "$package"
           done
           cp dist/*.rpm site/linux/rpm/Packages/
           createrepo_c --update --database site/linux/rpm
