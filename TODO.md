@@ -49,9 +49,10 @@
 ## Web server
 - [x] Static HTTP serving
 - [x] `memingo serve` static-file launcher
-- [x] `memingo api` route-based application launcher
+- [x] `memingo api` route-based application launcher for Python and `.mgo` apps
 - [x] HTTP client GET/POST and JSON helpers
 - [x] Memingo HTTP server API (Python application API v0.3)
+- [x] Native `.mgo` API routes, request objects and JSON body parsing
 - [x] Routes, methods and middleware (GET/POST/PUT/DELETE, path parameters)
 - [x] Request and response objects (headers, query, text and JSON helpers)
 - [ ] Templates
