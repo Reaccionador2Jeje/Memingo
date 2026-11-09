@@ -41,6 +41,11 @@ Available built-ins:
 - `api_get(app, path, ritual)`, `api_post(...)`, `api_put(...)`, `api_patch(...)`, and `api_delete(...)` register routes.
 - `api_route(app, methods, path, ritual)` registers one or more HTTP methods.
 - `request_json(request)` parses the incoming JSON body.
+- `response_json(data, status?, headers?)` creates a JSON response.
+- `response_text(text, status?, headers?)` creates a plain-text response.
+- `response_html(html, status?, headers?)` creates an HTML response.
+- `response_redirect(location, status?)` creates a redirect (301, 302, 303, 307, or 308).
+- `response_error(status, message)` creates a JSON error response for status codes 400–599.
 - `api_use(app, ritual)` registers middleware. The ritual receives `(request, next)`.
 - `response_header(response, name, value)`, `response_status(response, status)`, and `response_body(response, body)` modify the response returned by `next()`.
 - `api_listen(app, host?, port?)` starts the server.
@@ -61,6 +66,24 @@ api_use(app, add_server_header)
 ```
 
 The default host is `127.0.0.1`. CLI flags `--host` and `--port` override the defaults supplied by `api_listen(app)`. Route-ritual and middleware execution is serialized to protect shared interpreter state across concurrent HTTP requests.
+
+## Native response helpers
+
+Route rituals can use response constructors when they need to control the HTTP status, content type, or headers instead of returning a plain object or string:
+
+```mgo
+ritual create_item(request) {
+    drop response_json({id: 42, state: "created"}, 201, {"X-API": "Memingo"})
+}
+
+ritual old_page(request) {
+    drop response_redirect("/new-page", 308)
+}
+
+ritual missing(request) {
+    drop response_error(404, "Item not found")
+}
+```
 
 ## Python API quick start
 
