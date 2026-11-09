@@ -24,6 +24,7 @@ from .cli import (
     status_bar, tip, command_header, CYAN, GREEN, YELLOW,
 )
 from .completion import memingo_completion
+from .lsp import run_language_server
 
 
 def serve_api(path="app.py", host="127.0.0.1", port=8000) -> int:
@@ -615,9 +616,12 @@ def _main(argv=None) -> int:
     completion_parser = subparsers.add_parser("completion", help="Print shell completion scripts")
     completion_parser.add_argument("shell", choices=("bash", "zsh", "fish"))
 
+    lsp_parser = subparsers.add_parser("lsp", help="Start the Memingo Language Server Protocol server")
+    lsp_parser.add_argument("--stdio", action="store_true", help="Use the standard LSP stdio transport")
+
     args = parser.parse_args(argv)
 
-    raw_output_commands = {"completion", "run", "debug", "eval", "repl", "dev", "serve", "api", "test"}
+    raw_output_commands = {"completion", "lsp", "run", "debug", "eval", "repl", "dev", "serve", "api", "test"}
     if args.command not in raw_output_commands and args.command is not None:
         command_header("memingo", args.command)
 
@@ -674,6 +678,8 @@ def _main(argv=None) -> int:
         return run_source(" ".join(args.code), args.project)
     if args.command == "check":
         return check_sources(args.paths)
+    if args.command == "lsp":
+        return run_language_server()
     if args.command == "completion":
         try:
             print(memingo_completion(args.shell), end="")
