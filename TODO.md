@@ -13,7 +13,8 @@
 - [x] Standard library for JSON, environment and collections
 - [x] Text, number, collection and higher-order standard library
 - [x] Project-scoped text file helpers
-- [ ] Better error locations and source snippets
+- [x] Better runtime error locations (line and column)
+- [ ] Better parser error snippets and source excerpts
 - [ ] Modules and imports
 - [ ] Standard library for games and apps
 - [ ] Native compiler or bytecode VM
