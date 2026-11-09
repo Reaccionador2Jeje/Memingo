@@ -314,7 +314,10 @@ class Parser:
             self._skip_separators()
             if not self._check("RBRACE"):
                 while True:
-                    key = self._consume("IDENTIFIER", "Expected object key").value
+                    if self._check("STRING"):
+                        key = self._advance().value
+                    else:
+                        key = self._consume("IDENTIFIER", "Expected object key").value
                     self._consume("COLON", "Expected ':' after object key")
                     entries.append((key, self._expression()))
                     self._skip_separators()
