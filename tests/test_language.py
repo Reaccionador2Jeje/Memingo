@@ -172,7 +172,7 @@ class MemingoLanguageTests(unittest.TestCase):
     def test_text_helpers_repeat_lines_and_unique(self):
         source = (
             'spill repeat("ab", 3)\n'
-            'spill lines("uno\\ndos\\ntres")\n'
+            'spill lines("uno\ndos\ntres")\n'
             'spill unique([1, 2, 2, 3, 1])'
         )
         self.assertEqual(
@@ -251,10 +251,10 @@ class MemingoLanguageTests(unittest.TestCase):
     def test_http_server_dispatches_get_and_json_post(self):
         interpreter = Interpreter()
         source = (
-            'vibe api = http_server()\\n'
-            'ritual home(request) { drop {status: 200, body: {message: "Memingo"}} }\\n'
-            'ritual echo(request) { drop {status: 201, body: request.body} }\\n'
-            'api.get("/", home)\\n'
+            'vibe api = http_server()\n'
+            'ritual home(request) { drop {status: 200, body: {message: "Memingo"}} }\n'
+            'ritual echo(request) { drop {status: 201, body: request.body} }\n'
+            'api.get("/", home)\n'
             'api.post("/echo", echo)'
         )
         interpreter.run(parse(source))
