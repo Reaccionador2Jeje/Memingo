@@ -68,7 +68,9 @@
 ## Tooling
 - [x] Syntax highlighter
 - [x] VS Code extension
-- [ ] Language server protocol
+- [x] Native Memingo Language Server Protocol (stdio, diagnostics, completions, hover, definition, document symbols)
+- [ ] Complete LSP references, rename and code actions
+- [ ] Language server protocol extensions and workspace-wide analysis
 - [x] Formatter
 - [ ] Debugger
 - [x] Bilingual website and online documentation
