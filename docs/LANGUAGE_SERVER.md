@@ -34,4 +34,4 @@ The Android WebView edition cannot spawn the Python runtime directly. It now bun
 
 ## Current limitations
 
-The first release analyzes one open document at a time. Workspace-wide symbol indexing, cross-file navigation, semantic type inference, references, rename, formatting, and code actions are not yet complete.
+The first release analyzes one open document at a time. Workspace-wide symbol indexing, cross-file navigation, semantic type inference, workspace-wide symbol indexing, semantic type inference, formatting, and code actions are not yet complete. References and rename are currently limited to the active document.
