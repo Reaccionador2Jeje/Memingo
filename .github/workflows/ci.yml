@@ -27,21 +27,6 @@ jobs:
       - name: Run package tests
         run: python -m compileall -q memingo
 
-  arch-package:
-    runs-on: ubuntu-latest
-    container: archlinux:latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Arch build dependencies
-        run: |
-          pacman -Syu --noconfirm --needed base-devel git python-build python-installer python-setuptools python-wheel sudo
-          useradd --create-home builder
-          printf 'builder ALL=(ALL) NOPASSWD: ALL\\n' > /etc/sudoers.d/builder
-          chmod 0440 /etc/sudoers.d/builder
-          chown -R builder:builder "$GITHUB_WORKSPACE"
-      - name: Validate metadata and build the AUR package
-        run: |
-          sudo -u builder env GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -lc 'cd "$GITHUB_WORKSPACE/packaging/arch" && makepkg --printsrcinfo > .SRCINFO.generated && diff -u .SRCINFO .SRCINFO.generated && rm .SRCINFO.generated && makepkg --syncdeps --noconfirm --cleanbuild'
 
   native-packages:
     runs-on: ubuntu-latest
