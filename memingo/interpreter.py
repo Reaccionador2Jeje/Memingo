@@ -8,6 +8,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+from .server import MemingoApp, serve_app
 from .parser import (
     Assign, Binary, Borrow, Call, Function, Get, If, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
@@ -138,6 +139,17 @@ class Interpreter:
         self.global_environment.define("write_file", self._write_file)
         self.global_environment.define("file_exists", self._file_exists)
         self.global_environment.define("list_files", self._list_files)
+        self.global_environment.define("api", self._api_create)
+        self.global_environment.define("api_route", self._api_route)
+        self.global_environment.define("api_get", lambda app, path, handler: self._api_route(app, ("GET",), path, handler))
+        self.global_environment.define("api_post", lambda app, path, handler: self._api_route(app, ("POST",), path, handler))
+        self.global_environment.define("api_put", lambda app, path, handler: self._api_route(app, ("PUT",), path, handler))
+        self.global_environment.define("api_delete", lambda app, path, handler: self._api_route(app, ("DELETE",), path, handler))
+        self.global_environment.define("request_json", self._request_json)
+        self.global_environment.define("api_listen", self._api_listen)
+        self.api_host = "127.0.0.1"
+        self.api_port = 8000
+        self.api_server_started = False
 
     def run(self, program):
         try:
@@ -340,6 +352,58 @@ class Interpreter:
             except TypeError:
                 raise RuntimeErrorMemingo(f"Operator '{operator}' requires comparable values")
         raise RuntimeErrorMemingo(f"Unknown operator '{operator}'")
+
+    def _api_create(self):
+        return MemingoApp()
+
+    def _api_route(self, app, methods, path, handler):
+        if not isinstance(app, MemingoApp):
+            raise RuntimeErrorMemingo("api route requires an app created by api()")
+        if not isinstance(path, str):
+            raise RuntimeErrorMemingo("API route path must be text")
+        if not isinstance(handler, MemingoFunction) and not callable(handler):
+            raise RuntimeErrorMemingo("API route handler must be a ritual")
+        if isinstance(methods, str):
+            methods = (methods,)
+        elif not isinstance(methods, (list, tuple)):
+            raise RuntimeErrorMemingo("API route methods must be text or a list of methods")
+
+        def dispatch(request):
+            request_data = {
+                "method": request.method,
+                "path": request.path,
+                "query": request.query,
+                "params": request.params,
+                "headers": request.headers,
+                "body": request.text(),
+            }
+            if isinstance(handler, MemingoFunction):
+                return handler.call(self, [request_data])
+            return handler(request_data)
+
+        app.route(path, tuple(methods), dispatch)
+        return app
+
+    def _request_json(self, request):
+        if not isinstance(request, dict) or "body" not in request:
+            raise RuntimeErrorMemingo("request_json() requires a request object")
+        try:
+            return json.loads(request["body"]) if request["body"] else {}
+        except (TypeError, json.JSONDecodeError) as error:
+            raise RuntimeErrorMemingo("Request body is not valid JSON") from error
+
+    def _api_listen(self, app, host=None, port=None):
+        if not isinstance(app, MemingoApp):
+            raise RuntimeErrorMemingo("api_listen() requires an app created by api()")
+        selected_host = self.api_host if host is None else host
+        selected_port = self.api_port if port is None else port
+        if not isinstance(selected_host, str) or not selected_host:
+            raise RuntimeErrorMemingo("api_listen() host must be non-empty text")
+        if not isinstance(selected_port, int) or isinstance(selected_port, bool) or not 0 <= selected_port <= 65535:
+            raise RuntimeErrorMemingo("api_listen() port must be an integer from 0 to 65535")
+        self.api_server_started = True
+        serve_app(app, selected_host, selected_port)
+        return None
 
     def _http_get(self, url):
         request = urllib.request.Request(str(url), headers={"User-Agent": "Memingo/0.2"})
