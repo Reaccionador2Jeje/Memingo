@@ -27,10 +27,21 @@ from .completion import memingo_completion
 
 
 def serve_api(path="app.py", host="127.0.0.1", port=8000) -> int:
-    """Load a Python module exporting a MemingoApp named app and serve it."""
+    """Run a native .mgo API or a Python module exporting a MemingoApp."""
     source_path = Path(path).resolve()
     if not source_path.is_file():
         raise FileNotFoundError(f"API application file does not exist: {source_path}")
+
+    if source_path.suffix.lower() == ".mgo":
+        source = source_path.read_text(encoding="utf-8")
+        interpreter = Interpreter(project_directory=source_path.parent)
+        interpreter.api_host = host
+        interpreter.api_port = port
+        interpreter.run(parse(source))
+        if not interpreter.api_server_started:
+            raise ValueError(f"{source_path.name} must call api_listen(app)")
+        return 0
+
     spec = importlib.util.spec_from_file_location("memingo_user_api", source_path)
     if spec is None or spec.loader is None:
         raise ValueError(f"Cannot load API application: {source_path}")
@@ -702,7 +713,7 @@ def _main(argv=None) -> int:
     if args.command == "api":
         try:
             return serve_api(args.file, args.host, args.port)
-        except (OSError, ValueError, ImportError) as exception:
+        except (OSError, ValueError, ImportError, LexerError, ParseError, RuntimeErrorMemingo, UnicodeError) as exception:
             error(f"Memingo API error: {exception}")
             return 1
     if args.command == "add":
