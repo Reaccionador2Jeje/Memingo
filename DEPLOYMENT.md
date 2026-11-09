@@ -40,7 +40,7 @@ The package repository workflow can publish metadata and artifacts locally or to
 
 ## Create and publish Linux repositories
 
-The `Publish Linux Package Repositories` workflow runs for `v*` tags and builds a signed repository when the signing secrets below are configured. It deploys to GitHub Pages under:
+The `Publish Linux Package Repositories` workflow runs for `v*` tags. It requires the signing secrets below and stops before deployment if the private key or key ID is missing; unsigned APT/RPM repositories are never published. It deploys to GitHub Pages under:
 
 - APT: `https://reaccionador2jeje.github.io/Memingo/linux/apt/`
 - RPM: `https://reaccionador2jeje.github.io/Memingo/linux/rpm/`
@@ -67,7 +67,7 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-The public key is exported to `site/linux/memingo.asc`. APT signs `Release` with `InRelease` and `Release.gpg`; RPM signs packages and `repomd.xml`.
+The public key is exported to `site/linux/memingo.asc`. APT signs `Release` with `InRelease` and `Release.gpg`; RPM signs packages and `repomd.xml`. The APT repository publishes indexes for amd64, arm64, armhf and i386, plus any additional architecture detected in the built packages.
 
 Install from APT after the workflow deploys:
 
@@ -88,6 +88,7 @@ name=Memingo
 baseurl=https://reaccionador2jeje.github.io/Memingo/linux/rpm
 enabled=1
 gpgcheck=1
+repo_gpgcheck=1
 gpgkey=https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
 EOF
 sudo dnf install memingo
