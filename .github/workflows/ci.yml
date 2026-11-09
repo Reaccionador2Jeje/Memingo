@@ -41,7 +41,7 @@ jobs:
           chown -R builder:builder "$GITHUB_WORKSPACE"
       - name: Validate metadata and build the AUR package
         run: |
-          sudo -u builder bash -lc 'cd "$GITHUB_WORKSPACE/packaging/arch" && makepkg --printsrcinfo > .SRCINFO.generated && diff -u .SRCINFO .SRCINFO.generated && rm .SRCINFO.generated && makepkg --syncdeps --noconfirm --cleanbuild'
+          sudo -u builder env GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -lc 'cd "$GITHUB_WORKSPACE/packaging/arch" && makepkg --printsrcinfo > .SRCINFO.generated && diff -u .SRCINFO .SRCINFO.generated && rm .SRCINFO.generated && makepkg --syncdeps --noconfirm --cleanbuild'
 
   native-packages:
     runs-on: ubuntu-latest
