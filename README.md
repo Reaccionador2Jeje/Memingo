@@ -48,7 +48,7 @@ Memingo includes an original playable voxel game inspired by block-building sand
 
 ## Memingo HTTP API
 
-Memingo also provides a route-based HTTP application API in Python. It supports GET/POST/PUT/DELETE routes, path parameters, request/response helpers, JSON responses and middleware. See [docs/SERVER.md](docs/SERVER.md) for a complete example. Try the included API example with `python3 -m memingo api examples/api.py`. For your own app, run `memingo api app.py --host 127.0.0.1 --port 8000` (the file must export `app = MemingoApp()`). The static-file command `memingo serve` remains available.
+Memingo includes a native `.mgo` HTTP API and a Python application API. Define routes with `api_get`, `api_post`, `api_put` and `api_delete`, then start them using `api_listen(app)`. Try `python3 -m memingo api examples/native_api.mgo`. Python applications remain supported with `python3 -m memingo api examples/api.py`. See [docs/SERVER.md](docs/SERVER.md). The static-file command `memingo serve` remains available.
 
 ## Language reference
 
