@@ -4,6 +4,7 @@
   "description": "Memingo language support, commands and project tooling for Visual Studio Code.",
   "version": "0.2.0",
   "publisher": "atdev",
+  "icon": "./branding/memingo-icon.png",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Programming Languages", "Snippets", "Other"],
   "keywords": ["memingo", "meme", "language", "web", "mgo"],
