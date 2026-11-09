@@ -1,0 +1,9 @@
+# Memingo SQLite example
+vibe db = sqlite("data/notes.db")
+
+db.execute("CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, text TEXT)")
+db.execute("INSERT INTO notes (text) VALUES (?)", ["First note"])
+
+vibe notes = db.query("SELECT id, text FROM notes ORDER BY id")
+spill notes
+db.close()

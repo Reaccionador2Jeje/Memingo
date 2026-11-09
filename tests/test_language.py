@@ -1,9 +1,18 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from memingo.interpreter import RuntimeErrorMemingo, execute
+from memingo.interpreter import Interpreter, RuntimeErrorMemingo, execute
+from memingo.parser import parse
+from memingo.http_api import MemingoAPIServer
 from memingo.parser import ParseError
+
+
+
+
+def api_server_dispatch(api, method, path, body=b"", headers=None):
+    return api["get"].__self__._dispatch(method, path, headers or {}, body)
 
 
 class MemingoLanguageTests(unittest.TestCase):
@@ -163,7 +172,7 @@ class MemingoLanguageTests(unittest.TestCase):
     def test_text_helpers_repeat_lines_and_unique(self):
         source = (
             'spill repeat("ab", 3)\n'
-            'spill lines("uno\\ndos\\ntres")\n'
+            'spill lines("uno\ndos\ntres")\n'
             'spill unique([1, 2, 2, 3, 1])'
         )
         self.assertEqual(
@@ -178,6 +187,140 @@ class MemingoLanguageTests(unittest.TestCase):
             execute('spill repeat(1, 2)')
         with self.assertRaises(RuntimeErrorMemingo):
             execute('spill unique("nope")')
+
+
+    def test_runtime_errors_include_source_location(self):
+        with self.assertRaises(RuntimeErrorMemingo) as context:
+            execute('vibe answer = 42\nspill missing_value')
+        self.assertEqual(context.exception.line, 2)
+        self.assertIn("line 2", str(context.exception))
+
+    def test_runtime_error_in_function_keeps_inner_location(self):
+        source = 'ritual fail() {\n  spill missing_value\n}\nfail()'
+        with self.assertRaises(RuntimeErrorMemingo) as context:
+            execute(source)
+        self.assertEqual(context.exception.line, 2)
+        self.assertIn("line 2", str(context.exception))
+
+
+    def test_import_math_module(self):
+        self.assertEqual(execute('import "math"\nspill math.sqrt(81)\nspill math.pi > 3'), ["9.0", "based"])
+
+    def test_import_project_module_and_alias(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "mathkit.mgo").write_text(
+                'ritual double(n) { drop n * 2 }\nvibe label = "MathKit"',
+                encoding="utf-8",
+            )
+            output = execute(
+                'import "mathkit" as kit\nspill kit.double(21)\nspill kit.label',
+                project_directory=root,
+            )
+            self.assertEqual(output, ["42", "MathKit"])
+
+    def test_import_module_directory_entry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            package = root / "tools"
+            package.mkdir()
+            (package / "main.mgo").write_text('vibe answer = 42', encoding="utf-8")
+            self.assertEqual(
+                execute('import "tools"\nspill tools.answer', project_directory=root),
+                ["42"],
+            )
+
+    def test_import_rejects_path_escape_and_missing_module(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with self.assertRaises(RuntimeErrorMemingo):
+                execute('import "../outside"', project_directory=root)
+            with self.assertRaises(RuntimeErrorMemingo):
+                execute('import "missing"', project_directory=root)
+
+    def test_import_detects_circular_dependency(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "a.mgo").write_text('import "b"', encoding="utf-8")
+            (root / "b.mgo").write_text('import "a"', encoding="utf-8")
+            with self.assertRaises(RuntimeErrorMemingo) as context:
+                execute('import "a"', project_directory=root)
+            self.assertIn("Circular module import", str(context.exception))
+
+
+    def test_http_server_dispatches_get_and_json_post(self):
+        interpreter = Interpreter()
+        source = (
+            'vibe api = http_server()\n'
+            'ritual home(request) { drop {status: 200, body: {message: "Memingo"}} }\n'
+            'ritual echo(request) { drop {status: 201, body: request.body} }\n'
+            'api.get("/", home)\n'
+            'api.post("/echo", echo)'
+        )
+        interpreter.run(parse(source))
+        api = interpreter.global_environment.get("api")
+        status, headers, body = api_server_dispatch(api, "GET", "/")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"message": "Memingo"})
+        status, headers, body = api_server_dispatch(api, "POST", "/echo", b'{"ok":true}')
+        self.assertEqual(status, 201)
+        self.assertEqual(json.loads(body), {"ok": True})
+
+    def test_http_server_rejects_invalid_routes(self):
+        api = MemingoAPIServer(Interpreter()).api()
+        with self.assertRaises(ValueError):
+            api["get"]("hello", lambda request: request)
+        with self.assertRaises(ValueError):
+            api["get"]("/", "not a ritual")
+
+
+    def test_http_server_dynamic_routes_and_query(self):
+        interpreter = Interpreter()
+        source = (
+            'vibe api = http_server()\n'
+            'ritual user(request) { drop {body: {id: request.params.id, page: request.query.page}} }\n'
+            'api.get("/users/{id}", user)'
+        )
+        interpreter.run(parse(source))
+        api = interpreter.global_environment.get("api")
+        status, headers, body = api_server_dispatch(api, "GET", "/users/42?page=3")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"id": "42", "page": "3"})
+
+    def test_http_server_middleware_and_bearer_auth(self):
+        interpreter = Interpreter()
+        source = (
+            'vibe api = http_server()\n'
+            'ritual private(request) { drop {body: {secret: "ok"}} }\n'
+            'api.use(api.bearer("test-token"))\n'
+            'api.get("/private", private)'
+        )
+        interpreter.run(parse(source))
+        api = interpreter.global_environment.get("api")
+        status, headers, body = api_server_dispatch(api, "GET", "/private")
+        self.assertEqual(status, 401)
+        status, headers, body = api_server_dispatch(
+            api, "GET", "/private", headers={"Authorization": "Bearer test-token"}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"secret": "ok"})
+
+    def test_sqlite_helpers_support_parameterized_queries(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = execute(
+                'vibe db = sqlite(":memory:")\n'
+                'db.execute("CREATE TABLE people (name TEXT)")\n'
+                'db.execute("INSERT INTO people (name) VALUES (?)", ["Cris"])\n'
+                'spill db.query("SELECT name FROM people")[0].name\n'
+                'db.close()',
+                project_directory=temporary,
+            )
+            self.assertEqual(output, ["Cris"])
+
+    def test_sqlite_rejects_paths_outside_project(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaises(RuntimeErrorMemingo):
+                execute('vibe db = sqlite("../outside.db")', project_directory=temporary)
 
     def test_file_builtins_stay_inside_project(self):
         with tempfile.TemporaryDirectory() as temporary:

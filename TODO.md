@@ -1,5 +1,8 @@
 # Memingo Roadmap
 
+> Long-term direction: [Memingo 1.0 architecture](ARCHITECTURE.md). Keep the 0.2 interpreter compatible while building modules and real app/server/game frameworks in phases.
+
+
 ## Language
 - [x] Lexer with keywords, literals, operators and comments
 - [x] Parser for variables, functions, blocks, conditions and loops
@@ -10,8 +13,10 @@
 - [x] Standard library for JSON, environment and collections
 - [x] Text, number, collection and higher-order standard library
 - [x] Project-scoped text file helpers
-- [ ] Better error locations and source snippets
-- [ ] Modules and imports
+- [x] Better runtime error locations (line and column)
+- [ ] Better parser error snippets and source excerpts
+- [x] Basic project modules and imports (file/folder entry, aliases, cache and cycle detection)
+- [ ] Package registry integration and versioned module dependencies
 - [ ] Standard library for games and apps
 - [ ] Native compiler or bytecode VM
 
@@ -50,12 +55,18 @@
 - [x] Static HTTP serving
 - [x] `memingo serve` launcher
 - [x] HTTP client GET/POST and JSON helpers
-- [ ] Memingo HTTP server API
-- [ ] Routes, methods and middleware
-- [ ] Request and response objects
+- [x] Memingo HTTP server API
+- [x] GET/POST/PUT/PATCH/DELETE routes, dynamic route parameters and middleware
+- [x] Request and response objects
 - [ ] Templates
-- [ ] JSON and file uploads
+- [x] JSON request and response support
+- [ ] File uploads
 - [ ] Hot reload
+
+## Data
+- [x] Project-scoped SQLite database helper
+- [ ] PostgreSQL adapter and connection pooling
+- [ ] Database migrations and schema tools
 
 ## Tooling
 - [x] Syntax highlighter

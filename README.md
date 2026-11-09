@@ -46,6 +46,31 @@ Lists and objects can span multiple lines, including trailing commas.
 
 Memingo includes an original playable voxel game inspired by block-building sandboxes. Play it at `site/game.html` or add the `.mgo` world configuration from [examples/minecraft.mgo](examples/minecraft.mgo).
 
+
+## Memingo Server
+
+Build a JSON HTTP API with a few Memingo rituals:
+
+```mgo
+vibe api = http_server()
+
+ritual home(request) {
+    drop {status: 200, body: {message: "Hello from Memingo"}}
+}
+
+api.get("/", home)
+api.listen("127.0.0.1", 8000)
+```
+
+Supports GET, POST, PUT and DELETE routes, JSON request bodies, query parameters and custom response headers. See [examples/server.mgo](examples/server.mgo) and the [HTTP API reference](LANGUAGE.md#memingo-server-http-apis). This is a development server; production hosting, middleware and authentication are future work.
+
+
+The Server runtime also supports dynamic paths such as `/users/{id}`, request middleware, a bearer-token helper, and project-scoped SQLite storage. See [the HTTP API guide](LANGUAGE.md#memingo-server-http-apis), [server example](examples/server.mgo), and [SQLite example](examples/sqlite.mgo). Use parameterized SQL values for user data. The built-in server is intended for development; production TLS, deployment hardening, PostgreSQL pooling, and session management remain future work.
+
+## Memingo 1.0 direction
+
+The long-term architecture and phased plan for building concise apps, servers, web projects and games is documented in [ARCHITECTURE.md](ARCHITECTURE.md). The roadmap is tracked in [TODO.md](TODO.md).
+
 ## Language reference
 
 See the complete syntax and standard library in [LANGUAGE.md](LANGUAGE.md).
@@ -140,6 +165,23 @@ mgoa --version
 
 The default command location is `~/.local/bin`. Add that directory to `PATH` if the shell does not find `memingo`.
 
+### Android (Termux)
+
+Termux tiene su propio sistema de paquetes: los paquetes APT de Debian/Ubuntu y RPM de Fedora no se instalan directamente allí. Usa el instalador de Memingo compatible con Termux:
+
+```bash
+pkg update
+pkg install -y git python
+git clone https://github.com/Reaccionador2Jeje/Memingo.git
+cd Memingo
+sh scripts/install.sh
+hash -r
+memingo --version
+mgoa --version
+```
+
+El instalador detecta Termux y coloca `memingo` y `mgoa` en `$PREFIX/bin`. Para actualizar, ejecuta `git pull` y luego `sh scripts/install.sh` desde la carpeta del proyecto. Para desinstalar, ejecuta `sh scripts/uninstall.sh`.
+
 ### Windows
 
 ```powershell
@@ -201,6 +243,18 @@ python3 scripts/build-linux-repositories.py
 ```
 
 Metadata is written to `site/linux/apt` and `site/linux/rpm`. The GitHub Pages release workflow signs and publishes it automatically when `MEMINGO_GPG_*` Actions secrets are configured. Full setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+After a signed repository release is published, Debian/Ubuntu users can add the APT source:
+
+```bash
+curl -fsSLo memingo.asc https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
+sudo install -m 0644 memingo.asc /usr/share/keyrings/memingo.asc
+echo 'deb [signed-by=/usr/share/keyrings/memingo.asc] https://reaccionador2jeje.github.io/Memingo/linux/apt stable main' | sudo tee /etc/apt/sources.list.d/memingo.list
+sudo apt update
+sudo apt install memingo
+```
+
+Fedora/RHEL users can configure DNF with the repository file shown in [DEPLOYMENT.md](DEPLOYMENT.md). Repository publication requires the signing secrets; unsigned repositories are not deployed.
 
 Both packages install the runtime under `/usr/lib/memingo`, the `memingo` and `mgoa` commands in `/usr/bin`, and documentation in `/usr/share/doc/memingo`. Python 3.10 or newer is required.
 

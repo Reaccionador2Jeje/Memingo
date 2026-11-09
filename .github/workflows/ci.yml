@@ -2,9 +2,13 @@ name: Memingo CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, feat/arch-aur-packaging]
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: memingo-ci-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -26,6 +30,7 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Run package tests
         run: python -m compileall -q memingo
+
 
   native-packages:
     runs-on: ubuntu-latest

@@ -2,6 +2,7 @@ name: Publish Linux Package Repositories
 
 on:
   push:
+    branches: ["feat/arch-aur-packaging"]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -30,7 +31,7 @@ jobs:
       - name: Install repository tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev rpm createrepo-c gnupg
+          sudo apt-get install -y dpkg-dev apt-utils rpm createrepo-c gnupg
 
       - name: Build native packages
         run: python3 scripts/build-packages.py
@@ -45,13 +46,19 @@ jobs:
           GPG_KEY_ID: ${{ secrets.MEMINGO_GPG_KEY_ID }}
         run: |
           set -eu
-          if [[ -z "$GPG_PRIVATE_KEY" || -z "$GPG_KEY_ID" ]]; then
-            echo "Signing secrets not configured; repository will remain unsigned."
-            exit 0
+          if [[ -z "$GPG_PRIVATE_KEY" || -z "$GPG_KEY_ID" || -z "$GPG_PASSPHRASE" ]]; then
+            echo "::error::Configure MEMINGO_GPG_PRIVATE_KEY, MEMINGO_GPG_KEY_ID and MEMINGO_GPG_PASSPHRASE before publishing. Unsigned repositories are not deployed."
+            exit 1
           fi
           printf '%s' "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
-          test -n "$GPG_KEY_ID"
-          gpg --list-secret-keys "$GPG_KEY_ID"
+          if ! gpg --batch --with-colons --list-secret-keys "$GPG_KEY_ID" | grep -q '^fpr:'; then
+            echo "::error::The configured GPG key ID does not identify an imported secret key."
+            exit 1
+          fi
+          printf 'Memingo repository signing validation\n' > /tmp/memingo-gpg-check.txt
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+            --local-user "$GPG_KEY_ID" --detach-sign --output /tmp/memingo-gpg-check.sig /tmp/memingo-gpg-check.txt
+          gpg --batch --verify /tmp/memingo-gpg-check.sig /tmp/memingo-gpg-check.txt
           gpg --batch --yes --armor --export "$GPG_KEY_ID" > site/linux/memingo.asc
 
       - name: Sign APT repository
@@ -59,31 +66,46 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.MEMINGO_GPG_PASSPHRASE }}
           GPG_KEY_ID: ${{ secrets.MEMINGO_GPG_KEY_ID }}
         run: |
-          if [[ -z "$GPG_KEY_ID" ]]; then
-            echo "Signing key not configured; skipping APT signatures."
-            exit 0
-          fi
           cd site/linux/apt/dists/stable
           gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
             --default-key "$GPG_KEY_ID" --clearsign --output InRelease Release
           gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
             --default-key "$GPG_KEY_ID" --armor --detach-sign --output Release.gpg Release
+          gpg --batch --verify Release.gpg Release
+          gpg --batch --verify InRelease
 
       - name: Sign RPM repository
         env:
           GPG_PASSPHRASE: ${{ secrets.MEMINGO_GPG_PASSPHRASE }}
           GPG_KEY_ID: ${{ secrets.MEMINGO_GPG_KEY_ID }}
         run: |
-          if [[ -z "$GPG_KEY_ID" ]]; then
-            echo "Signing key not configured; skipping RPM signatures."
-            exit 0
+          set -eu
+          # Use RPM's built-in signing macro so RPM expands its internal
+          # signature/plaintext filename macros correctly.
+          printf '%s\n' "$GPG_PASSPHRASE" > /tmp/memingo-gpg-passphrase
+          chmod 600 /tmp/memingo-gpg-passphrase
+          trap 'rm -f /tmp/memingo-gpg-passphrase' EXIT
+          cat > "$HOME/.rpmmacros" <<EOF
+          %_signature gpg
+          %_gpg_name $GPG_KEY_ID
+          %_gpg_path $HOME/.gnupg
+          %_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase-file /tmp/memingo-gpg-passphrase
+          EOF
+          if ! rpm --eval '%{__gpg_sign_cmd}' | grep -q -- '--passphrase-file'; then
+            echo "::error::This RPM version does not support _gpg_sign_cmd_extra_args."
+            exit 1
           fi
-          echo '%_signature gpg' > "$HOME/.rpmmacros"
-          echo "%_gpg_name $GPG_KEY_ID" >> "$HOME/.rpmmacros"
-          echo '%_gpg_path /home/runner/.gnupg' >> "$HOME/.rpmmacros"
-          echo '%__gpg_sign_cmd %{__gpg} --batch --yes --pinentry-mode loopback --passphrase %{?__gpg_passphrase} --no-armor --no-secmem-warning -u "%{_gpg_name}" -sbo %{__signature_filename} %{__plaintext_filename}' >> "$HOME/.rpmmacros"
           for package in dist/*.rpm; do
-            rpmsign --define "_gpg_passphrase $GPG_PASSPHRASE" --addsign "$package"
+            rpmsign --addsign "$package"
+          done
+          # Use an isolated RPM database: GitHub-hosted runners do not
+          # grant write access to the system database under /var/lib/rpm.
+          RPM_DB="$RUNNER_TEMP/memingo-rpmdb"
+          mkdir -p "$RPM_DB"
+          rpm --dbpath "$RPM_DB" --initdb
+          rpm --dbpath "$RPM_DB" --import site/linux/memingo.asc
+          for package in dist/*.rpm; do
+            rpm --dbpath "$RPM_DB" --checksig --verbose "$package"
           done
           cp dist/*.rpm site/linux/rpm/Packages/
           createrepo_c --update --database site/linux/rpm
@@ -91,6 +113,7 @@ jobs:
             --default-key "$GPG_KEY_ID" --armor --detach-sign \
             --output site/linux/rpm/repodata/repomd.xml.asc \
             site/linux/rpm/repodata/repomd.xml
+          gpg --batch --verify site/linux/rpm/repodata/repomd.xml.asc site/linux/rpm/repodata/repomd.xml
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

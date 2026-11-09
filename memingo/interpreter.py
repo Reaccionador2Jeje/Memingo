@@ -8,14 +8,29 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+from .http_api import MemingoAPIServer
+from .database import MemingoSQLite
 from .parser import (
-    Assign, Binary, Borrow, Call, Function, Get, If, Let, ListExpression,
+    Assign, Binary, Borrow, Call, Function, Get, If, ImportModule, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
 )
 
 
 class RuntimeErrorMemingo(Exception):
-    pass
+    """Runtime error with optional source location."""
+
+    def __init__(self, message, line=None, column=None):
+        super().__init__(message)
+        self.line = line
+        self.column = column
+
+    def __str__(self):
+        message = super().__str__()
+        if self.line is None:
+            return message
+        if self.column is None:
+            return f"{message} at line {self.line}"
+        return f"{message} at line {self.line}, column {self.column}"
 
 
 class ReturnSignal(Exception):
@@ -76,6 +91,8 @@ class Interpreter:
         self.project_directory = Path(project_directory).resolve()
         self.output = []
         self.debug_trace = None
+        self.module_cache = {}
+        self.loading_modules = set()
         env_path = self.project_directory / ".env"
         if env_path.exists():
             for line in env_path.read_text(encoding="utf-8").splitlines():
@@ -85,6 +102,13 @@ class Interpreter:
                 name, value = line.split("=", 1)
                 os.environ.setdefault(name.strip(), value.strip().strip('"').strip("'"))
         self.global_environment = Environment()
+        self.global_environment.define("http_server", lambda: MemingoAPIServer(self).api())
+        self.global_environment.define("sqlite", lambda filename: MemingoSQLite(self.project_directory, filename).api())
+        self.global_environment.define("math", {
+            "sqrt": math.sqrt, "pow": pow, "sin": math.sin, "cos": math.cos,
+            "tan": math.tan, "pi": math.pi, "e": math.e,
+            "floor": math.floor, "ceil": math.ceil,
+        })
         self.global_environment.define("headcount", lambda value: len(value))
         self.global_environment.define("whatkind", self._whatkind)
         self.global_environment.define("json_parse", lambda text: json.loads(text))
@@ -151,7 +175,14 @@ class Interpreter:
         try:
             result = None
             for statement in statements:
-                result = self.execute(statement)
+                try:
+                    result = self.execute(statement)
+                except RuntimeErrorMemingo as error:
+                    # Keep the innermost source location while errors bubble up.
+                    if error.line is None:
+                        error.line = getattr(statement, "line", None)
+                        error.column = getattr(statement, "column", None)
+                    raise
             return result
         finally:
             self.environment = previous
@@ -180,6 +211,46 @@ class Interpreter:
             return value
         if isinstance(node, Return):
             raise ReturnSignal(self.evaluate(node.value))
+        if isinstance(node, ImportModule):
+            module_path = self.evaluate(node.path)
+            if not isinstance(module_path, str) or not module_path:
+                raise RuntimeErrorMemingo("import requires a non-empty quoted path")
+            if module_path == "math":
+                self.environment.define(node.alias, self.global_environment.get("math"))
+                return None
+            requested = Path(module_path)
+            if requested.is_absolute() or ".." in requested.parts:
+                raise RuntimeErrorMemingo("Module imports must stay inside the project directory")
+            candidates = []
+            if requested.suffix:
+                candidates.append((self.project_directory / requested).resolve())
+            else:
+                candidates.append((self.project_directory / requested.with_suffix(".mgo")).resolve())
+                candidates.append((self.project_directory / requested / "main.mgo").resolve())
+            module_file = next((candidate for candidate in candidates
+                                if candidate.is_file()
+                                and self.project_directory in candidate.parents), None)
+            if module_file is None:
+                raise RuntimeErrorMemingo(f"Module '{module_path}' was not found in the project")
+            if module_file in self.loading_modules:
+                raise RuntimeErrorMemingo(f"Circular module import detected: '{module_path}'")
+            if module_file not in self.module_cache:
+                self.loading_modules.add(module_file)
+                module_environment = Environment(self.global_environment)
+                try:
+                    try:
+                        module_source = module_file.read_text(encoding="utf-8")
+                    except (OSError, UnicodeError) as error:
+                        raise RuntimeErrorMemingo(f"Could not read module '{module_path}': {error}") from error
+                    module_program = parse(module_source)
+                    self.execute_block(module_program.statements, module_environment)
+                    self.module_cache[module_file] = {
+                        name: value for name, value in module_environment.values.items()
+                    }
+                finally:
+                    self.loading_modules.discard(module_file)
+            self.environment.define(node.alias, self.module_cache[module_file])
+            return None
         if isinstance(node, Borrow):
             package_name = self.evaluate(node.package)
             if not isinstance(package_name, str):

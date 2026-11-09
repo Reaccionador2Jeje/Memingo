@@ -1,0 +1,31 @@
+# Memingo Server: routes, middleware and bearer authentication
+# Set API_TOKEN in .env before using the protected route.
+
+vibe api = http_server()
+
+ritual home(request) {
+    drop {
+        status: 200,
+        body: {
+            message: "Hello from Memingo Server",
+            method: request.method
+        }
+    }
+}
+
+ritual show_user(request) {
+    drop {
+        status: 200,
+        body: {user_id: request.params.id}
+    }
+}
+
+ritual private_data(request) {
+    drop {body: {message: "You are authenticated"}}
+}
+
+api.get("/", home)
+api.get("/users/{id}", show_user)
+api.use(api.bearer(env("API_TOKEN", "")))
+api.get("/private", private_data)
+api.listen("127.0.0.1", 8000)

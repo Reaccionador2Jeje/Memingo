@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Guía oficial para instalar Memingo en Debian, Ubuntu, Fedora y otras distribuciones Linux.">
+  <title>Instalar Memingo en Linux</title>
+  <link rel="icon" href="assets/memingo-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .linux-guide{max-width:980px;margin:0 auto;padding:clamp(32px,7vw,88px) 24px}
+    .linux-guide h1{font-size:clamp(2.5rem,7vw,5rem);line-height:.98;margin:.35em 0}
+    .linux-guide h2{font-size:clamp(1.5rem,3vw,2.2rem);margin:2.2rem 0 .7rem}
+    .linux-guide p,.linux-guide li{line-height:1.7}
+    .linux-guide pre{overflow-x:auto;padding:20px;border-radius:12px;background:#171717;color:#f7f4eb;line-height:1.6;white-space:pre}
+    .linux-guide code{font-size:.92em}
+    .linux-guide .guide-note{padding:16px 20px;border-left:4px solid #f2c94c;background:#fff8df;margin:24px 0}
+    .linux-guide .guide-links{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}
+    .linux-guide .guide-links a{color:inherit}
+    .linux-guide .back{display:inline-block;margin-bottom:24px}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Memingo inicio">
+      <img src="assets/memingo-mark.svg" alt=""><span>memingo</span>
+    </a>
+    <nav class="main-nav" aria-label="Navegación principal">
+      <a href="./">Inicio</a><a href="./#docs">Docs</a><a class="active" href="linux.html">Linux</a><a href="./#downloads">Descargas</a>
+    </nav>
+    <div class="header-actions"><a class="button button-dark header-download" href="./">Volver al sitio</a></div>
+  </header>
+  <main class="linux-guide">
+    <a class="back" href="./">← Volver a Memingo</a>
+    <p class="eyebrow">MEMINGO 0.2 · LINUX</p>
+    <h1>Instala Memingo.<br><span>Code the bit.</span></h1>
+    <p>Instala el lenguaje y su gestor de paquetes <code>mgoa</code> desde los repositorios oficiales firmados de Memingo.</p>
+    <div class="guide-links">
+      <a class="button button-yellow" href="#apt">Debian / Ubuntu · APT</a>
+      <a class="button button-black" href="#dnf">Fedora · DNF</a>
+    </div>
+
+    <section id="apt">
+      <h2>Debian y Ubuntu (APT)</h2>
+      <p>Copia el bloque completo en una terminal:</p>
+      <pre><code>sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+
+curl -fsSLo /tmp/memingo-archive-keyring.asc \
+  https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
+sudo install -D -m 0644 /tmp/memingo-archive-keyring.asc \
+  /usr/share/keyrings/memingo-archive-keyring.asc
+
+echo "deb [signed-by=/usr/share/keyrings/memingo-archive-keyring.asc] https://reaccionador2jeje.github.io/Memingo/linux/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/memingo.list
+
+sudo apt-get update
+sudo apt-get install memingo</code></pre>
+      <p>Verifica los comandos:</p>
+      <pre><code>memingo --version
+mgoa --version</code></pre>
+      <p>APT valida la firma del repositorio con la clave indicada en <code>signed-by</code>.</p>
+    </section>
+
+    <section id="dnf">
+      <h2>Fedora y sistemas compatibles con DNF</h2>
+      <p>Crea la configuración oficial del repositorio:</p>
+      <pre><code>sudo tee /etc/yum.repos.d/memingo.repo &gt;/dev/null &lt;&lt;'EOF'
+[memingo]
+name=Memingo
+baseurl=https://reaccionador2jeje.github.io/Memingo/linux/rpm
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
+EOF</code></pre>
+      <p>Instala y comprueba:</p>
+      <pre><code>sudo dnf makecache
+sudo dnf install memingo
+memingo --version
+mgoa --version</code></pre>
+      <p>DNF puede pedir confirmación para importar la clave pública. Comprueba que el origen mostrado sea el repositorio oficial de Memingo antes de aceptar.</p>
+      <p>La configuración mantiene activadas tanto la comprobación de firmas de paquetes como la firma de los metadatos.</p>
+    </section>
+
+    <aside class="guide-note">
+      <strong>Requisito:</strong> Memingo necesita Python 3.10 o posterior. El gestor de paquetes instala la dependencia declarada cuando está disponible en los repositorios de tu distribución.
+    </aside>
+
+    <section>
+      <h2>¿Necesitas desinstalar?</h2>
+      <p>Debian / Ubuntu:</p>
+      <pre><code>sudo apt-get remove memingo
+sudo rm -f /etc/apt/sources.list.d/memingo.list
+sudo rm -f /usr/share/keyrings/memingo-archive-keyring.asc
+sudo apt-get update</code></pre>
+      <p>Fedora / DNF:</p>
+      <pre><code>sudo dnf remove memingo
+sudo rm -f /etc/yum.repos.d/memingo.repo
+sudo dnf clean all</code></pre>
+      <p>Los proyectos que hayas creado en tus carpetas personales no se eliminan al desinstalar el paquete.</p>
+    </section>
+
+    <section>
+      <h2>Solución de problemas</h2>
+      <ul>
+        <li><strong>No se encuentra el paquete:</strong> revisa la URL del repositorio y actualiza la caché con <code>apt-get update</code> o <code>dnf makecache</code>.</li>
+        <li><strong>Error de firma:</strong> comprueba que descargaste la clave pública desde el sitio oficial y que la verificación de firmas sigue activada. No desactives las comprobaciones para saltarte el error.</li>
+        <li><strong>Falta Python:</strong> instala Python 3.10 o posterior desde los repositorios oficiales de tu distribución.</li>
+        <li><strong>No aparece el comando:</strong> abre una terminal nueva y ejecuta <code>command -v memingo</code> y <code>command -v mgoa</code>.</li>
+      </ul>
+    </section>
+    <p class="guide-links"><a href="linux/apt/">Índice del repositorio APT ↗</a><a href="linux/rpm/">Índice del repositorio RPM ↗</a><a href="linux/memingo.asc">Clave pública ↗</a></p>
+  </main>
+  <footer>
+    <a class="brand footer-brand" href="./"><img src="assets/memingo-mark.svg" alt=""><span>memingo</span></a>
+    <p>Code the bit.</p><small>© 2026 AtDev. BSD 3-Clause.</small>
+  </footer>
+</body>
+</html>

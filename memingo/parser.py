@@ -13,6 +13,12 @@ class Borrow:
 
 
 @dataclass
+class ImportModule:
+    path: object
+    alias: str
+
+
+@dataclass
 class Let:
     name: str
     value: object
@@ -139,6 +145,16 @@ class Parser:
             return Say(self._expression())
         if self._match("BORROW"):
             return Borrow(self._expression())
+        if self._match("IMPORT"):
+            path = self._consume("STRING", "Expected quoted module path after import").value
+            alias = None
+            if self._match("AS"):
+                alias = self._consume("IDENTIFIER", "Expected module alias after as").value
+            if alias is None:
+                alias = path.replace("\\", "/").rsplit("/", 1)[-1].removesuffix(".mgo")
+            if not alias.isidentifier():
+                raise ParseError(f"Invalid module alias {alias!r}")
+            return ImportModule(Literal(path), alias)
         if self._check("IDENTIFIER"):
             name = self._advance().value
             if self._match("EQUAL"):

@@ -1,85 +1,51 @@
-# Deploy Memingo to GitHub Pages
+# Instalar y publicar Memingo en Linux
 
-## Automatic deployment
+Memingo distribuye paquetes nativos para distribuciones basadas en **APT** (paquete DEB) y **DNF** (paquete RPM). La publicación en AUR no forma parte del proyecto.
 
-1. Open the repository settings on GitHub.
-2. Go to **Pages**.
-3. Set **Build and deployment** to **GitHub Actions**.
-4. Push to `main` or `master`, or run **Deploy Memingo to GitHub Pages** manually.
+Sitio oficial: https://reaccionador2jeje.github.io/Memingo/
 
-The workflow publishes the `site/` directory.
+## Requisitos
 
-The project Pages URL is:
+- Debian o Ubuntu (o derivada) para las instrucciones APT.
+- Fedora, RHEL o una distribución compatible con DNF para las instrucciones RPM.
+- Python 3.10 o posterior. Los paquetes declaran esta dependencia y el gestor de paquetes la instala si está disponible en los repositorios de la distribución.
+- Conexión a Internet para descargar el repositorio y sus paquetes.
 
-`https://reaccionador2jeje.github.io/Memingo/`
+Los paquetes instalan el runtime en `/usr/lib/memingo` y los comandos `memingo` y `mgoa` en `/usr/bin`.
 
-## Native Linux packages
+## Debian y Ubuntu (APT)
 
-Build `.deb` and `.rpm` artifacts with:
-
-```bash
-python3 scripts/build-packages.py
-```
-
-Both packages install the runtime under `/usr/lib/memingo` and expose `memingo` and `mgoa` through `/usr/bin`. CI builds them for pull requests and pushes, and stores them as workflow artifacts named `memingo-linux-packages`.
-
-## Package registry
-
-The `mgoa` registry is published with the site at `https://reaccionador2jeje.github.io/Memingo/mgoa/index.json`. Package sources live in `packages/<name>/`; the generated archives live in `site/mgoa/packages/`.
-
-After changing a package source, rebuild the registry before deploying:
+Copia y ejecuta estos comandos en una terminal:
 
 ```bash
-python3 scripts/build-registry.py
-python3 scripts/build-registry.py --check
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+
+curl -fsSLo /tmp/memingo-archive-keyring.asc \
+  https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
+sudo install -D -m 0644 /tmp/memingo-archive-keyring.asc \
+  /usr/share/keyrings/memingo-archive-keyring.asc
+
+echo "deb [signed-by=/usr/share/keyrings/memingo-archive-keyring.asc] https://reaccionador2jeje.github.io/Memingo/linux/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/memingo.list
+
+sudo apt-get update
+sudo apt-get install memingo
 ```
 
-The build script creates reproducible ZIPs, computes their SHA-256 digests and rewrites `site/mgoa/index.json`. Commit the source, the archives and the index together so published checksums stay valid. `tests/test_registry_packages.py` verifies the catalog, archives, checksums, installation and every package `self_test()`.
-
-The package repository workflow can publish metadata and artifacts locally or to GitHub Pages. Package signatures must be verified in a clean system before public distribution.
-
-## Create and publish Linux repositories
-
-The `Publish Linux Package Repositories` workflow runs for `v*` tags and builds a signed repository when the signing secrets below are configured. It deploys to GitHub Pages under:
-
-- APT: `https://reaccionador2jeje.github.io/Memingo/linux/apt/`
-- RPM: `https://reaccionador2jeje.github.io/Memingo/linux/rpm/`
-
-Generate one repository signing key locally:
+Comprueba la instalación:
 
 ```bash
-gpg --full-generate-key
-GPG_KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '$1 == "sec" {print $5; exit}')
-gpg --armor --export "$GPG_KEY_ID" > memingo.asc
-gpg --armor --export-secret-keys "$GPG_KEY_ID" | base64 -w0 > memingo-private-key.base64
+memingo --version
+mgoa --version
+apt-cache policy memingo
 ```
 
-Add these GitHub Actions repository secrets under Settings > Secrets and variables > Actions:
+APT verifica la firma del repositorio usando exclusivamente la clave indicada en `signed-by`.
 
-- `MEMINGO_GPG_KEY_ID`: the long key fingerprint or key ID.
-- `MEMINGO_GPG_PASSPHRASE`: the key passphrase. Use an empty passphrase for a noninteractive CI-only key.
-- `MEMINGO_GPG_PRIVATE_KEY`: the Base64 content of `memingo-private-key.base64`.
+## Fedora y sistemas compatibles con DNF
 
-To publish a release:
-
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-```
-
-The public key is exported to `site/linux/memingo.asc`. APT signs `Release` with `InRelease` and `Release.gpg`; RPM signs packages and `repomd.xml`.
-
-Install from APT after the workflow deploys:
-
-```bash
-curl -fsSLo memingo.asc https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
-sudo install -m 0644 memingo.asc /usr/share/keyrings/memingo.asc
-echo 'deb [signed-by=/usr/share/keyrings/memingo.asc] https://reaccionador2jeje.github.io/Memingo/linux/apt stable main' | sudo tee /etc/apt/sources.list.d/memingo.list
-sudo apt update
-sudo apt install memingo
-```
-
-Install from RPM repositories:
+Crea el archivo del repositorio:
 
 ```bash
 sudo tee /etc/yum.repos.d/memingo.repo >/dev/null <<'EOF'
@@ -88,18 +54,145 @@ name=Memingo
 baseurl=https://reaccionador2jeje.github.io/Memingo/linux/rpm
 enabled=1
 gpgcheck=1
+repo_gpgcheck=1
 gpgkey=https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
 EOF
+```
+
+Instala Memingo:
+
+```bash
+sudo dnf makecache
 sudo dnf install memingo
 ```
 
-Do not commit private keys or Base64 private-key output. Verify packages and signatures in a clean container before enabling public distribution.
+DNF puede pedir confirmación para importar la clave pública del repositorio. Comprueba que el origen mostrado sea el repositorio oficial de Memingo antes de aceptar.
 
-## Manual local preview
+Comprueba la instalación:
+
+```bash
+memingo --version
+mgoa --version
+dnf info memingo
+```
+
+La configuración activa tanto la verificación de firmas de los paquetes RPM (`gpgcheck=1`) como la verificación de metadatos del repositorio (`repo_gpgcheck=1`).
+
+## Android (Termux)
+
+Termux no usa los repositorios APT de Debian/Ubuntu ni los paquetes RPM de Fedora. Por eso, en Android se instala Memingo con el instalador compatible con Termux, que coloca los comandos dentro de `$PREFIX/bin`.
+
+Instala los requisitos y descarga el proyecto:
+
+```bash
+pkg update
+pkg install -y git python
+git clone https://github.com/Reaccionador2Jeje/Memingo.git
+cd Memingo
+sh scripts/install.sh
+hash -r
+memingo --version
+mgoa --version
+```
+
+El instalador detecta Termux automáticamente, utiliza el Python de Termux y evita modificar archivos de configuración del PATH porque `$PREFIX/bin` ya está incluido en el entorno. No ejecutes `apt install memingo` en Termux: ese paquete se publica para distribuciones Debian/Ubuntu, no para el repositorio de paquetes de Android.
+
+Para actualizar, entra en la carpeta del repositorio y ejecuta:
+
+```bash
+git pull
+sh scripts/install.sh
+```
+
+Para desinstalar desde Termux:
+
+```bash
+sh scripts/uninstall.sh
+```
+
+## Desinstalar
+
+Debian/Ubuntu:
+
+```bash
+sudo apt-get remove memingo
+sudo rm -f /etc/apt/sources.list.d/memingo.list
+sudo rm -f /usr/share/keyrings/memingo-archive-keyring.asc
+sudo apt-get update
+```
+
+Fedora/DNF:
+
+```bash
+sudo dnf remove memingo
+sudo rm -f /etc/yum.repos.d/memingo.repo
+sudo dnf clean all
+```
+
+La desinstalación del paquete no elimina los proyectos que hayas creado en tus carpetas personales.
+
+## Solución de problemas
+
+- **No se encuentra el paquete:** confirma que agregaste el repositorio correcto, que la URL de Pages responde y que ejecutaste `sudo apt-get update` o `sudo dnf makecache`.
+- **Error de firma en APT:** vuelve a descargar la clave pública desde la URL oficial y comprueba que la entrada `signed-by` apunta al archivo instalado.
+- **Error de firma en DNF:** confirma que `gpgcheck=1`, `repo_gpgcheck=1` y `gpgkey` están presentes en `/etc/yum.repos.d/memingo.repo`. No desactives la verificación de firmas para evitar el error.
+- **Falta Python:** instala Python 3.10 o posterior desde los repositorios oficiales de tu distribución.
+- **El comando no aparece:** abre una terminal nueva y ejecuta `command -v memingo` y `command -v mgoa`.
+
+## URLs de los repositorios
+
+- Página principal: https://reaccionador2jeje.github.io/Memingo/
+- Clave pública: https://reaccionador2jeje.github.io/Memingo/linux/memingo.asc
+- APT: https://reaccionador2jeje.github.io/Memingo/linux/apt/
+- RPM/DNF: https://reaccionador2jeje.github.io/Memingo/linux/rpm/
+
+## Compilar paquetes localmente
+
+Desde la raíz del repositorio:
+
+```bash
+# Debian/Ubuntu: requiere dpkg-deb
+python3 scripts/build-packages.py --only deb
+
+# Fedora/RHEL: requiere rpmbuild (paquete rpm-build)
+python3 scripts/build-packages.py --only rpm
+
+# Ambos formatos
+python3 scripts/build-packages.py
+```
+
+Los archivos se generan en `dist/`. Para crear los metadatos locales de ambos repositorios:
+
+```bash
+python3 scripts/build-linux-repositories.py
+```
+
+## Publicación automática en GitHub Pages
+
+El workflow **Publish Linux Package Repositories** publica el directorio `site/` cuando se impulsa un tag `v*` o se ejecuta manualmente mediante `workflow_dispatch`.
+
+Debe existir un entorno de GitHub Pages configurado para el repositorio y estos tres secretos de GitHub Actions:
+
+- `MEMINGO_GPG_PRIVATE_KEY`: clave privada GPG codificada en Base64.
+- `MEMINGO_GPG_KEY_ID`: ID o huella de la clave de firma.
+- `MEMINGO_GPG_PASSPHRASE`: frase de contraseña de esa clave.
+
+**Nunca** guardes la clave privada ni la frase de contraseña en el repositorio, en archivos publicados, en incidencias o en mensajes. Configura los valores únicamente en GitHub Actions Secrets. El workflow verifica las firmas APT, los paquetes RPM y los metadatos RPM antes de desplegar; si una verificación falla, la publicación se detiene.
+
+Para publicar una versión mediante un tag, por ejemplo:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+La clave pública se publica como `site/linux/memingo.asc`. APT firma `InRelease` y `Release.gpg`; RPM firma cada paquete y `repomd.xml`.
+
+## Vista previa local del sitio
 
 ```bash
 cd site
 python3 -m http.server 4173
 ```
 
-Open `http://127.0.0.1:4173/`.
+Abre http://127.0.0.1:4173/ en el navegador.
