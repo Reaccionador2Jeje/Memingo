@@ -145,6 +145,7 @@ class Interpreter:
         self.global_environment.define("api_get", lambda app, path, handler: self._api_route(app, ("GET",), path, handler))
         self.global_environment.define("api_post", lambda app, path, handler: self._api_route(app, ("POST",), path, handler))
         self.global_environment.define("api_put", lambda app, path, handler: self._api_route(app, ("PUT",), path, handler))
+        self.global_environment.define("api_patch", lambda app, path, handler: self._api_route(app, ("PATCH",), path, handler))
         self.global_environment.define("api_delete", lambda app, path, handler: self._api_route(app, ("DELETE",), path, handler))
         self.global_environment.define("api_use", self._api_use)
         self.global_environment.define("response_header", self._response_header)
