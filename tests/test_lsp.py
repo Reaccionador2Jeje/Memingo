@@ -2,7 +2,7 @@ import io
 import json
 import unittest
 
-from memingo.lsp import MemingoLanguageServer
+from memingo.lsp import MemingoLanguageServer, _diagnostics
 
 
 class LanguageServerTests(unittest.TestCase):
@@ -19,8 +19,16 @@ class LanguageServerTests(unittest.TestCase):
         output = io.BytesIO()
         server = MemingoLanguageServer(io.BytesIO(source), output)
         self.assertEqual(server.run(), 0)
-        packets = output.getvalue().split(b"\r\n\r\n")
-        messages = [json.loads(packets[i+1]) for i in range(0, len(packets)-1, 2) if packets[i+1]]
+        raw = output.getvalue()
+        messages = []
+        while raw:
+            boundary = raw.find(b"\r\n\r\n")
+            self.assertGreaterEqual(boundary, 0)
+            header = raw[:boundary].decode("ascii")
+            length = int(next(line.split(":", 1)[1].strip() for line in header.split("\r\n") if line.lower().startswith("content-length:")))
+            start = boundary + 4
+            messages.append(json.loads(raw[start:start + length].decode("utf-8")))
+            raw = raw[start + length:]
         self.assertEqual(messages[0]["id"], 1)
         self.assertIn("completionProvider", messages[0]["result"]["capabilities"])
         diagnostics = next(item for item in messages if item.get("method") == "textDocument/publishDiagnostics")
@@ -36,7 +44,7 @@ class LanguageServerTests(unittest.TestCase):
     def test_invalid_document_publishes_diagnostic(self):
         server = MemingoLanguageServer(io.BytesIO(), io.BytesIO())
         server.documents["file:///bad.mgo"] = "vibe value ="
-        result = server._diagnostics(server.documents["file:///bad.mgo"])
+        result = _diagnostics(server.documents["file:///bad.mgo"])
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["severity"], 1)
 
