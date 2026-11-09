@@ -41,11 +41,26 @@ Available built-ins:
 - `api_get(app, path, ritual)`, `api_post(...)`, `api_put(...)`, and `api_delete(...)` register routes.
 - `api_route(app, methods, path, ritual)` registers one or more HTTP methods.
 - `request_json(request)` parses the incoming JSON body.
+- `api_use(app, ritual)` registers middleware. The ritual receives `(request, next)`.
+- `response_header(response, name, value)`, `response_status(response, status)`, and `response_body(response, body)` modify the response returned by `next()`.
 - `api_listen(app, host?, port?)` starts the server.
 
 The request passed to a ritual is an object with `method`, `path`, `query`, `params`, `headers`, and `body` fields. Route handlers may return an object or list for a JSON response, text for a text response, or `ghost` for HTTP 204. Invalid request JSON returns HTTP 400.
 
-The default host is `127.0.0.1`. CLI flags `--host` and `--port` override the defaults supplied by `api_listen(app)`. Route-ritual execution is serialized to protect shared interpreter state across concurrent HTTP requests.
+Middleware runs in registration order before the route. Call `next()` to continue, or return an object to short-circuit the request. When `next()` returns a response, use the response helpers to modify it and return it.
+
+```mgo
+ritual add_server_header(request, next) {
+    vibe response = next()
+    response_header(response, "X-Powered-By", "Memingo")
+    response_status(response, 200)
+    drop response
+}
+
+api_use(app, add_server_header)
+```
+
+The default host is `127.0.0.1`. CLI flags `--host` and `--port` override the defaults supplied by `api_listen(app)`. Route-ritual and middleware execution is serialized to protect shared interpreter state across concurrent HTTP requests.
 
 ## Python API quick start
 
