@@ -64,6 +64,9 @@ api.listen("127.0.0.1", 8000)
 
 Supports GET, POST, PUT and DELETE routes, JSON request bodies, query parameters and custom response headers. See [examples/server.mgo](examples/server.mgo) and the [HTTP API reference](LANGUAGE.md#memingo-server-http-apis). This is a development server; production hosting, middleware and authentication are future work.
 
+
+The Server runtime also supports dynamic paths such as `/users/{id}`, request middleware, a bearer-token helper, and project-scoped SQLite storage. See [the HTTP API guide](LANGUAGE.md#memingo-server-http-apis), [server example](examples/server.mgo), and [SQLite example](examples/sqlite.mgo). Use parameterized SQL values for user data. The built-in server is intended for development; production TLS, deployment hardening, PostgreSQL pooling, and session management remain future work.
+
 ## Memingo 1.0 direction
 
 The long-term architecture and phased plan for building concise apps, servers, web projects and games is documented in [ARCHITECTURE.md](ARCHITECTURE.md). The roadmap is tracked in [TODO.md](TODO.md).
