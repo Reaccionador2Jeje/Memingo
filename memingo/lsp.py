@@ -149,6 +149,46 @@ class MemingoLanguageServer:
         end = {"line": symbol["line"], "character": symbol["character"] + len(name)}
         return {"uri": uri, "range": {"start": start, "end": end}}
 
+    def _identifier_at(self, source: str, position: dict):
+        line = int(position.get("line", 0))
+        character = int(position.get("character", 0))
+        lines = source.splitlines()
+        if line < 0 or line >= len(lines):
+            return None
+        return self._word_at(lines[line], character)
+
+    def _references(self, params: dict) -> list[dict]:
+        uri, source = self._document(params)
+        name = self._identifier_at(source, params.get("position") or {})
+        if not name:
+            return []
+        try:
+            tokens = Lexer(source).tokenize()
+        except LexerError:
+            return []
+        results = []
+        for token in tokens:
+            if token.kind != "IDENTIFIER" or token.value != name:
+                continue
+            start = {"line": token.line - 1, "character": token.column - 1}
+            end = {"line": token.line - 1, "character": token.column - 1 + len(name)}
+            results.append({"uri": uri, "range": {"start": start, "end": end}})
+        return results[:500]
+
+    def _rename(self, params: dict):
+        uri, source = self._document(params)
+        name = self._identifier_at(source, params.get("position") or {})
+        new_name = str(params.get("newName", "")).strip()
+        if not name or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,255}", new_name):
+            return None
+        if name not in {item["name"] for item in _symbols(source)}:
+            return None
+        edits = []
+        for location in self._references(params):
+            range_value = location["range"]
+            edits.append({"range": range_value, "newText": new_name})
+        return {"changes": {uri: edits}} if edits else None
+
     def handle(self, message: dict) -> bool:
         method = message.get("method")
         params = message.get("params") or {}
@@ -163,6 +203,8 @@ class MemingoLanguageServer:
                     "hoverProvider": True,
                     "definitionProvider": True,
                     "documentSymbolProvider": True,
+                    "referencesProvider": True,
+                    "renameProvider": True,
                 },
                 "serverInfo": {"name": "Memingo Language Server", "version": "0.1.0"},
             })
@@ -198,6 +240,10 @@ class MemingoLanguageServer:
             self.respond(request_id, self._hover(params))
         elif method == "textDocument/definition":
             self.respond(request_id, self._definition(params))
+        elif method == "textDocument/references":
+            self.respond(request_id, self._references(params))
+        elif method == "textDocument/rename":
+            self.respond(request_id, self._rename(params))
         elif method == "textDocument/documentSymbol":
             uri, source = self._document(params)
             symbols = []
