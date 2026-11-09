@@ -414,7 +414,13 @@ class Interpreter:
                 "body": request.text(),
             }
 
+            next_called = False
+
             def next_adapter():
+                nonlocal next_called
+                if next_called:
+                    raise RuntimeErrorMemingo("Middleware next() may only be called once")
+                next_called = True
                 response = next_handler()
                 return {
                     "__memingo_response__": True,
