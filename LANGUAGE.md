@@ -107,6 +107,8 @@ api_listen(app)
 - `api_get(app, path, ritual)`, `api_post(...)`, `api_put(...)`, `api_patch(...)`, and `api_delete(...)` register routes.
 - `api_route(app, methods, path, ritual)` registers custom methods.
 - `request_json(request)` parses a request's JSON body.
+- `response_json(data, status?, headers?)`, `response_text(text, status?, headers?)`, and `response_html(html, status?, headers?)` create explicit HTTP responses.
+- `response_redirect(location, status?)` creates a redirect; `response_error(status, message)` creates a JSON error response.
 - `api_use(app, ritual)` registers middleware with `(request, next)` parameters.
 - `response_header(response, name, value)`, `response_status(response, status)`, and `response_body(response, body)` modify a response returned by `next()`.
 - `api_listen(app, host?, port?)` starts listening. The default host is `127.0.0.1` and port is `8000`.
