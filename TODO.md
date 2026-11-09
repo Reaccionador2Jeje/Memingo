@@ -1,5 +1,8 @@
 # Memingo Roadmap
 
+> Long-term direction: [Memingo 1.0 architecture](ARCHITECTURE.md). Keep the 0.2 interpreter compatible while building modules and real app/server/game frameworks in phases.
+
+
 ## Language
 - [x] Lexer with keywords, literals, operators and comments
 - [x] Parser for variables, functions, blocks, conditions and loops
