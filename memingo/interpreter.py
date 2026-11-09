@@ -445,7 +445,7 @@ class Interpreter:
         if not isinstance(value, (str, int, float)):
             raise RuntimeErrorMemingo("Response header value must be text or a number")
         rendered = str(value)
-        if "\\r" in rendered or "\\n" in rendered:
+        if "\r" in rendered or "\n" in rendered:
             raise RuntimeErrorMemingo("Response header value cannot contain line breaks")
         response.setdefault("headers", {})[name] = rendered
         return response
