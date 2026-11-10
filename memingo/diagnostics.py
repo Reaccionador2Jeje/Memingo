@@ -53,6 +53,8 @@ def render_diagnostic(error, source, filename="<source>"):
     width = len(str(last))
     output = [
         "",
+        "Memingo error",
+        "",
         "MEMINGO ERROR",
         "",
         f"--> {filename}:{line}:{column}",
