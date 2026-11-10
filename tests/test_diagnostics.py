@@ -14,6 +14,7 @@ class SmartDiagnosticsTests(unittest.TestCase):
 
         output = render_diagnostic(context.exception, source, "main.mgo")
         self.assertIn("main.mgo:2:1", output)
+        self.assertIn("Memingo error", output)
         self.assertIn("spill missing_value", output)
         self.assertIn("^", output)
         self.assertIn("declare it first", output)
