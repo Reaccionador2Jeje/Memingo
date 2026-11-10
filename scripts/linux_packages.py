@@ -756,4 +756,3 @@ def build_pacman_repository(output: Path, packages: list[Path]) -> bool:
     shutil.copy2(db_archive, repository / "memingo.db")
     shutil.copy2(files_archive, repository / "memingo.files")
     return True
-
