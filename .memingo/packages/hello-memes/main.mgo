@@ -1,0 +1,13 @@
+vibe meme_hello = "Hello from an approved package!"
+
+ritual greeting(name) {
+    drop meme_hello + " " + name
+}
+
+ritual greet(name) {
+    spill greeting(name)
+}
+
+ritual self_test() {
+    drop greeting("mgoa") == "Hello from an approved package! mgoa"
+}

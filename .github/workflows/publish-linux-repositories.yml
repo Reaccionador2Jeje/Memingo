@@ -14,6 +14,10 @@ concurrency:
   group: memingo-package-repositories
   cancel-in-progress: true
 
+env:
+  GPG_KEY_ID: ${{ secrets.MEMINGO_GPG_KEY_ID }}
+  GPG_PASSPHRASE: ${{ secrets.MEMINGO_GPG_PASSPHRASE }}
+
 jobs:
   publish:
     environment:
@@ -27,57 +31,45 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install repository tools
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install packaging tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev rpm createrepo-c gnupg
+          sudo apt-get install -y dpkg-dev rpm createrepo-c gnupg zstd
+
+      - name: Verify package registry
+        run: python3 scripts/build-registry.py --check
+
+      - name: Build VS Code extension
+        working-directory: vscode-extension
+        run: npx --yes @vscode/vsce package
+
+      - name: Fetch Memingo IDE packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/fetch-ide-artifacts.py
 
       - name: Build native packages
         run: python3 scripts/build-packages.py
 
-      - name: Create repository metadata
-        run: python3 scripts/build-linux-repositories.py
-
-      - name: Import and verify signing key
+      - name: Import signing key
+        if: ${{ env.GPG_KEY_ID != '' }}
         env:
           GPG_PRIVATE_KEY: ${{ secrets.MEMINGO_GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.MEMINGO_GPG_PASSPHRASE }}
-          GPG_KEY_ID: ${{ secrets.MEMINGO_GPG_KEY_ID }}
         run: |
           set -eu
-          if [[ -z "$GPG_PRIVATE_KEY" || -z "$GPG_KEY_ID" ]]; then
-            echo "Signing secrets not configured; repository will remain unsigned."
-            exit 0
-          fi
           printf '%s' "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
-          test -n "$GPG_KEY_ID"
           gpg --list-secret-keys "$GPG_KEY_ID"
+          mkdir -p site/linux
           gpg --batch --yes --armor --export "$GPG_KEY_ID" > site/linux/memingo.asc
 
-      - name: Sign APT repository
-        env:
-          GPG_PASSPHRASE: ${{ secrets.MEMINGO_GPG_PASSPHRASE }}
-          GPG_KEY_ID: ${{ secrets.MEMINGO_GPG_KEY_ID }}
+      - name: Sign RPM and pacman packages
+        if: ${{ env.GPG_KEY_ID != '' }}
         run: |
-          if [[ -z "$GPG_KEY_ID" ]]; then
-            echo "Signing key not configured; skipping APT signatures."
-            exit 0
-          fi
-          cd site/linux/apt/dists/stable
-          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
-            --default-key "$GPG_KEY_ID" --clearsign --output InRelease Release
-          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
-            --default-key "$GPG_KEY_ID" --armor --detach-sign --output Release.gpg Release
-
-      - name: Sign RPM repository
-        env:
-          GPG_PASSPHRASE: ${{ secrets.MEMINGO_GPG_PASSPHRASE }}
-          GPG_KEY_ID: ${{ secrets.MEMINGO_GPG_KEY_ID }}
-        run: |
-          if [[ -z "$GPG_KEY_ID" ]]; then
-            echo "Signing key not configured; skipping RPM signatures."
-            exit 0
-          fi
+          set -eu
           echo '%_signature gpg' > "$HOME/.rpmmacros"
           echo "%_gpg_name $GPG_KEY_ID" >> "$HOME/.rpmmacros"
           echo '%_gpg_path /home/runner/.gnupg' >> "$HOME/.rpmmacros"
@@ -85,12 +77,39 @@ jobs:
           for package in dist/*.rpm; do
             rpmsign --define "_gpg_passphrase $GPG_PASSPHRASE" --addsign "$package"
           done
-          cp dist/*.rpm site/linux/rpm/Packages/
-          createrepo_c --update --database site/linux/rpm
+          for package in dist/*.pkg.tar.zst; do
+            gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+              --default-key "$GPG_KEY_ID" --detach-sign --no-armor "$package"
+          done
+
+      - name: Create repository metadata
+        run: python3 scripts/build-linux-repositories.py
+
+      - name: Sign APT repository
+        if: ${{ env.GPG_KEY_ID != '' }}
+        run: |
+          cd site/linux/apt/dists/stable
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+            --default-key "$GPG_KEY_ID" --clearsign --output InRelease Release
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+            --default-key "$GPG_KEY_ID" --armor --detach-sign --output Release.gpg Release
+
+      - name: Sign RPM repository
+        if: ${{ env.GPG_KEY_ID != '' }}
+        run: |
           gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
             --default-key "$GPG_KEY_ID" --armor --detach-sign \
             --output site/linux/rpm/repodata/repomd.xml.asc \
             site/linux/rpm/repodata/repomd.xml
+
+      - name: Sign pacman repository
+        if: ${{ env.GPG_KEY_ID != '' }}
+        run: |
+          cd site/linux/arch/x86_64
+          for database in memingo.db memingo.files; do
+            gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+              --default-key "$GPG_KEY_ID" --detach-sign --no-armor "$database"
+          done
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

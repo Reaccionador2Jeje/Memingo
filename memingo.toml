@@ -1,0 +1,9 @@
+[package]
+name = "Memingo"
+version = "0.2.0"
+entry = "main.mgo"
+
+[dependencies]
+hello-memes = "0.1.0"
+envkit = "0.2.0"
+clikit = "0.2.0"

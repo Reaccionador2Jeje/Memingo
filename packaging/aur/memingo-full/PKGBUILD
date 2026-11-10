@@ -1,0 +1,18 @@
+# Maintainer: Memingo <noreply@example.com>
+pkgname=memingo-full
+pkgver=0.2.0
+pkgrel=1
+pkgdesc='Complete Memingo development environment (meta package)'
+arch=('any')
+url='https://github.com/Reaccionador2Jeje/Memingo'
+license=('BSD-3-Clause')
+depends=('memingo' 'memingo-registry' 'memingo-vscode')
+optdepends=('memingo-ide-bin: prebuilt Memingo IDE')
+source=()
+sha256sums=()
+
+package() {
+  install -d "$pkgdir/usr/share/doc/memingo-full"
+  printf 'Memingo full environment\n\nInstalls memingo, memingo-registry and memingo-vscode.\nInstall memingo-ide-bin for the desktop IDE.\n' \
+    > "$pkgdir/usr/share/doc/memingo-full/README"
+}

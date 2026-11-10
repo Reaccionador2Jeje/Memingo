@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""Create APT, DNF/RPM and pacman repository metadata for Memingo."""
+
+from __future__ import annotations
+
 import argparse
 import gzip
 import hashlib
@@ -7,13 +11,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+from linux_packages import DIST, build_pacman_repository
+
 
 ROOT = Path(__file__).resolve().parent.parent
-DIST = ROOT / "dist"
 DEFAULT_OUTPUT = ROOT / "site" / "linux"
 
 
-def sha256(path):
+def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -21,7 +26,7 @@ def sha256(path):
     return digest.hexdigest()
 
 
-def sha512(path):
+def sha512(path: Path) -> str:
     digest = hashlib.sha512()
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -29,24 +34,39 @@ def sha512(path):
     return digest.hexdigest()
 
 
-def build_apt_repository(output, version, packages):
+def deb_package_name(package: Path) -> str:
+    try:
+        return subprocess.check_output(
+            ["dpkg-deb", "-f", str(package), "Package"], text=True
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return package.name.split("_", 1)[0]
+
+
+def build_apt_repository(output: Path, packages: list[Path]) -> bool:
     if not shutil.which("dpkg-scanpackages"):
         print("APT repository: dpkg-scanpackages is required (install dpkg-dev)", file=sys.stderr)
         return False
 
-    pool = output / "apt" / "pool" / "main" / "m" / "memingo"
-    pool.mkdir(parents=True, exist_ok=True)
+    apt_root = output / "apt"
     for package in packages:
+        name = deb_package_name(package)
+        pool = apt_root / "pool" / "main" / name[0] / name
+        pool.mkdir(parents=True, exist_ok=True)
         shutil.copy2(package, pool / package.name)
 
-    apt_root = output / "apt"
     distribution = apt_root / "dists" / "stable"
     component = distribution / "main" / "binary-amd64"
     component.mkdir(parents=True, exist_ok=True)
 
     packages_file = component / "Packages"
     with packages_file.open("w", encoding="utf-8") as stream:
-        subprocess.run(["dpkg-scanpackages", "pool/", "/dev/null"], cwd=apt_root, stdout=stream, check=True)
+        subprocess.run(
+            ["dpkg-scanpackages", "pool/", "/dev/null"],
+            cwd=apt_root,
+            stdout=stream,
+            check=True,
+        )
     with packages_file.open("rb") as source, gzip.open(str(packages_file) + ".gz", "wb") as target:
         shutil.copyfileobj(source, target)
 
@@ -76,7 +96,7 @@ def build_apt_repository(output, version, packages):
     return True
 
 
-def build_rpm_repository(output, packages):
+def build_rpm_repository(output: Path, packages: list[Path]) -> bool:
     if not shutil.which("createrepo_c"):
         print("RPM repository: createrepo_c is required (install createrepo-c)", file=sys.stderr)
         return False
@@ -90,10 +110,10 @@ def build_rpm_repository(output, packages):
     return True
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description="Create local APT and RPM repository metadata")
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
-    parser.add_argument("--only", choices=("apt", "rpm"))
+    parser.add_argument("--only", choices=("apt", "rpm", "arch"), action="append")
     args = parser.parse_args(argv)
 
     output = Path(args.output).resolve()
@@ -103,17 +123,25 @@ def main(argv=None):
 
     deb_packages = sorted(DIST.glob("*.deb"))
     rpm_packages = sorted(DIST.glob("*.rpm"))
-    built = []
+    arch_packages = sorted(DIST.glob("*.pkg.tar.zst"))
+    formats = tuple(args.only) if args.only else ("apt", "rpm", "arch")
+    built: list[Path] = []
 
-    if args.only in (None, "apt") and deb_packages:
-        if build_apt_repository(output, None, deb_packages):
+    if "apt" in formats and deb_packages:
+        if build_apt_repository(output, deb_packages):
             built.append(output / "apt")
-    if args.only in (None, "rpm") and rpm_packages:
+    if "rpm" in formats and rpm_packages:
         if build_rpm_repository(output, rpm_packages):
             built.append(output / "rpm")
+    if "arch" in formats and arch_packages:
+        if build_pacman_repository(output, arch_packages):
+            built.append(output / "arch")
 
     if not built:
-        print("No repository was built. Build packages first with scripts/build-packages.py", file=sys.stderr)
+        print(
+            "No repository was built. Build packages first with scripts/build-packages.py",
+            file=sys.stderr,
+        )
         return 1
     for repository in built:
         print(repository)

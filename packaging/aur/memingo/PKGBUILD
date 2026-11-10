@@ -1,0 +1,34 @@
+# Maintainer: Memingo <noreply@example.com>
+pkgname=memingo
+pkgver=0.2.0
+pkgrel=1
+pkgdesc='Meme-inspired programming language and package manager'
+arch=('any')
+url='https://github.com/Reaccionador2Jeje/Memingo'
+license=('BSD-3-Clause')
+depends=('python>=3.10')
+provides=('memingo-lang')
+conflicts=('memingo-git')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Reaccionador2Jeje/Memingo/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "Memingo-$pkgver"
+
+  install -d "$pkgdir/usr/lib/memingo" "$pkgdir/usr/bin" "$pkgdir/usr/share/doc/memingo"
+
+  cp -r memingo "$pkgdir/usr/lib/memingo/"
+  find "$pkgdir/usr/lib/memingo" -type d -name __pycache__ -prune -exec rm -rf {} +
+  find "$pkgdir/usr/lib/memingo" -type f -name '*.py[co]' -delete
+  install -m644 scripts/launcher.py scripts/mgoa.py "$pkgdir/usr/lib/memingo/"
+
+  for document in README.md LANGUAGE.md LICENSE; do
+    if [[ -f "$document" ]]; then
+      install -m644 "$document" "$pkgdir/usr/share/doc/memingo/"
+    fi
+  done
+
+  printf '#!/usr/bin/sh\nexec /usr/bin/python3 -I /usr/lib/memingo/launcher.py "$@"\n' > "$pkgdir/usr/bin/memingo"
+  printf '#!/usr/bin/sh\nexec /usr/bin/python3 -I /usr/lib/memingo/mgoa.py "$@"\n' > "$pkgdir/usr/bin/mgoa"
+  chmod 755 "$pkgdir/usr/bin/memingo" "$pkgdir/usr/bin/mgoa"
+}

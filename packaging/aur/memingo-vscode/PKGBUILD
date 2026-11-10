@@ -1,0 +1,44 @@
+# Maintainer: Memingo <noreply@example.com>
+pkgname=memingo-vscode
+pkgver=0.2.0
+pkgrel=1
+pkgdesc='Memingo language support for Visual Studio Code'
+arch=('any')
+url='https://github.com/Reaccionador2Jeje/Memingo'
+license=('BSD-3-Clause')
+depends=('memingo')
+makedepends=('nodejs' 'npm')
+optdepends=(
+  'code: install the extension into Visual Studio Code'
+  'code-insiders: install the extension into Code - Insiders'
+  'vscodium: install the extension into VSCodium'
+)
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Reaccionador2Jeje/Memingo/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "Memingo-$pkgver/vscode-extension"
+  npx --yes @vscode/vsce package --out memingo.vsix
+}
+
+package() {
+  cd "Memingo-$pkgver"
+
+  install -d "$pkgdir/usr/share/memingo/vscode" "$pkgdir/usr/bin"
+  install -m644 vscode-extension/memingo.vsix "$pkgdir/usr/share/memingo/vscode/memingo.vsix"
+
+  cat > "$pkgdir/usr/bin/memingo-vscode-install" <<'EOF'
+#!/usr/bin/sh
+set -eu
+VSIX=/usr/share/memingo/vscode/memingo.vsix
+for editor in code code-insiders codium; do
+  if command -v "$editor" >/dev/null 2>&1; then
+    exec "$editor" --install-extension "$VSIX" --force
+  fi
+done
+echo "No se encontró VS Code, Code - Insiders ni VSCodium." >&2
+echo "Instala la extensión manualmente con: code --install-extension $VSIX" >&2
+exit 1
+EOF
+  chmod 755 "$pkgdir/usr/bin/memingo-vscode-install"
+}

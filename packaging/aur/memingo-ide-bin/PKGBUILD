@@ -1,0 +1,18 @@
+# Maintainer: Memingo <noreply@example.com>
+pkgname=memingo-ide-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='IDE for the Memingo programming language (prebuilt)'
+arch=('x86_64')
+url='https://github.com/Reaccionador2Jeje/Memingo-IDE'
+license=('BSL-1.0')
+depends=('gtk3' 'nss' 'libxss' 'libnotify' 'libxtst' 'xdg-utils' 'at-spi2-core')
+provides=('memingo-ide')
+conflicts=('memingo-ide')
+source=("Memingo-IDE-${pkgver}-linux-x86_64.pkg.tar.zst::https://github.com/Reaccionador2Jeje/Memingo-IDE/releases/download/v${pkgver}/Memingo-IDE-${pkgver}-linux-x86_64.pkg.tar.zst")
+sha256sums=('SKIP')
+
+package() {
+  tar --zstd -xf "$srcdir/Memingo-IDE-${pkgver}-linux-x86_64.pkg.tar.zst" -C "$pkgdir" \
+    --exclude='.PKGINFO' --exclude='.MTREE' --exclude='.BUILDINFO' --exclude='.INSTALL'
+}

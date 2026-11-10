@@ -1,0 +1,12 @@
+pkgbase = memingo-registry
+	pkgdesc = Official Memingo package registry for offline mgoa installs
+	pkgver = 0.2.0
+	pkgrel = 1
+	url = https://github.com/Reaccionador2Jeje/Memingo
+	arch = any
+	license = BSD-3-Clause
+	depends = memingo
+	source = memingo-registry-0.2.0.tar.gz::https://github.com/Reaccionador2Jeje/Memingo/archive/refs/tags/v0.2.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = memingo-registry

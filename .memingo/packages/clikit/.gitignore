@@ -1,0 +1,4 @@
+.memingo/
+dist/
+__pycache__/
+.env

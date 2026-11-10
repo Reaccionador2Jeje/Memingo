@@ -1,0 +1,14 @@
+pkgbase = memingo
+	pkgdesc = Meme-inspired programming language and package manager
+	pkgver = 0.2.0
+	pkgrel = 1
+	url = https://github.com/Reaccionador2Jeje/Memingo
+	arch = any
+	license = BSD-3-Clause
+	depends = python>=3.10
+	provides = memingo-lang
+	conflicts = memingo-git
+	source = memingo-0.2.0.tar.gz::https://github.com/Reaccionador2Jeje/Memingo/archive/refs/tags/v0.2.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = memingo

@@ -1,0 +1,6 @@
+[package]
+name = "envkit"
+version = "0.2.0"
+entry = "main.mgo"
+
+[dependencies]
