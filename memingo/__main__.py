@@ -14,6 +14,7 @@ from pathlib import Path
 from . import __version__
 from .interpreter import Interpreter, RuntimeErrorMemingo, execute
 from .formatter import format_source
+from .diagnostics import render_diagnostic
 from .mgoa import PackageError, add_package, install_project, remove_package
 from .lexer import LexerError
 from .packages import ensure_project, init_project, read_manifest, resolve_entry
@@ -75,15 +76,16 @@ def serve_api(path="app.py", host="127.0.0.1", port=8000) -> int:
 
 
 def run_file(path: str) -> int:
+    source_path = Path(path).resolve()
+    source = ""
     try:
-        source_path = Path(path).resolve()
         project_directory = source_path.parent
-        with open(source_path, "r", encoding="utf-8") as source_file:
-            for line in execute(source_file.read(), project_directory=project_directory):
-                print(line)
+        source = source_path.read_text(encoding="utf-8")
+        for line in execute(source, project_directory=project_directory):
+            print(line)
         return 0
     except (LexerError, ParseError, RuntimeErrorMemingo) as error:
-        print(f"Memingo error: {error}", file=sys.stderr)
+        print(render_diagnostic(error, source, str(source_path)), file=sys.stderr)
         return 1
     except UnicodeError:
         print(f"Memingo error: {path} is not valid UTF-8", file=sys.stderr)
@@ -104,7 +106,7 @@ def run_source(source: str, project_directory=".") -> int:
             print(line)
         return 0
     except (LexerError, ParseError, RuntimeErrorMemingo) as error:
-        print(f"Memingo error: {error}", file=sys.stderr)
+        print(render_diagnostic(error, source, "<eval>"), file=sys.stderr)
         return 1
     except RecursionError:
         print("Memingo error: Maximum recursion depth exceeded", file=sys.stderr)
@@ -165,8 +167,12 @@ def check_sources(paths) -> int:
     checked = 0
     for source_file in files:
         try:
-            parse(source_file.read_text(encoding="utf-8"))
-        except (LexerError, ParseError, UnicodeError, OSError) as error:
+            source = source_file.read_text(encoding="utf-8")
+            parse(source)
+        except (LexerError, ParseError) as error:
+            print(render_diagnostic(error, source, str(source_file)), file=sys.stderr)
+            return 1
+        except (UnicodeError, OSError) as error:
             print(f"Memingo error: {source_file}: {error}", file=sys.stderr)
             return 1
         checked += 1
@@ -352,7 +358,7 @@ def repl() -> int:
             if result is not None and len(interpreter.output) == previous_output_count:
                 print(result)
         except (LexerError, ParseError, RuntimeErrorMemingo) as error:
-            print(f"Memingo error: {error}", file=sys.stderr)
+            print(render_diagnostic(error, source, "<repl>"), file=sys.stderr)
         except (RecursionError, UnicodeError) as error:
             print(f"Memingo error: {error}", file=sys.stderr)
         except KeyboardInterrupt:
