@@ -178,7 +178,13 @@ class Interpreter:
         try:
             result = None
             for statement in statements:
-                result = self.execute(statement)
+                try:
+                    result = self.execute(statement)
+                except RuntimeErrorMemingo as error:
+                    if getattr(error, "line", None) is None:
+                        error.line = getattr(statement, "line", None)
+                        error.column = getattr(statement, "column", None)
+                    raise
             return result
         finally:
             self.environment = previous
