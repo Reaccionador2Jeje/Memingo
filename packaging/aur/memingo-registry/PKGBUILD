@@ -1,0 +1,45 @@
+# Maintainer: Memingo <noreply@example.com>
+pkgname=memingo-registry
+pkgver=0.2.0
+pkgrel=1
+pkgdesc='Official Memingo package registry for offline mgoa installs'
+arch=('any')
+url='https://github.com/Reaccionador2Jeje/Memingo'
+license=('BSD-3-Clause')
+depends=('memingo')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Reaccionador2Jeje/Memingo/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "Memingo-$pkgver"
+
+  local registry="$pkgdir/usr/share/memingo/registry"
+  install -d "$registry/packages" "$pkgdir/usr/bin"
+
+  install -m644 site/mgoa/index.json "$registry/index.json"
+  install -m644 site/mgoa/packages/*.zip "$registry/packages/"
+
+  python3 - "$registry" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+registry = Path(sys.argv[1])
+index_path = registry / "index.json"
+index = json.loads(index_path.read_text(encoding="utf-8"))
+table = index.get("approved", {}).get("packages", {})
+for record in table.values():
+    for release in record.get("versions", {}).values():
+        archive = str(release.get("archive", ""))
+        name = archive.rsplit("/", 1)[-1]
+        release["archive"] = f"file://{registry}/packages/{name}"
+index_path.write_text(json.dumps(index, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+PY
+
+  cat > "$pkgdir/usr/bin/memingo-registry" <<'EOF'
+#!/usr/bin/sh
+echo "Memingo offline registry: file:///usr/share/memingo/registry/index.json"
+echo "Usage: mgoa install --registry file:///usr/share/memingo/registry/index.json <package>"
+EOF
+  chmod 755 "$pkgdir/usr/bin/memingo-registry"
+}

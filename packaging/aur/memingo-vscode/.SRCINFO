@@ -1,0 +1,17 @@
+pkgbase = memingo-vscode
+	pkgdesc = Memingo language support for Visual Studio Code
+	pkgver = 0.2.0
+	pkgrel = 1
+	url = https://github.com/Reaccionador2Jeje/Memingo
+	arch = any
+	license = BSD-3-Clause
+	depends = memingo
+	makedepends = nodejs
+	makedepends = npm
+	optdepends = code: install the extension into Visual Studio Code
+	optdepends = code-insiders: install the extension into Code - Insiders
+	optdepends = vscodium: install the extension into VSCodium
+	source = memingo-vscode-0.2.0.tar.gz::https://github.com/Reaccionador2Jeje/Memingo/archive/refs/tags/v0.2.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = memingo-vscode

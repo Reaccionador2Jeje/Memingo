@@ -1,0 +1,2 @@
+vibe app = "Memingo"
+spill "Welcome to " + app + "!"

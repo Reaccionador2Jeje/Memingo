@@ -1,0 +1,31 @@
+{
+  "dependencies": {
+    "hello-memes": {
+      "version": "0.1.0",
+      "entry": "main.mgo",
+      "sha256": "0d8133f5813484ab11f637a77571581728073ab1d1ddb1d6af3195c77ac2bf61",
+      "archive_sha256": "37e2bb38519e830d680147b648c201cb315bfd9554d558580b29a0d35590dd4d",
+      "approved": true,
+      "source": "registry",
+      "registry": "https://reaccionador2jeje.github.io/Memingo/mgoa/index.json"
+    },
+    "envkit": {
+      "version": "0.2.0",
+      "entry": "main.mgo",
+      "sha256": "16d0e49d17becc74687163ce7441fbcb8ece6b1cb7d156f56f228a9013563782",
+      "archive_sha256": "",
+      "approved": false,
+      "source": "local",
+      "path": "/home/cristopher/Memingo/envkit"
+    },
+    "clikit": {
+      "version": "0.2.0",
+      "entry": "main.mgo",
+      "sha256": "34be15ee63b73935af837192c83da455ae58765f49cfacd30c6abdd7a00a918e",
+      "archive_sha256": "",
+      "approved": false,
+      "source": "local",
+      "path": "/home/cristopher/Memingo/clikit"
+    }
+  }
+}

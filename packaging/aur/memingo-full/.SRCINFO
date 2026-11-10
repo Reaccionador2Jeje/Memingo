@@ -1,0 +1,13 @@
+pkgbase = memingo-full
+	pkgdesc = Complete Memingo development environment (meta package)
+	pkgver = 0.2.0
+	pkgrel = 1
+	url = https://github.com/Reaccionador2Jeje/Memingo
+	arch = any
+	license = BSD-3-Clause
+	depends = memingo
+	depends = memingo-registry
+	depends = memingo-vscode
+	optdepends = memingo-ide-bin: prebuilt Memingo IDE
+
+pkgname = memingo-full
