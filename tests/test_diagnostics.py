@@ -8,7 +8,7 @@ from memingo.parser import ParseError, parse
 
 class SmartDiagnosticsTests(unittest.TestCase):
     def test_runtime_error_shows_statement_location(self):
-        source = 'vibe answer = 42\\nspill missing_value'
+        source = 'vibe answer = 42\nspill missing_value'
         with self.assertRaises(RuntimeErrorMemingo) as context:
             execute(source)
 
