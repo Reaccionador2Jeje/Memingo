@@ -32,7 +32,7 @@ def _help_for(message):
 def render_diagnostic(error, source, filename="<source>"):
     """Render a source-aware diagnostic for lexer, parser and runtime errors."""
     message = re.sub(
-        r"\\s+at line \\d+, column \\d+$",
+        r"\s+at line \d+, column \d+$",
         "",
         str(error),
     )
@@ -42,7 +42,7 @@ def render_diagnostic(error, source, filename="<source>"):
         return f"Memingo error: {message}"
 
     lines = source.splitlines()
-    if source.endswith("\\n"):
+    if source.endswith("\n"):
         lines.append("")
 
     if not 1 <= line <= len(lines):
@@ -68,4 +68,4 @@ def render_diagnostic(error, source, filename="<source>"):
             output.append(f" {' ' * width} | {' ' * len(prefix)}^")
 
     output.extend(["", message, "", f"Help: {_help_for(message)}", ""])
-    return "\\n".join(output)
+    return "\n".join(output)
