@@ -76,6 +76,7 @@ class MemingoDesktop(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(f"Memingo Desktop {__version__}")
+        self._set_app_icon()
         self.geometry("1100x740")
         self.minsize(760, 520)
         self.current_file = None
@@ -84,6 +85,14 @@ class MemingoDesktop(tk.Tk):
         self._load_settings()
         if not CONFIG_FILE.exists():
             self.after(180, lambda: FirstRunWizard(self, self._finish_setup))
+
+    def _set_app_icon(self):
+        icon_path = Path(__file__).resolve().parent / "assets" / "memingo.png"
+        try:
+            self._icon_image = tk.PhotoImage(file=str(icon_path))
+            self.iconphoto(True, self._icon_image)
+        except (tk.TclError, OSError):
+            pass
 
     def _build_ui(self):
         style = ttk.Style(self)
