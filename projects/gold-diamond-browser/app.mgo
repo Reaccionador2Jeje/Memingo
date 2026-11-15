@@ -1,0 +1,18 @@
+# Gold & Diamond Browser — application logic in Memingo.
+# This file is the source of the browser's identity and default behavior.
+
+vibe browser = {
+    name: "Gold & Diamond Browser",
+    version: "0.1.0",
+    home: "https://duckduckgo.com",
+    search_engine: "https://duckduckgo.com/?q=",
+    theme: "gold-diamond",
+    language: "es"
+}
+
+ritual browser_config() {
+    drop json_stringify(browser)
+}
+
+write_file("browser-config.json", browser_config())
+spill "Gold & Diamond Browser " + browser.version + " is ready."
