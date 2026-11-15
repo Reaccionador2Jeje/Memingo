@@ -9,7 +9,7 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\Memingo
 DefaultGroupName=Memingo
-OutputDir=dist
+OutputDir=..\..\dist
 OutputBaseFilename=Memingo-Setup-{#MyAppVersion}-windows-x64
 Compression=lzma2
 SolidCompression=yes
@@ -18,7 +18,7 @@ PrivilegesRequired=lowest
 UninstallDisplayIcon={app}\Memingo.exe
 ArchitecturesInstallIn64BitMode=x64
 [Files]
-Source: "..\dist\Memingo\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
+Source: "..\..\dist\Memingo\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
 [Icons]
 Name: "{group}\Memingo"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\Memingo"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
