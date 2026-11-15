@@ -64,7 +64,7 @@ def save_icon(image, stem, iconset):
     png=BRANDING/f"{stem}.png"
     image.save(png)
     iconset.mkdir(parents=True,exist_ok=True)
-    for size in (16,32,64,128,256,512):
+    for size in (16,32,128,256,512):
         image.resize((size,size),Image.Resampling.LANCZOS).save(iconset/f"icon_{size}x{size}.png")
     for size in (16,32,128,256,512):
         image.resize((size*2,size*2),Image.Resampling.LANCZOS).save(iconset/f"icon_{size}x{size}@2x.png")
