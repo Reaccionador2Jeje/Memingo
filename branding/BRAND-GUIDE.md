@@ -22,3 +22,8 @@ Keep a clear area equal to one eye circle around the icon. Do not stretch, recol
 ## Services
 
 Use the same icon in the website, VS Code extension, package manager, CLI launcher, server launcher and desktop installers. The icon remains square with a 28-unit corner radius for 160x160 artwork.
+
+
+## Programming language files
+
+Use `memingo-file.svg` for `.mgo` source files. Desktop builds generate platform icon files from the SVG master artwork: Windows `.ico` and macOS `.icns`. The application icon and source-file icon share the gradient code-chat identity.
