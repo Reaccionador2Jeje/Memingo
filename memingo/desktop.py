@@ -73,7 +73,7 @@ class FirstRunWizard(tk.Toplevel):
             messagebox.showerror("Setup could not finish", str(exc), parent=self)
 
 class MemingoDesktop(tk.Tk):
-    def __init__(self):
+    def __init__(self, initial_file: Path | None = None):
         super().__init__()
         self.title(f"Memingo Desktop {__version__}")
         self._set_app_icon()
@@ -83,6 +83,8 @@ class MemingoDesktop(tk.Tk):
         self.workspace = Path.home() / "MemingoProjects"
         self._build_ui()
         self._load_settings()
+        if initial_file and initial_file.is_file():
+            self._open_path(initial_file)
         if not CONFIG_FILE.exists():
             self.after(180, lambda: FirstRunWizard(self, self._finish_setup))
 
@@ -178,9 +180,12 @@ class MemingoDesktop(tk.Tk):
     def open_file(self):
         path = filedialog.askopenfilename(title="Open Memingo source", initialdir=self.workspace,
             filetypes=[("Memingo source", "*.mgo"), ("All files", "*.*")])
-        if not path: return
+        if path:
+            self._open_path(Path(path))
+
+    def _open_path(self, path: Path):
         try:
-            self.current_file = Path(path)
+            self.current_file = path
             self.editor.delete("1.0", "end")
             self.editor.insert("1.0", self.current_file.read_text(encoding="utf-8"))
             self.file_label.configure(text=self.current_file.name)
@@ -221,7 +226,8 @@ class MemingoDesktop(tk.Tk):
         self.destroy()
 
 def main():
-    MemingoDesktop().mainloop()
+    initial_file = Path(sys.argv[1]).expanduser() if len(sys.argv) > 1 else None
+    MemingoDesktop(initial_file=initial_file).mainloop()
 
 if __name__ == "__main__":
     main()
