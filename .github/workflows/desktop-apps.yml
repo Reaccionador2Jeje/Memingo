@@ -23,6 +23,7 @@ jobs:
           python scripts/build_icons.py
           New-Item -ItemType Directory -Force memingo/assets | Out-Null
           Copy-Item branding/memingo.png memingo/assets/memingo.png
+          Copy-Item branding/memingo-file.ico dist/Memingo/MemingoFile.ico
       - name: Build desktop application
         run: pyinstaller --noconfirm --clean --windowed --name Memingo --icon branding/memingo.ico --add-data "memingo/assets/memingo.png;memingo/assets" --collect-all memingo scripts/desktop_entry.py
       - name: Install Inno Setup
