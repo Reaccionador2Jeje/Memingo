@@ -16,9 +16,15 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install build tools
-        run: python -m pip install pyinstaller
+        run: python -m pip install pyinstaller cairosvg pillow
+      - name: Generate branded icons
+        shell: pwsh
+        run: |
+          python scripts/build_icons.py
+          New-Item -ItemType Directory -Force memingo/assets | Out-Null
+          Copy-Item branding/memingo.png memingo/assets/memingo.png
       - name: Build desktop application
-        run: pyinstaller --noconfirm --clean --windowed --name Memingo --collect-all memingo scripts/desktop_entry.py
+        run: pyinstaller --noconfirm --clean --windowed --name Memingo --icon branding/memingo.ico --add-data "memingo/assets/memingo.png;memingo/assets" --collect-all memingo scripts/desktop_entry.py
       - name: Install Inno Setup
         run: choco install innosetup --yes --no-progress
       - name: Build setup wizard
@@ -43,9 +49,35 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install build tools
-        run: python -m pip install pyinstaller
+        run: python -m pip install pyinstaller cairosvg pillow
+      - name: Generate branded icons
+        run: |
+          python scripts/build_icons.py
+          mkdir -p memingo/assets
+          cp branding/memingo.png memingo/assets/memingo.png
+          iconutil -c icns dist/memingo.iconset -o branding/memingo.icns
+          iconutil -c icns dist/memingo-file.iconset -o branding/memingo-file.icns
       - name: Build application bundle
-        run: pyinstaller --noconfirm --clean --windowed --name Memingo --osx-bundle-identifier dev.atdev.memingo --collect-all memingo scripts/desktop_entry.py
+        run: pyinstaller --noconfirm --clean --windowed --name Memingo --icon branding/memingo.icns --add-data "memingo/assets/memingo.png:memingo/assets" --osx-bundle-identifier dev.atdev.memingo --collect-all memingo scripts/desktop_entry.py
+      - name: Register .mgo source files
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations array" dist/Memingo.app/Contents/Info.plist || true
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations:0 dict" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations:0:UTTypeIdentifier string dev.atdev.memingo-source" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations:0:UTTypeDescription string Memingo Source" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations:0:UTTypeConformsTo array" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations:0:UTTypeConformsTo:0 string public.source-code" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification dict" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension array" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension:0 string mgo" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDocumentTypes array" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDocumentTypes:0 dict" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDocumentTypes:0:CFBundleTypeName string Memingo Source" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDocumentTypes:0:CFBundleTypeRole string Editor" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDocumentTypes:0:LSItemContentTypes array" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDocumentTypes:0:LSItemContentTypes:0 string dev.atdev.memingo-source" dist/Memingo.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleDocumentTypes:0:CFBundleTypeIconFile string memingo-file.icns" dist/Memingo.app/Contents/Info.plist
+          cp branding/memingo-file.icns dist/Memingo.app/Contents/Resources/
       - name: Create DMG installer
         run: |
           mkdir -p dist/dmg
@@ -71,10 +103,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: release-files
-      - name: Publish GitHub Release
+      - name: Publish desktop release
         uses: softprops/action-gh-release@v2
         with:
-          name: Memingo \${{ github.ref_name }}
+          name: Memingo ${{ github.ref_name }}
           generate_release_notes: true
           files: |
             release-files/memingo-windows/Memingo-Setup-*-windows-x64.exe
