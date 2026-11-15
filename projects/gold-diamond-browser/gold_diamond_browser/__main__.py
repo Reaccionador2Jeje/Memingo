@@ -129,18 +129,30 @@ class BrowserWindow(QMainWindow):
         widget.deleteLater()
 
     def resolve_address(self, text: str) -> str:
-        """Memingo supplies the browser policy; Python safely encodes search text."""
+        """Ask the Memingo app logic to classify an address or search query."""
         value = text.strip()
         if not value:
             return self.config.get("home", "https://duckduckgo.com")
-        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", value):
-            return value
-        if value.startswith("localhost") or value.startswith("127.0.0.1"):
-            return "http://" + value
-        if " " not in value and "." in value:
-            return "https://" + value
-        engine = self.config.get("search_engine", "https://duckduckgo.com/?q=")
-        return engine + quote_plus(value)
+
+        previous = os.environ.get("GDB_ADDRESS")
+        os.environ["GDB_ADDRESS"] = value
+        try:
+            source = MGO_ENTRY.read_text(encoding="utf-8")
+            list(execute(source, project_directory=ROOT))
+            resolved_file = ROOT / "resolved-address.txt"
+            if not resolved_file.exists():
+                raise RuntimeError("Memingo did not resolve the address")
+            result = resolved_file.read_text(encoding="utf-8").strip()
+        finally:
+            if previous is None:
+                os.environ.pop("GDB_ADDRESS", None)
+            else:
+                os.environ["GDB_ADDRESS"] = previous
+
+        if result.startswith("SEARCH:"):
+            query = result[len("SEARCH:"):]
+            return self.config.get("search_engine", "https://duckduckgo.com/?q=") + quote_plus(query)
+        return result
 
     def navigate(self):
         target = self.resolve_address(self.address.text())
