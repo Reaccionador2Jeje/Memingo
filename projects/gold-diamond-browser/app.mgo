@@ -1,5 +1,5 @@
 # Gold & Diamond Browser — application logic in Memingo.
-# This file is the source of the browser's identity and default behavior.
+# This file owns the browser identity, defaults and address classification.
 
 vibe browser = {
     name: "Gold & Diamond Browser",
@@ -14,5 +14,24 @@ ritual browser_config() {
     drop json_stringify(browser)
 }
 
+ritual resolve_address(value) {
+    when starts_with(value, "https://") || starts_with(value, "http://") {
+        drop value
+    }
+    when starts_with(value, "file://") {
+        drop value
+    }
+    when !contains(value, " ") && contains(value, ".") {
+        drop "https://" + value
+    }
+    drop "SEARCH:" + value
+}
+
 write_file("browser-config.json", browser_config())
+
+vibe requested_address = env("GDB_ADDRESS", "")
+when requested_address != "" {
+    write_file("resolved-address.txt", resolve_address(trim(requested_address)))
+}
+
 spill "Gold & Diamond Browser " + browser.version + " is ready."
