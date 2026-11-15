@@ -338,3 +338,9 @@ The CLI, package manager, web-server launcher, tooling, and native runtime are t
 ### Debugging
 
 Run `memingo debug path/to/main.mgo` to execute a source file and emit a JSON statement trace prefixed with `MEMINGO_DEBUG:`. Each event includes its source line, statement type and visible variable snapshot. Mark source lines with `--breakpoints 3,8` to flag matching trace events. The trace is capped at 10,000 statements to prevent unbounded memory use.
+
+## Walletie compatibility
+
+The language, interpreter, and core development workflow remain usable without Walletie. Optional community rewards may integrate through the Walletie HTTPS API after shared AtDev identity is available.
+
+Walletie V1 currently accepts AtDev Cloud HS256 tokens only; other identity systems need the documented SSO bridge first. See the [Walletie integration matrix](https://github.com/Reaccionador2Jeje/Walletie/blob/main/docs/INTEGRATION_MATRIX.md).
