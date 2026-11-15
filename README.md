@@ -344,3 +344,16 @@ Run `memingo debug path/to/main.mgo` to execute a source file and emit a JSON st
 The language, interpreter, and core development workflow remain usable without Walletie. Optional community rewards may integrate through the Walletie HTTPS API after shared AtDev identity is available.
 
 Walletie V1 currently accepts AtDev Cloud HS256 tokens only; other identity systems need the documented SSO bridge first. See the [Walletie integration matrix](https://github.com/Reaccionador2Jeje/Walletie/blob/main/docs/INTEGRATION_MATRIX.md).
+
+
+## Memingo Desktop (Windows and macOS)
+
+Memingo Desktop is a lightweight graphical editor for \`.mgo\` programs. It includes:
+- A first-launch setup wizard to choose a projects folder and optionally create a starter project.
+- Open, edit and save Memingo source files.
+- Run programs with the bundled interpreter and view output and errors.
+- Keyboard shortcuts: Ctrl/Cmd+N, Ctrl/Cmd+O, Ctrl/Cmd+S and F5.
+
+The Windows build is distributed as an Inno Setup installer with a standard setup wizard, optional desktop shortcut and uninstall entry. The macOS build is distributed as a \`.dmg\` containing \`Memingo.app\` and an Applications shortcut. Initial builds are unsigned: Windows SmartScreen may show an unrecognized-app warning, and macOS may require approval in Privacy & Security.
+
+Test builds are published as artifacts by the **Memingo Desktop Apps** GitHub Actions workflow. The app bundles the interpreter and does not require a separate Python installation.
