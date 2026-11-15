@@ -1,6 +1,6 @@
 """Memingo Desktop: a lightweight cross-platform editor for .mgo programs."""
 from __future__ import annotations
-import json, os, tkinter as tk
+import json, os, sys, tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from . import __version__
@@ -127,9 +127,10 @@ class MemingoDesktop(tk.Tk):
         status.pack(fill="x", side="bottom")
         ttk.Label(status, text=f"Memingo {__version__}  •  .mgo", style="Status.TLabel").pack(side="left")
         ttk.Label(status, text="Ready", style="Status.TLabel").pack(side="right")
-        self.bind("<Control-n>", lambda _e: self.new_file())
-        self.bind("<Control-o>", lambda _e: self.open_file())
-        self.bind("<Control-s>", lambda _e: self.save_file())
+        modifier = "Command" if sys.platform == "darwin" else "Control"
+        self.bind(f"<{modifier}-n>", lambda _e: self.new_file())
+        self.bind(f"<{modifier}-o>", lambda _e: self.open_file())
+        self.bind(f"<{modifier}-s>", lambda _e: self.save_file())
         self.bind("<F5>", lambda _e: self.run_code())
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
