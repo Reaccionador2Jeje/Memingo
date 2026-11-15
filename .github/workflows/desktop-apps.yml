@@ -15,17 +15,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install build tools
-        run: python -m pip install pyinstaller cairosvg pillow
+      - name: Install build tools and Memingo package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install . pyinstaller cairosvg pillow
       - name: Generate branded icons
         shell: pwsh
         run: |
           python scripts/build_icons.py
           New-Item -ItemType Directory -Force memingo/assets | Out-Null
           Copy-Item branding/memingo.png memingo/assets/memingo.png
-          Copy-Item branding/memingo-file.ico dist/Memingo/MemingoFile.ico
       - name: Build desktop application
-        run: pyinstaller --noconfirm --clean --windowed --name Memingo --icon branding/memingo.ico --add-data "memingo/assets/memingo.png;memingo/assets" --collect-all memingo scripts/desktop_entry.py
+        run: pyinstaller --noconfirm --clean --windowed --name Memingo --icon branding/memingo.ico --add-data "memingo/assets/memingo.png;memingo/assets" --paths . --collect-submodules memingo --collect-data memingo --hidden-import memingo.desktop --hidden-import memingo.interpreter --hidden-import memingo.parser --hidden-import memingo.lexer --hidden-import memingo.packages scripts/desktop_entry.py
+      - name: Add language file icon
+        run: Copy-Item branding/memingo-file.ico dist/Memingo/MemingoFile.ico
+        shell: pwsh
       - name: Install Inno Setup
         run: choco install innosetup --yes --no-progress
       - name: Build setup wizard
@@ -49,8 +53,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install build tools
-        run: python -m pip install pyinstaller cairosvg pillow
+      - name: Install build tools and Memingo package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install . pyinstaller cairosvg pillow
       - name: Generate branded icons
         run: |
           python scripts/build_icons.py
@@ -59,7 +65,7 @@ jobs:
           iconutil -c icns dist/memingo.iconset -o branding/memingo.icns
           iconutil -c icns dist/memingo-file.iconset -o branding/memingo-file.icns
       - name: Build application bundle
-        run: pyinstaller --noconfirm --clean --windowed --name Memingo --icon branding/memingo.icns --add-data "memingo/assets/memingo.png:memingo/assets" --osx-bundle-identifier dev.atdev.memingo --collect-all memingo scripts/desktop_entry.py
+        run: pyinstaller --noconfirm --clean --windowed --name Memingo --icon branding/memingo.icns --add-data "memingo/assets/memingo.png:memingo/assets" --osx-bundle-identifier dev.atdev.memingo --paths . --collect-submodules memingo --collect-data memingo --hidden-import memingo.desktop --hidden-import memingo.interpreter --hidden-import memingo.parser --hidden-import memingo.lexer --hidden-import memingo.packages scripts/desktop_entry.py
       - name: Register .mgo source files
         run: |
           /usr/libexec/PlistBuddy -c "Add :UTExportedTypeDeclarations array" dist/Memingo.app/Contents/Info.plist || true
