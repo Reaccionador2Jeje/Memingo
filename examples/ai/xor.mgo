@@ -1,0 +1,27 @@
+# Train a small XOR classifier with Memingo's native AI engine.
+vibe model = ai.create({
+    name: "XOR",
+    layers: [2, 4, 1],
+    activation: "sigmoid"
+})
+
+vibe training = ai.dataset(
+    [[0, 0], [0, 1], [1, 0], [1, 1]],
+    [[0], [1], [1], [0]]
+)
+
+vibe report = ai.train(model, training, {
+    epochs: 2500,
+    learning_rate: 0.5,
+    shuffle: based
+})
+
+spill "Training complete"
+spill report
+spill "Prediction for [0, 1]:"
+spill ai.predict(model, [0, 1])
+spill "Training evaluation:"
+spill ai.evaluate(model, training)
+
+ai.save(model, "models/xor.mgoai")
+spill "Model saved to models/xor.mgoai"
