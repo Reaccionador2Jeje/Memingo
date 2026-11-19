@@ -103,46 +103,77 @@ class DenseNetwork:
         if not isinstance(dataset, Dataset):
             raise AIError("ai.train expects a dataset created with ai.dataset")
         options = options or {}
+        if not isinstance(options, dict):
+            raise AIError("training options must be an object")
         epochs = options.get("epochs", 100)
         learning_rate = options.get("learning_rate", 0.01)
+        batch_size = options.get("batch_size", 1)
         if isinstance(epochs, bool) or not isinstance(epochs, int) or not 1 <= epochs <= 100000:
             raise AIError("epochs must be an integer between 1 and 100000")
-        if isinstance(learning_rate, bool) or not isinstance(learning_rate, (int, float)) or not 0 < learning_rate <= 1:
+        if isinstance(learning_rate, bool) or not isinstance(learning_rate, (int, float)) or not math.isfinite(learning_rate) or not 0 < learning_rate <= 1:
             raise AIError("learning_rate must be greater than 0 and at most 1")
+        if isinstance(batch_size, bool) or not isinstance(batch_size, int) or not 1 <= batch_size <= len(dataset):
+            raise AIError("batch_size must be an integer between 1 and the dataset size")
         if len(dataset.inputs[0]) != self.layers[0] or len(dataset.outputs[0]) != self.layers[-1]:
             raise AIError("dataset dimensions do not match model input/output sizes")
         shuffle = options.get("shuffle", True)
         if not isinstance(shuffle, bool):
             raise AIError("shuffle must be based or cringe")
+
         indices = list(range(len(dataset)))
-        for epoch in range(epochs):
+        for _ in range(epochs):
             if shuffle:
                 random.shuffle(indices)
             total_loss = 0.0
-            for index in indices:
-                activations = self._forward(dataset.inputs[index])
-                expected = dataset.outputs[index]
-                output = activations[-1]
-                deltas = [[0.0] * size for size in self.layers[1:]]
-                last = len(deltas) - 1
-                deltas[last] = [(actual - target) * self._derivative(actual) for actual, target in zip(output, expected)]
-                for layer_index in range(last - 1, -1, -1):
-                    deltas[layer_index] = [
-                        sum(self.weights[layer_index + 1][next_index][neuron] * deltas[layer_index + 1][next_index]
-                            for next_index in range(len(deltas[layer_index + 1])))
-                        * self._derivative(activations[layer_index + 1][neuron])
-                        for neuron in range(self.layers[layer_index + 1])
+            for offset in range(0, len(indices), batch_size):
+                batch = indices[offset:offset + batch_size]
+                weight_gradients = [
+                    [[0.0 for _ in row] for row in layer]
+                    for layer in self.weights
+                ]
+                bias_gradients = [[0.0 for _ in layer] for layer in self.biases]
+                for index in batch:
+                    activations = self._forward(dataset.inputs[index])
+                    expected = dataset.outputs[index]
+                    output = activations[-1]
+                    deltas = [[0.0] * size for size in self.layers[1:]]
+                    last = len(deltas) - 1
+                    deltas[last] = [
+                        (actual - target) * self._derivative(actual)
+                        for actual, target in zip(output, expected)
                     ]
-                for layer_index, layer_deltas in enumerate(deltas):
-                    previous = activations[layer_index]
-                    for neuron, delta in enumerate(layer_deltas):
-                        for weight_index in range(len(previous)):
-                            self.weights[layer_index][neuron][weight_index] -= float(learning_rate) * delta * previous[weight_index]
-                        self.biases[layer_index][neuron] -= float(learning_rate) * delta
-                total_loss += sum((actual - target) ** 2 for actual, target in zip(output, expected)) / len(output)
-            loss = total_loss / len(dataset)
-            self.history.append({"epoch": epoch + 1, "loss": loss})
-        return {"epochs": epochs, "loss": self.history[-1]["loss"], "samples": len(dataset)}
+                    for layer_index in range(last - 1, -1, -1):
+                        deltas[layer_index] = [
+                            sum(
+                                self.weights[layer_index + 1][next_index][neuron]
+                                * deltas[layer_index + 1][next_index]
+                                for next_index in range(len(deltas[layer_index + 1]))
+                            ) * self._derivative(activations[layer_index + 1][neuron])
+                            for neuron in range(self.layers[layer_index + 1])
+                        ]
+                    for layer_index, layer_deltas in enumerate(deltas):
+                        previous = activations[layer_index]
+                        for neuron, delta in enumerate(layer_deltas):
+                            bias_gradients[layer_index][neuron] += delta
+                            for weight_index in range(len(previous)):
+                                weight_gradients[layer_index][neuron][weight_index] += delta * previous[weight_index]
+                    total_loss += sum(
+                        (actual - target) ** 2 for actual, target in zip(output, expected)
+                    ) / len(output)
+                scale = float(learning_rate) / len(batch)
+                for layer_index, layer in enumerate(self.weights):
+                    for neuron, row in enumerate(layer):
+                        for weight_index in range(len(row)):
+                            row[weight_index] -= scale * weight_gradients[layer_index][neuron][weight_index]
+                        self.biases[layer_index][neuron] -= scale * bias_gradients[layer_index][neuron]
+            self.history.append({"epoch": len(self.history) + 1, "loss": total_loss / len(dataset)})
+        return {
+            "epochs": epochs,
+            "total_epochs": len(self.history),
+            "loss": self.history[-1]["loss"],
+            "samples": len(dataset),
+            "batch_size": batch_size,
+        }
 
     def evaluate(self, dataset):
         if not isinstance(dataset, Dataset):
