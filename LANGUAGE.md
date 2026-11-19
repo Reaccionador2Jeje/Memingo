@@ -232,6 +232,7 @@ vibe data = ai.dataset(
 vibe report = ai.train(model, data, {
     epochs: 1000,
     learning_rate: 0.3,
+    batch_size: 2,
     shuffle: based
 })
 
