@@ -212,3 +212,46 @@ greet("Team")
 ```
 
 `borrow` loads the installed package entry point from `.memingo/packages/<name>`. Package names may contain letters, digits, dots, dashes, and underscores.
+
+## Built-in AI training
+
+Memingo includes a dependency-free CPU engine for small dense neural networks. It is called directly from `.mgo` scripts; Python is not required by the AI API.
+
+```mgo
+vibe model = ai.create({
+    name: "MyModel",
+    layers: [2, 4, 1],
+    activation: "sigmoid"
+})
+
+vibe data = ai.dataset(
+    [[0, 0], [0, 1], [1, 0], [1, 1]],
+    [[0], [1], [1], [0]]
+)
+
+vibe report = ai.train(model, data, {
+    epochs: 1000,
+    learning_rate: 0.3,
+    shuffle: based
+})
+
+spill report.loss
+spill ai.predict(model, [0, 1])
+spill ai.evaluate(model, data)
+
+ai.save(model, "models/my-model.mgoai")
+vibe restored = ai.load("models/my-model.mgoai")
+spill ai.predict(restored, [0, 1])
+```
+
+Available operations:
+
+- `ai.create(config)` creates a dense neural network. Configure `layers` and an activation (`relu`, `sigmoid`, or `tanh`).
+- `ai.dataset(inputs, outputs)` validates paired numeric training examples.
+- `ai.train(model, dataset, options)` trains with backpropagation and returns epoch count, final mean squared error, and sample count.
+- `ai.predict(model, inputs)` returns the model output for one input row.
+- `ai.evaluate(model, dataset)` returns mean squared error and sample count.
+- `ai.save(model, path)` saves a versioned `.mgoai` model inside the project directory.
+- `ai.load(path)` loads a saved model from inside the project directory.
+
+The built-in engine is CPU-based and intended for learning and small models. Training limits epochs to 100,000 and network size to 8,192 total neurons. It does not currently provide GPU acceleration, transformer/LLM training, image pipelines, or automatic dataset downloads. Python and external ML frameworks remain optional integrations.
