@@ -14,6 +14,7 @@ from .parser import (
     Assign, Binary, Borrow, Call, Function, Get, If, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
 )
+from . import ai as memingo_ai
 
 
 class RuntimeErrorMemingo(Exception):
@@ -93,6 +94,15 @@ class Interpreter:
         self.global_environment.define("json_stringify", lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":")))
         self.global_environment.define("env", lambda name, default=None: os.environ.get(name, default))
         self.global_environment.define("random", random.random)
+        self.global_environment.define("ai", {
+            "create": memingo_ai.create,
+            "dataset": memingo_ai.dataset,
+            "train": lambda model, data, options=None: model.train(data, options),
+            "predict": lambda model, inputs: model.predict(inputs),
+            "evaluate": lambda model, data: model.evaluate(data),
+            "save": lambda model, path: model.save(path, self.project_directory),
+            "load": lambda path: memingo_ai.load(path, self.project_directory),
+        })
         self.global_environment.define("random_int", lambda low, high: random.randint(low, high))
         self.global_environment.define("shuffle", self._shuffle)
         self.global_environment.define("uuid", lambda: str(uuid.uuid4()))
