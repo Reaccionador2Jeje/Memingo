@@ -65,6 +65,11 @@ Memingo includes an original playable voxel game inspired by block-building sand
 
 Memingo includes a native `.mgo` HTTP API and a Python application API. Define routes with `api_get`, `api_post`, `api_put`, `api_patch` and `api_delete`, add middleware with `api_use`, create explicit JSON/text/HTML responses with custom status codes, redirects and error responses, receive multipart forms and save uploaded files, then start them using `api_listen(app)`. Try `python3 -m memingo api examples/native_uploads.mgo`. Try `python3 -m memingo api examples/native_api.mgo` or `python3 -m memingo api examples/native_responses.mgo` for JSON, HTML, redirects and error responses. Python applications remain supported with `python3 -m memingo api examples/api.py`. See [docs/SERVER.md](docs/SERVER.md). The static-file command `memingo serve` remains available.
 
+
+## Native AI training
+
+Memingo scripts can create, train, evaluate, save and reload small dense neural networks through the built-in `ai` API. The first CPU training engine uses pure Python with no mandatory ML dependencies. See [LANGUAGE.md](LANGUAGE.md#built-in-ai-training) and [examples/ai/xor.mgo](examples/ai/xor.mgo) for a complete example. Python and external ML frameworks remain optional integrations; GPU and large language model training are not part of this initial engine.
+
 ## Language reference
 
 See the complete syntax and standard library in [LANGUAGE.md](LANGUAGE.md).
