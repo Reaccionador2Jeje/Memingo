@@ -9,8 +9,10 @@ class AITest(unittest.TestCase):
     def test_train_predict_evaluate_and_persist(self):
         model = create({"name": "XOR", "layers": [2, 4, 1], "activation": "sigmoid"})
         data = dataset([[0, 0], [0, 1], [1, 0], [1, 1]], [[0], [1], [1], [0]])
-        result = model.train(data, {"epochs": 2500, "learning_rate": 0.5})
+        result = model.train(data, {"epochs": 2500, "learning_rate": 0.5, "batch_size": 2})
         self.assertEqual(result["epochs"], 2500)
+        self.assertEqual(result["batch_size"], 2)
+        self.assertEqual(result["total_epochs"], 2500)
         self.assertGreaterEqual(result["loss"], 0)
         self.assertEqual(len(model.predict([0, 1])), 1)
         self.assertEqual(model.evaluate(data)["samples"], 4)
