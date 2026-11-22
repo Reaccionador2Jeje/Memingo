@@ -160,6 +160,17 @@ ritual log2_irl(value) {
         scaled = scaled * 2
         result = result - 1
     }
+    vibe weight = 0.5
+    vibe i = 0
+    grind i < 24 {
+        scaled = scaled * scaled
+        when scaled >= 2 {
+            scaled = scaled / 2
+            result = result + weight
+        }
+        weight = weight / 2
+        i = i + 1
+    }
     drop result
 }
 
