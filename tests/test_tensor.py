@@ -122,6 +122,46 @@ spill ai.to_list(restored)
             "[[1.0, 2.0], [3.0, 4.0]]",
         ])
 
+    def test_autograd_broadcast_and_multiply(self):
+        from memingo.tensor import backward, grad, multiply, sum_tensor
+        left = tensor([[1, 2], [3, 4]], requires_grad=True)
+        right = tensor([2, 3], requires_grad=True)
+        backward(sum_tensor(multiply(left, right)))
+        self.assertEqual(grad(left), [[2.0, 3.0], [2.0, 3.0]])
+        self.assertEqual(grad(right), [4.0, 6.0])
+
+    def test_autograd_matmul(self):
+        from memingo.tensor import backward, grad, sum_tensor
+        left = tensor([[1, 2], [3, 4]], requires_grad=True)
+        right = tensor([[5, 6], [7, 8]], requires_grad=True)
+        backward(sum_tensor(matmul(left, right)))
+        self.assertEqual(grad(left), [[11.0, 15.0], [11.0, 15.0]])
+        self.assertEqual(grad(right), [[4.0, 4.0], [6.0, 6.0]])
+
+    def test_autograd_softmax_transpose_and_scalar(self):
+        from memingo.tensor import backward, grad, sum_tensor
+        vector = tensor([1, 2, 3], requires_grad=True)
+        backward(sum_tensor(softmax(vector)))
+        self.assertTrue(all(abs(value) < 1e-12 for value in grad(vector)))
+        matrix = tensor([[1, 2], [3, 4]], requires_grad=True)
+        backward(sum_tensor(transpose(matrix)))
+        self.assertEqual(grad(matrix), [[1.0, 1.0], [1.0, 1.0]])
+
+    def test_autograd_requires_seed_for_non_scalar(self):
+        from memingo.tensor import backward
+        with self.assertRaises(TensorError):
+            backward(tensor([1, 2], requires_grad=True))
+
+    def test_memingo_autograd_api(self):
+        from memingo.interpreter import execute
+        source = '''
+vibe x = ai.tensor([2, 3], based)
+vibe loss = ai.sum_tensor(ai.multiply(x, [4, 5]))
+ai.backward(loss)
+spill ai.grad(x)
+'''
+        self.assertEqual(execute(source), ["[4.0, 5.0]"])
+
     def test_memingo_script_api(self):
         from memingo.interpreter import execute
         source = '''
