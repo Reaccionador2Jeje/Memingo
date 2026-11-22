@@ -255,5 +255,38 @@ spill ai.to_list(ai.softmax([1, 2, 3]))
         ])
 
 
+    def test_sequential_dense_model_forward_and_training(self):
+        from memingo.nn import dense, sequential, train_loop
+        model = sequential([
+            dense(2, 4, "tanh", seed=21),
+            dense(4, 1, "sigmoid", seed=22),
+        ])
+        inputs = [[0, 0], [0, 1], [1, 0], [1, 1]]
+        targets = [[0], [1], [1], [0]]
+        before = to_list(model.forward(inputs))
+        self.assertEqual(shape(model.forward(inputs)), [4, 1])
+        report = train_loop(model, inputs, targets, epochs=20, learning_rate=0.1, optimizer="adam")
+        self.assertEqual(report["epochs"], 20)
+        self.assertEqual(report["samples"], 4)
+        self.assertTrue(math.isfinite(report["loss"]))
+        self.assertNotEqual(before, to_list(model.forward(inputs)))
+
+    def test_memingo_sequential_model_api(self):
+        from memingo.interpreter import execute
+        source = '''
+vibe layer1 = ai.dense(2, 3, "relu", 10)
+vibe layer2 = ai.dense(3, 1, "sigmoid", 11)
+vibe brain = ai.sequential([layer1, layer2])
+vibe result = ai.forward(brain, [[0, 1], [1, 0]])
+spill ai.shape(result)
+'''
+        self.assertEqual(execute(source), ["[2, 1]"])
+
+    def test_sequential_rejects_disconnected_layers(self):
+        from memingo.nn import dense, sequential
+        with self.assertRaises(TensorError):
+            sequential([dense(2, 3), dense(4, 1)])
+
+
 if __name__ == "__main__":
     unittest.main()
