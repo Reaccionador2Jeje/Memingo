@@ -97,6 +97,34 @@ def forward(model, inputs):
     return model.forward(inputs)
 
 
+def summary(model):
+    """Return a JSON-friendly overview of a Sequential model."""
+    if not isinstance(model, Sequential):
+        raise ops.TensorError("summary expects a model created by ai.sequential")
+    layer_details = []
+    total_parameters = 0
+    for index, layer in enumerate(model.layers, start=1):
+        count = layer.in_features * layer.out_features + layer.out_features
+        total_parameters += count
+        layer_details.append({
+            "index": index,
+            "type": "dense",
+            "input_features": layer.in_features,
+            "output_features": layer.out_features,
+            "activation": layer.activation,
+            "parameters": count,
+        })
+    return {
+        "type": "sequential",
+        "layers": len(model.layers),
+        "input_features": model.in_features,
+        "output_features": model.out_features,
+        "parameters": total_parameters,
+        "trainable_parameters": total_parameters,
+        "layer_details": layer_details,
+    }
+
+
 def train_loop(model, inputs, targets, epochs=100, learning_rate=0.01, optimizer="adam"):
     """Full-batch supervised training with native reverse-mode autograd."""
     if not isinstance(model, Sequential):
