@@ -125,7 +125,7 @@ class Tensor:
                 raise TensorError("backward requires an explicit gradient for non-scalar tensors")
             seed = [1.0]
         else:
-            seed = _flat(as_tensor(gradient)._data)
+            seed = [_inspect(value) for value in _flat(as_tensor(gradient)._data)]
             if len(seed) != self.size:
                 raise TensorError("backward gradient shape does not match the tensor")
         order, visited = [], set()
@@ -144,10 +144,12 @@ class Tensor:
             if node.grad is None:
                 continue
             for parent, contribution in node._backward(node.grad):
+                if len(contribution) != parent.size:
+                    raise TensorError("internal autograd gradient shape mismatch")
                 if parent.grad is None:
                     parent.grad = [0.0] * parent.size
                 for index, value in enumerate(contribution):
-                    parent.grad[index] += value
+                    parent.grad[index] = _inspect(parent.grad[index] + _inspect(value))
         return self.grad_values()
 
     def transpose(self):
