@@ -1,6 +1,6 @@
 # Memingo Android Native — Architecture
 
-Status: design approved; implementation not started.
+Status: A0 foundation implemented on feat/android-native-foundation; native code generation is not implemented yet.
 
 ## Goals
 
@@ -24,11 +24,13 @@ Those features package the IDE. They do not yet generate arbitrary native Androi
 
 ## Target developer workflow
 
-Proposed CLI surface (not implemented yet):
+Current A0 CLI surface:
 
 ```bash
-memingo android init MyApplication
-memingo android check
+memingo android init MyApplication --application-id com.example.my_app
+memingo android check MyApplication
+
+# Planned for later milestones:
 memingo android build --debug
 memingo android build --release
 memingo android run
@@ -115,11 +117,25 @@ The Capacitor mobile editor can edit projects, but native app compilation on And
 ## Milestones
 
 ### A0 — Foundation
-- [ ] Add versioned Android project configuration.
-- [ ] Add Android project validation and diagnostics.
-- [ ] Add generator/template ownership rules.
-- [ ] Add CLI command group without changing existing commands.
-- [ ] Add tests for manifests, path safety and deterministic generation.
+- [x] Add Android project configuration under a versioned [android] manifest section.
+- [x] Add Android project validation and CLI diagnostics.
+- [x] Add memingo android init and memingo android check without changing existing commands.
+- [x] Add tests for manifest preservation, application ID validation, SDK ranges and entry-point checks.
+- [ ] Add generator/template ownership rules (required when A1 creates generated files).
+
+A0 configuration example:
+
+```toml
+[android]
+application_id = "com.example.my_app"
+min_sdk = 23
+target_sdk = 35
+version_code = 1
+version_name = "0.2.0"
+ui = "compose"
+```
+
+The first command adds this section to an existing Memingo project without replacing its existing manifest or source files. It refuses to overwrite an existing [android] section. The checker validates the application ID, SDK ranges, version metadata, supported UI toolkit and Memingo entry file. A0 does not generate Kotlin, Gradle files or APKs yet.
 
 ### A1 — Native hello-world
 - [ ] Generate a minimal Kotlin/Compose Android project.
