@@ -512,23 +512,35 @@ class AdamOptimizer(Optimizer):
         self._second = {id(parameter): [0.0] * parameter.size for parameter in self.parameters}
 
     def step(self):
-        self._step += 1
+        active = [parameter for parameter in self.parameters if parameter.grad is not None]
+        if not active:
+            return False
+        next_step = self._step + 1
         updates = []
+        next_first, next_second = {}, {}
         for parameter in self.parameters:
             values = _flat(parameter._data)
-            gradients = parameter.grad or [0.0] * parameter.size
-            first = self._first[id(parameter)]
-            second = self._second[id(parameter)]
+            if parameter.grad is None:
+                updates.append(values)
+                continue
+            gradients = parameter.grad
+            first = list(self._first[id(parameter)])
+            second = list(self._second[id(parameter)])
             next_values = []
             for index, (value, gradient) in enumerate(zip(values, gradients)):
                 first[index] = self.beta1 * first[index] + (1 - self.beta1) * gradient
                 second[index] = self.beta2 * second[index] + (1 - self.beta2) * gradient * gradient
-                corrected_first = first[index] / (1 - self.beta1 ** self._step)
-                corrected_second = second[index] / (1 - self.beta2 ** self._step)
+                corrected_first = first[index] / (1 - self.beta1 ** next_step)
+                corrected_second = second[index] / (1 - self.beta2 ** next_step)
                 next_values.append(value - self.learning_rate * corrected_first /
                                    (math.sqrt(corrected_second) + self.epsilon))
             updates.append(next_values)
+            next_first[id(parameter)] = first
+            next_second[id(parameter)] = second
         self._apply(updates)
+        self._first.update(next_first)
+        self._second.update(next_second)
+        self._step = next_step
         return True
 
 
