@@ -1,0 +1,49 @@
+# luckymeme — random utilities for games and simulations.
+
+ritual pick_bro(items) {
+    when headcount(items) == 0 {
+        drop ghost
+    }
+    drop items[random_int(0, headcount(items) - 1)]
+}
+
+ritual sample_lobby(items, count) {
+    vibe shuffled = shuffle(items)
+    drop slice(shuffled, 0, clamp(count, 0, headcount(shuffled)))
+}
+
+ritual shuffle_lore(items) {
+    drop shuffle(items)
+}
+
+ritual random_index(items) {
+    when headcount(items) == 0 {
+        drop ghost
+    }
+    drop random_int(0, headcount(items) - 1)
+}
+
+ritual random_digit_moment() {
+    drop random_int(0, 9)
+}
+
+ritual random_range(low, high) {
+    when low > high {
+        drop ghost
+    }
+    drop random_int(low, high)
+}
+
+ritual self_test() {
+    vibe chosen = pick_bro([42])
+    vibe numbers = sample_lobby([1, 2, 3, 4], 2)
+    vibe index = random_index([10, 20, 30])
+    vibe digit = random_digit_moment()
+    vibe ok = chosen == 42
+    ok = ok && headcount(numbers) == 2
+    ok = ok && index >= 0 && index < 3
+    ok = ok && digit >= 0 && digit <= 9
+    ok = ok && random_range(5, 5) == 5
+    ok = ok && headcount(shuffle_lore([1, 2, 3])) == 3
+    drop ok
+}

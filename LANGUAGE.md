@@ -256,3 +256,28 @@ Available operations:
 - `ai.load(path)` loads a saved model from inside the project directory.
 
 The built-in engine is CPU-based and intended for learning and small models. Training limits epochs to 100,000 and network size to 8,192 total neurons. It does not currently provide GPU acceleration, transformer/LLM training, image pipelines, or automatic dataset downloads. Python and external ML frameworks remain optional integrations.
+
+
+## Meme-first standard packages
+
+Memingo's standard package collection uses meme-inspired names while keeping real, documented behavior. Existing package names remain available for backward compatibility.
+
+| Package | Purpose | Example operations |
+| --- | --- | --- |
+| `brainrot` | Mathematics | `sqrt_irl`, `powerlevel`, `factorial_arc`, `fibonacci_lore`, `is_prime_sus` |
+| `yapstats` | Statistics | `average_yap`, `median_lore`, `variance_arc`, `stddev_finalboss`, `percentile_lore` |
+| `luckymeme` | Random utilities for games and simulations | `pick_bro`, `sample_lobby`, `coinflip_irl`, `roll_dice`, `roll_many` |
+| `whenisbro` | Time and durations | `timestamp_irl`, `days_between`, `weekday_lore`, `format_duration` |
+
+Install these packages through the Memingo package manager, then load them with `borrow`:
+
+```mgo
+borrow "brainrot"
+borrow "yapstats"
+borrow "luckymeme"
+borrow "whenisbro"
+
+spill sqrt_irl(81)
+```
+
+Each package exposes a `self_test()` ritual for a quick behavior check. Meme-inspired names are the public API; implementations remain deterministic where appropriate, validated, and suitable for normal software projects.
