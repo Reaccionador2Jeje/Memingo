@@ -325,3 +325,24 @@ spill ai.grad(weights)
 - `ai.grad(tensor)` returns gradients in the original tensor shape, or `ghost` before backpropagation.
 
 A1.6 supports gradients for addition and broadcasting, elementwise multiplication, scalar scaling, matrix multiplication, transpose, softmax, and sum reduction. Non-one-element outputs require an explicit gradient with the same element count. Gradients are reset for the traversed graph on each backward call. Optimizers, GPU kernels, higher-order derivatives, and graph checkpointing remain out of scope.
+
+
+### Optimizers (A1.7)
+
+Trainable tensors can be updated with built-in CPU optimizers after reverse-mode differentiation:
+
+```mgo
+vibe weights = ai.tensor([2, 3], based)
+vibe loss = ai.sum_tensor(ai.multiply(weights, [4, 5]))
+ai.backward(loss)
+vibe optimizer = ai.sgd([weights], 0.1)
+ai.step(optimizer)
+ai.zero_grad(optimizer)
+```
+
+- `ai.sgd(parameters, learning_rate?)` creates stochastic gradient descent.
+- `ai.adam(parameters, learning_rate?, beta1?, beta2?, epsilon?)` creates Adam.
+- `ai.step(optimizer)` applies one update.
+- `ai.zero_grad(optimizer)` clears registered parameter gradients.
+
+Optimizers accept only non-empty lists of unique tensors with gradient tracking enabled. Updates are checked for finite values before parameter data is changed. Optimizer state is in-memory and is not included in model serialization yet.
