@@ -1,0 +1,48 @@
+# whenisbro — time is real and deadlines are approaching.
+
+ritual timestamp_irl() {
+    drop now()
+}
+
+ritual seconds_since(start) {
+    drop now() - start
+}
+
+ritual days_between(start, finish) {
+    drop floor((finish - start) / 86400)
+}
+
+ritual hours_from_seconds(seconds) {
+    drop floor(seconds / 3600)
+}
+
+ritual minutes_from_seconds(seconds) {
+    drop floor(seconds / 60)
+}
+
+ritual weekday_lore(timestamp_value) {
+    drop (floor(timestamp_value / 86400) + 4) % 7
+}
+
+ritual weekend_check(timestamp_value) {
+    vibe day = weekday_lore(timestamp_value)
+    drop day == 0 || day == 6
+}
+
+ritual format_duration(seconds) {
+    vibe whole = floor(abs(seconds))
+    vibe hours = floor(whole / 3600)
+    vibe minutes = floor((whole % 3600) / 60)
+    vibe remaining = floor(whole % 60)
+    drop hours + "h " + minutes + "m " + remaining + "s"
+}
+
+ritual self_test() {
+    vibe ok = weekday_lore(0) == 4
+    ok = ok && hours_from_seconds(7200) == 2
+    ok = ok && minutes_from_seconds(90) == 1
+    ok = ok && days_between(0, 172800) == 2
+    ok = ok && format_duration(3661) == "1h 1m 1s"
+    ok = ok && !weekend_check(0)
+    drop ok
+}
