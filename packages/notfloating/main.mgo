@@ -1,0 +1,67 @@
+# notfloating — decimal arithmetic with a fixed-point safety net.
+# Values are represented as integer millionths (scale = 1,000,000).
+
+ritual fixed_from(value) {
+    drop round(value * 1000000)
+}
+
+ritual fixed_to(value) {
+    drop value / 1000000
+}
+
+ritual fixed_add(left, right) {
+    drop left + right
+}
+
+ritual fixed_sub(left, right) {
+    drop left - right
+}
+
+ritual fixed_mul(left, right) {
+    drop round((left * right) / 1000000)
+}
+
+ritual fixed_div(left, right) {
+    when right == 0 {
+        drop ghost
+    }
+    drop round((left * 1000000) / right)
+}
+
+ritual decimal_round(value, places) {
+    when places < 0 || places > 9 {
+        drop ghost
+    }
+    vibe scale = power10(places)
+    drop round(value * scale) / scale
+}
+
+ritual power10(places) {
+    vibe result = 1
+    vibe i = 0
+    grind i < places {
+        result = result * 10
+        i = i + 1
+    }
+    drop result
+}
+
+ritual decimal_clamp(value, low, high) {
+    when low > high {
+        drop ghost
+    }
+    drop clamp(value, low, high)
+}
+
+ritual self_test() {
+    vibe a = fixed_from(1.25)
+    vibe b = fixed_from(2.5)
+    vibe ok = a == 1250000 && b == 2500000
+    ok = ok && fixed_to(fixed_add(a, b)) == 3.75
+    ok = ok && fixed_to(fixed_sub(b, a)) == 1.25
+    ok = ok && fixed_to(fixed_mul(a, b)) == 3.125
+    ok = ok && fixed_to(fixed_div(b, a)) == 2
+    ok = ok && decimal_round(3.14159, 2) == 3.14
+    ok = ok && decimal_clamp(12, 0, 10) == 10
+    drop ok
+}
