@@ -58,7 +58,7 @@ ritual fraction_value(value) {
 }
 
 ritual fraction_string(value) {
-    drop value[0] + "/" + value[1]
+    drop json_stringify(value)
 }
 
 ritual self_test() {
