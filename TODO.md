@@ -10,7 +10,9 @@
 - [x] Basic expression type inference and numeric widening
 - [x] Initial static checks for names, assignments, conditions, and calls
 - [ ] Full function signature and return-type inference
-- [ ] Typed HIR and lowering from the existing AST
+- [x] Initial typed HIR and lowering from the existing AST
+- [x] Public parse → type-check → HIR compilation API
+- [x] Type model invariants and reusable checker state
 - [ ] Type checker and ownership analysis
 - [ ] Bytecode format and virtual machine
 - [ ] Native backend prototype and benchmarks
@@ -26,6 +28,7 @@
 - [x] Text, number, collection and higher-order standard library
 - [x] Project-scoped text file helpers
 - [ ] Render parser and lexer errors with source snippets
+- [ ] Add CLI `memingo compile` command backed by compiler pipeline
 - [ ] Modules and imports
 - [ ] Standard library for games and apps
 - [ ] Native compiler or bytecode VM
