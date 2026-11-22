@@ -34,8 +34,8 @@ class AIStudioTests(unittest.TestCase):
             data = ai.dataset([[0, 1], [1, 0]], [[1], [0]])
             studio.save_dataset(data, "datasets/demo.mgodata", root)
             (root / "broken.mgoai").write_text("{broken")
-            (root / "ignored").mkdir()
-            (root / "ignored" / "not-indexed.mgodata").write_text("{}")
+            (root / ".git").mkdir()
+            (root / ".git" / "not-indexed.mgodata").write_text("{}")
 
             result = studio.workspace(root)
             self.assertEqual(result["counts"]["models"], 2)
