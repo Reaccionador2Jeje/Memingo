@@ -282,13 +282,27 @@ Available operations:
 - `ai.to_list(tensor)` converts it back to ordinary Memingo lists.
 - `ai.matmul(left, right)` multiplies two compatible rank-2 matrices.
 - `ai.transpose(tensor)` transposes a rank-2 matrix.
-- `ai.add(left, right)` performs shape-matched elementwise addition.
+- `ai.add(left, right)` performs elementwise addition with NumPy-style
+  trailing-dimension broadcasting for rank-1 and rank-2 tensors.
+- `ai.multiply(left, right)` performs elementwise multiplication with the same
+  broadcasting rules.
 - `ai.scale(tensor, factor)` multiplies every value by a scalar.
-- `ai.sum(tensor)` returns the sum of all values.
+- `ai.sum(tensor)`, `ai.mean(tensor)`, `ai.min(tensor)`, and `ai.max(tensor)`
+  return scalar reductions over all elements.
+- `ai.get(tensor, index)` reads a vector element, matrix row, or matrix element
+  using `[row, column]`; negative indices count from the end.
+- `ai.slice(tensor, axis?, start?, stop?, step?)` returns a non-empty slice.
+  Slicing currently creates an independent tensor copy, not a shared-memory view.
+- `ai.serialize(tensor)` returns deterministic, versioned JSON;
+  `ai.deserialize(text)` validates and restores it.
 - `ai.softmax(tensor)` applies numerically stable softmax over the last axis.
 - `ai.random_tensor(dimensions, seed?, low?, high?)` creates reproducible rank-1
   or rank-2 uniform random values when a seed is supplied.
 
-The initial CPU tensor engine is intentionally small: no broadcasting, arbitrary
-rank, automatic differentiation, GPU acceleration, or Transformer implementation
-is provided yet. Those capabilities will be introduced independently with tests.
+A1.5 safety and runtime limits: tensors are limited to 1,000,000 elements,
+each dimension is limited to 4,096, and the runtime rejects non-finite input or
+results. Broadcasting supports rank-1/rank-2 tensors with compatible trailing
+dimensions. Matrix multiplication uses a transposed right-hand matrix and
+accurate `math.fsum` accumulation. The engine remains CPU-only: arbitrary rank,
+shared-storage tensor views, automatic differentiation, GPU acceleration, and
+Transformer operations are not part of this stage.
