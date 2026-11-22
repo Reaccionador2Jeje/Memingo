@@ -46,7 +46,7 @@ Lists and objects can span multiple lines, including trailing commas.
 
 MGOA installs packages from the public GitHub Pages mirror and can publish a Memingo project or package with `mgoa publish .`. Configure `MGOA_PUBLISH_TOKEN` with Contents: write access to the Memingo repository before publishing. Published archives, SHA-256 checksums and the community package index are committed to `site/mgoa/`; GitHub Pages deploys them automatically from the main branch. Official packages remain curated separately from community publications.
 
-See [MGOA publishing documentation](docs/MGOA_PUBLISHING.md) for setup, security and registry details.
+See [MGOA publishing documentation](docs/MGOA_PUBLISHING.md) for setup, security and registry details. For local `.mgo` dependencies, see [MGOA local modules](docs/MGOA_LOCAL_MODULES.md).
 
 ## Memingo Language Server
 
