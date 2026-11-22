@@ -25,6 +25,7 @@ from .cli import (
 )
 from .completion import memingo_completion
 from .lsp import run_language_server
+from .compiler import compile_source
 
 
 def run_ide_web(host="127.0.0.1", port=3000) -> int:
@@ -171,6 +172,53 @@ def check_sources(paths) -> int:
             return 1
         checked += 1
     success(f"{checked} file(s) checked")
+    return 0
+
+
+def analyze_sources(paths) -> int:
+    """Run static semantic analysis and typed HIR lowering without execution."""
+    files = []
+    for input_path in paths:
+        path = Path(input_path)
+        if path.is_dir():
+            excluded = {".git", ".memingo", "dist", "__pycache__", "node_modules", ".venv"}
+            files.extend(
+                source for source in sorted(path.rglob("*.mgo"))
+                if not (excluded & set(source.relative_to(path).parts))
+            )
+        elif path.is_file():
+            files.append(path)
+        else:
+            print(f"Memingo error: File not found: {path}", file=sys.stderr)
+            return 1
+
+    if not files:
+        print("Memingo error: No .mgo files found", file=sys.stderr)
+        return 1
+
+    failures = 0
+    for source_file in files:
+        try:
+            source_text = source_file.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exception:
+            print(f"Memingo error: {source_file}: {exception}", file=sys.stderr)
+            failures += 1
+            continue
+
+        result = compile_source(source_text, source_id=str(source_file))
+        if result.diagnostics:
+            for diagnostic in result.diagnostics:
+                if diagnostic.labels:
+                    print(diagnostic.render(result.sources), file=sys.stderr)
+                else:
+                    print(f"{diagnostic.severity.value}[{diagnostic.code}]: {diagnostic.message}", file=sys.stderr)
+        if not result.succeeded:
+            failures += 1
+
+    if failures:
+        error(f"{failures} file(s) failed static analysis")
+        return 1
+    success(f"{len(files)} file(s) analyzed; typed HIR generated")
     return 0
 
 
@@ -580,6 +628,9 @@ def _main(argv=None) -> int:
     check_parser = subparsers.add_parser("check", help="Parse Memingo files without running them")
     check_parser.add_argument("paths", nargs="*", default=["."], help="Files or directories to check")
 
+    analyze_parser = subparsers.add_parser("analyze", help="Run static type analysis and build typed HIR without executing code")
+    analyze_parser.add_argument("paths", nargs="*", default=["."], help="Files or directories to analyze")
+
     stats_parser = subparsers.add_parser("stats", help="Summarize Memingo source files in a project")
     stats_parser.add_argument("directory", nargs="?", default=".")
 
@@ -701,6 +752,8 @@ def _main(argv=None) -> int:
         return run_source(" ".join(args.code), args.project)
     if args.command == "check":
         return check_sources(args.paths)
+    if args.command == "analyze":
+        return analyze_sources(args.paths)
     if args.command == "lsp":
         return run_language_server()
     if args.command == "ide":
