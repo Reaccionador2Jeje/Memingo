@@ -724,7 +724,7 @@ def _read_github_registry(repository, branch, token):
             }
         raise
     try:
-        encoded = result["content"].replace("\\n", "")
+        encoded = result["content"].replace("\n", "")
         registry = json.loads(base64.b64decode(encoded).decode("utf-8"))
     except (KeyError, ValueError, UnicodeError, json.JSONDecodeError) as error:
         raise PackageError("The current GitHub Pages package index is invalid") from error
@@ -818,8 +818,8 @@ def publish_to_mirror(
 
     index_content = json.dumps(
         registry, indent=2, ensure_ascii=False, sort_keys=True
-    ) + "\\n"
-    checksum_content = f"{digest}  {archive_name}\\n"
+    ) + "\n"
+    checksum_content = f"{digest}  {archive_name}\n"
 
     ref = _github_api_request(
         "GET",
