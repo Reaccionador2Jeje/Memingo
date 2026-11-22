@@ -1,12 +1,15 @@
+import base64
 import hashlib
 import json
 import os
 import re
 import shutil
 import tempfile
+import urllib.error
 import urllib.request
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -226,14 +229,34 @@ def _load_registry(registry_url=None):
 
 
 def _registry_packages(registry):
-    """Return the package table and whether the registry is the curated one."""
+    """Merge curated and community packages without losing approval metadata."""
     approved = registry.get("approved")
-    if isinstance(approved, dict) and isinstance(approved.get("packages"), dict):
-        return approved["packages"], True
-    packages = registry.get("packages")
-    if isinstance(packages, dict):
-        return packages, False
-    raise PackageError("Registry must contain an 'approved.packages' or 'packages' table")
+    approved_packages = (
+        approved.get("packages", {}) if isinstance(approved, dict) else {}
+    )
+    community_packages = registry.get("packages", {})
+    if not isinstance(approved_packages, dict):
+        approved_packages = {}
+    if not isinstance(community_packages, dict):
+        community_packages = {}
+    if not approved_packages and not community_packages:
+        raise PackageError("Registry must contain an 'approved.packages' or 'packages' table")
+
+    if approved_packages and community_packages:
+        merged = {
+            name: {**record, "approved": False}
+            for name, record in community_packages.items()
+            if isinstance(record, dict)
+        }
+        merged.update({
+            name: {**record, "approved": True}
+            for name, record in approved_packages.items()
+            if isinstance(record, dict)
+        })
+        return merged, False
+    if approved_packages:
+        return approved_packages, True
+    return community_packages, False
 
 
 def _verify_archive_digest(expected, actual, label):
@@ -633,3 +656,242 @@ def publish_package(directory=".", output="dist"):
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     checksum.write_text(f"{digest}  {archive.name}\n", encoding="utf-8")
     return archive
+
+
+def _github_api_request(method, endpoint, token, payload=None):
+    """Make an authenticated GitHub REST request without external dependencies."""
+    url = endpoint if endpoint.startswith("https://") else f"https://api.github.com{endpoint}"
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=body,
+        method=method.upper(),
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "mgoa-package-manager",
+            **({"Content-Type": "application/json"} if body is not None else {}),
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            raw = response.read()
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")
+        raise PackageError(
+            f"GitHub API rejected the publish request ({error.code}): {detail[:500]}"
+        ) from error
+    except Exception as error:
+        raise PackageError(f"Could not reach GitHub while publishing: {error}") from error
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as error:
+        raise PackageError("GitHub returned an invalid JSON response") from error
+
+
+def _github_create_blob(repository, token, content, encoding="utf-8"):
+    if encoding == "base64":
+        encoded = base64.b64encode(content).decode("ascii")
+        payload = {"content": encoded, "encoding": "base64"}
+    else:
+        payload = {"content": content, "encoding": "utf-8"}
+    result = _github_api_request(
+        "POST", f"/repos/{repository}/git/blobs", token, payload
+    )
+    sha = result.get("sha")
+    if not sha:
+        raise PackageError("GitHub did not return a blob SHA while publishing")
+    return sha
+
+
+def _read_github_registry(repository, branch, token):
+    endpoint = (
+        f"/repos/{repository}/contents/site/mgoa/index.json"
+        f"?ref={urllib.parse.quote(branch, safe='')}"
+    )
+    try:
+        result = _github_api_request("GET", endpoint, token)
+    except PackageError as error:
+        if "404" in str(error):
+            return {
+                "schema": "memingo-registry/v1",
+                "approved": {"packages": {}},
+                "packages": {},
+            }
+        raise
+    try:
+        encoded = result["content"].replace("\\n", "")
+        registry = json.loads(base64.b64decode(encoded).decode("utf-8"))
+    except (KeyError, ValueError, UnicodeError, json.JSONDecodeError) as error:
+        raise PackageError("The current GitHub Pages package index is invalid") from error
+    if not isinstance(registry, dict):
+        raise PackageError("The current GitHub Pages package index must be a JSON object")
+    registry.setdefault("packages", {})
+    if not isinstance(registry["packages"], dict):
+        raise PackageError("The community package index must be an object")
+    return registry
+
+
+def publish_to_mirror(
+    directory=".",
+    output="dist",
+    token=None,
+    repository=None,
+    branch=None,
+):
+    """Build a package and atomically publish it to the Memingo GitHub Pages mirror.
+
+    The token must have Contents: write permission on the target repository.
+    """
+    token = token or os.environ.get("MGOA_PUBLISH_TOKEN")
+    if not token:
+        raise PackageError(
+            "Publishing requires MGOA_PUBLISH_TOKEN with Contents: write permission"
+        )
+    repository = repository or os.environ.get(
+        "MGOA_PUBLISH_REPOSITORY", "Reaccionador2Jeje/Memingo"
+    )
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
+        raise PackageError("Invalid GitHub repository. Expected owner/name.")
+    branch = branch or os.environ.get("MGOA_PUBLISH_BRANCH", "main")
+    if not branch or branch.startswith("-"):
+        raise PackageError("Invalid Git branch for package publishing")
+
+    root = Path(directory).resolve()
+    archive = publish_package(root, output)
+    manifest_path = root / MANIFEST
+    if not manifest_path.exists():
+        manifest_path = root / "package.toml"
+    metadata = _load_toml(manifest_path).get("package", {})
+    name = _validate_package_name(metadata.get("name"))
+    version = _validate_version(metadata.get("version"))
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    description = str(metadata.get("description") or "")
+    homepage = str(metadata.get("homepage") or "https://github.com/Reaccionador2Jeje/Memingo")
+    license_name = str(metadata.get("license") or "")
+
+    registry = _read_github_registry(repository, branch, token)
+    community = registry.setdefault("packages", {})
+    record = community.get(name, {})
+    if not isinstance(record, dict):
+        raise PackageError(f"Registry entry for '{name}' is invalid")
+    versions = record.setdefault("versions", {})
+    if not isinstance(versions, dict):
+        raise PackageError(f"Version table for '{name}' is invalid")
+    previous = versions.get(version)
+    if isinstance(previous, dict) and previous.get("sha256") not in (None, digest):
+        raise PackageError(
+            f"{name}@{version} already exists with a different checksum; publish a new version"
+        )
+
+    public_base = DEFAULT_REGISTRY.rsplit("/", 1)[0]
+    archive_name = archive.name
+    archive_url = f"{public_base}/packages/{archive_name}"
+    versions[version] = {
+        "archive": archive_url,
+        "sha256": digest,
+    }
+    record.update({
+        "description": description,
+        "latest": version,
+        "versions": versions,
+        "approved": False,
+        "homepage": homepage,
+    })
+    if license_name:
+        record["license"] = license_name
+    community[name] = record
+
+    index_content = json.dumps(
+        registry, indent=2, ensure_ascii=False, sort_keys=True
+    ) + "\\n"
+    checksum_content = f"{digest}  {archive_name}\\n"
+
+    ref = _github_api_request(
+        "GET",
+        f"/repos/{repository}/git/ref/heads/{urllib.parse.quote(branch, safe='/')}",
+        token,
+    )
+    parent_sha = ref.get("object", {}).get("sha")
+    if not parent_sha:
+        raise PackageError(f"Could not resolve GitHub branch '{branch}'")
+    parent = _github_api_request(
+        "GET", f"/repos/{repository}/git/commits/{parent_sha}", token
+    )
+    base_tree = parent.get("tree", {}).get("sha")
+    if not base_tree:
+        raise PackageError("Could not resolve the GitHub mirror base tree")
+
+    archive_blob = _github_create_blob(
+        repository, token, archive.read_bytes(), encoding="base64"
+    )
+    checksum_blob = _github_create_blob(
+        repository, token, checksum_content, encoding="utf-8"
+    )
+    index_blob = _github_create_blob(
+        repository, token, index_content, encoding="utf-8"
+    )
+    tree = _github_api_request(
+        "POST",
+        f"/repos/{repository}/git/trees",
+        token,
+        {
+            "base_tree": base_tree,
+            "tree": [
+                {
+                    "path": f"site/mgoa/packages/{archive_name}",
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": archive_blob,
+                },
+                {
+                    "path": f"site/mgoa/packages/{archive_name}.sha256",
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": checksum_blob,
+                },
+                {
+                    "path": "site/mgoa/index.json",
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": index_blob,
+                },
+            ],
+        },
+    )
+    tree_sha = tree.get("sha")
+    if not tree_sha:
+        raise PackageError("GitHub did not create the package mirror tree")
+    commit = _github_api_request(
+        "POST",
+        f"/repos/{repository}/git/commits",
+        token,
+        {
+            "message": f"Publish MGOA package {name}@{version}",
+            "tree": tree_sha,
+            "parents": [parent_sha],
+        },
+    )
+    commit_sha = commit.get("sha")
+    if not commit_sha:
+        raise PackageError("GitHub did not create the package publication commit")
+    _github_api_request(
+        "PATCH",
+        f"/repos/{repository}/git/refs/heads/{urllib.parse.quote(branch, safe='/')}",
+        token,
+        {"sha": commit_sha, "force": False},
+    )
+    return {
+        "name": name,
+        "version": version,
+        "archive": archive,
+        "archive_url": archive_url,
+        "sha256": digest,
+        "registry_url": DEFAULT_REGISTRY,
+        "commit": commit_sha,
+        "repository": repository,
+        "branch": branch,
+    }
