@@ -65,6 +65,7 @@ class TypeChecker:
         self.expression_types.clear()
         self._functions.clear()
         self.scope = Scope()
+        self.diagnostics.clear()
 
         # Predeclare rituals so calls can resolve regardless of declaration order.
         for statement in program.statements:
@@ -118,7 +119,8 @@ class TypeChecker:
             previous = self.scope
             local = Scope(previous)
             for parameter in node.params:
-                local.define(parameter, ANY)
+                if not local.define(parameter, ANY):
+                    self._error("M1014", f"duplicate parameter '{parameter}'", node)
             self.scope = local
             self._check_block(node.body, nested=False)
             self.scope = previous
