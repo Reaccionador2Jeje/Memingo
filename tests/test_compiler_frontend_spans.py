@@ -26,7 +26,7 @@ class FrontendSpanTests(unittest.TestCase):
 
         declaration = program.statements[0]
         self.assertIsInstance(declaration, Let)
-        self.assertEqual(declaration.span, Span("example.mgo", 0, 18))
+        self.assertEqual(declaration.span, Span("example.mgo", 0, 19))
         self.assertIsInstance(declaration.value, Binary)
         self.assertEqual(declaration.value.span, Span("example.mgo", 14, 19))
 
