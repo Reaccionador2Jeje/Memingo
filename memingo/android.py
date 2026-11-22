@@ -4,8 +4,8 @@ A0 deliberately manages project metadata only. Code generation and Gradle
 invocation belong to later Android backend milestones.
 """
 
+import json
 import re
-import tempfile
 from pathlib import Path
 
 from .packages import ensure_project, read_manifest, resolve_entry
@@ -169,33 +169,7 @@ def initialize_android_project(
         "ui": "compose",
     }
 
-    # Validate before changing the manifest.
-    candidate = dict(data)
-    candidate["android"] = config
-    original = manifest_path.read_text(encoding="utf-8")
-    lines = [
-        "",
-        "# Native Android application configuration (Memingo A0)",
-        "[android]",
-        f'application_id = "{selected_id}"',
-        f"min_sdk = {min_sdk}",
-        f"target_sdk = {target_sdk}",
-        "version_code = 1",
-        f'version_name = "{config["version_name"]}"',
-        'ui = "compose"',
-        "",
-    ]
-
-    # Use the same manifest parser as the rest of Memingo, via a temporary
-    # candidate file, so invalid values never leave a partially written file.
-    with tempfile.TemporaryDirectory(prefix="memingo-android-") as temporary:
-        candidate_path = Path(temporary) / "memingo.toml"
-        candidate_path.write_text(original.rstrip() + "\n" + "\n".join(lines), encoding="utf-8")
-        from .packages import _read_simple_toml
-
-        parsed = _read_simple_toml(candidate_path)
-        candidate_path.replace(candidate_path)  # Keep the temporary candidate local.
-    # Validate the schema directly before committing the new section.
+    # Validate every supplied value before touching the existing manifest.
     if not isinstance(selected_id, str) or not APPLICATION_ID_PATTERN.fullmatch(selected_id):
         raise AndroidProjectError(
             "[android].application_id must be a valid Java package name, "
@@ -205,6 +179,22 @@ def initialize_android_project(
         raise AndroidProjectError("[android].min_sdk must be between 21 and 100")
     if isinstance(target_sdk, bool) or not isinstance(target_sdk, int) or not min_sdk <= target_sdk <= 100:
         raise AndroidProjectError("[android].target_sdk must be between min_sdk and 100")
+    version_name = config["version_name"]
+    if not isinstance(version_name, str) or not version_name.strip():
+        raise AndroidProjectError("[android].version_name must be a non-empty string")
+
+    lines = [
+        "",
+        "# Native Android application configuration (Memingo A0)",
+        "[android]",
+        f"application_id = {json.dumps(selected_id)}",
+        f"min_sdk = {min_sdk}",
+        f"target_sdk = {target_sdk}",
+        "version_code = 1",
+        f"version_name = {json.dumps(version_name)}",
+        'ui = "compose"',
+        "",
+    ]
 
     temporary_path = manifest_path.with_name(manifest_path.name + ".tmp")
     try:
