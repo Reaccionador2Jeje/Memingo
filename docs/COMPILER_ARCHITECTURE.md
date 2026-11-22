@@ -70,7 +70,7 @@ Safe Memingo code must not require raw pointer operations. Ownership and borrowi
 
 1. **Foundation:** source maps and structured diagnostics.
 2. **Semantic model:** initial scopes, primitive/collection types, inference, and type diagnostics (in progress).
-3. **Typed HIR:** lower existing AST nodes into a typed representation.
+3. **Typed HIR:** initial typed HIR and AST lowering are implemented; continue filling semantic metadata and invariants.
 4. **Analysis:** type checking and safe ownership rules.
 5. **Execution:** bytecode format and virtual machine.
 6. **Native:** measured backend prototype and optimization pipeline.
