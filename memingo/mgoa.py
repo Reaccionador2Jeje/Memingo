@@ -150,7 +150,7 @@ def parse_spec(spec):
 
 
 def _download(url, destination):
-    request = urllib.request.Request(url, headers={"User-Agent": "mgoa/0.2"})
+    request = urllib.request.Request(url, headers={"User-Agent": "mgoa/0.3.0"})
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             payload = response.read()
@@ -218,7 +218,7 @@ def _registry_url(registry_url=None):
 
 def _load_registry(registry_url=None):
     url = _registry_url(registry_url)
-    request = urllib.request.Request(url, headers={"User-Agent": "mgoa/0.2"})
+    request = urllib.request.Request(url, headers={"User-Agent": "mgoa/0.3.0"})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             data = json.loads(response.read().decode("utf-8"))
