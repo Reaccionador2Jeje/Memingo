@@ -78,7 +78,7 @@ def validate_android_project(directory="."):
         )
 
     schema_version = config.get("schema_version", 1)
-    if isinstance(schema_version, bool) or schema_version != 1:
+    if isinstance(schema_version, bool) or not isinstance(schema_version, int) or schema_version != 1:
         raise AndroidProjectError("[android].schema_version must be 1")
 
     application_id = config.get("application_id")
