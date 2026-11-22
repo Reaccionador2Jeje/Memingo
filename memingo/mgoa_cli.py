@@ -60,6 +60,7 @@ def main(argv=None):
     publish_parser.add_argument("--output", default="dist", help="Local archive output directory")
     publish_parser.add_argument("--repository", help="Mirror repository (default: MGOA_PUBLISH_REPOSITORY)")
     publish_parser.add_argument("--branch", help="Mirror branch (default: MGOA_PUBLISH_BRANCH or main)")
+    publish_parser.add_argument("--base-url", help="Public mirror base URL (default: GitHub Pages URL)")
 
     completion_parser = subparsers.add_parser("completion", help="Print shell completion scripts")
     completion_parser.add_argument("shell", choices=("bash", "zsh", "fish"))
@@ -169,6 +170,7 @@ def main(argv=None):
                 args.output,
                 repository=args.repository,
                 branch=args.branch,
+                base_url=args.base_url,
             )
             heading("Package published to GitHub Pages")
             success(f"{published['name']}@{published['version']}")
