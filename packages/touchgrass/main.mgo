@@ -1,0 +1,99 @@
+# touchgrass — calendar math, because dates are grass-touching territory.
+
+ritual leap_year(year) {
+    drop year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)
+}
+
+ritual days_in_month(year, month) {
+    when month < 1 || month > 12 {
+        drop 0
+    }
+    when month == 2 {
+        when leap_year(year) {
+            drop 29
+        }
+        drop 28
+    }
+    when month == 4 || month == 6 || month == 9 || month == 11 {
+        drop 30
+    }
+    drop 31
+}
+
+ritual valid_date(year, month, day) {
+    drop year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= days_in_month(year, month)
+}
+
+ritual days_before_year(year) {
+    vibe previous = year - 1
+    drop previous * 365 + floor(previous / 4) - floor(previous / 100) + floor(previous / 400)
+}
+
+ritual day_of_year(year, month, day) {
+    when !valid_date(year, month, day) {
+        drop ghost
+    }
+    vibe total = day
+    vibe current = 1
+    grind current < month {
+        total = total + days_in_month(year, current)
+        current = current + 1
+    }
+    drop total
+}
+
+ritual date_to_days(year, month, day) {
+    when !valid_date(year, month, day) {
+        drop ghost
+    }
+    drop days_before_year(year) - days_before_year(1970) + day_of_year(year, month, day) - 1
+}
+
+ritual weekday_date(year, month, day) {
+    vibe days = date_to_days(year, month, day)
+    when days == ghost {
+        drop ghost
+    }
+    drop (days + 4) % 7
+}
+
+ritual date_add_days(year, month, day, offset) {
+    vibe ordinal = date_to_days(year, month, day)
+    when ordinal == ghost {
+        drop ghost
+    }
+    ordinal = ordinal + floor(offset)
+    when ordinal < -719162 {
+        drop ghost
+    }
+    vibe result_year = 1970
+    when ordinal >= 0 {
+        grind ordinal >= (days_before_year(result_year + 1) - days_before_year(1970)) {
+            result_year = result_year + 1
+        }
+    } nah {
+        grind ordinal < (days_before_year(result_year) - days_before_year(1970)) {
+            result_year = result_year - 1
+        }
+    }
+    vibe day_index = ordinal - (days_before_year(result_year) - days_before_year(1970)) + 1
+    vibe result_month = 1
+    grind day_index > days_in_month(result_year, result_month) {
+        day_index = day_index - days_in_month(result_year, result_month)
+        result_month = result_month + 1
+    }
+    drop [result_year, result_month, day_index]
+}
+
+ritual self_test() {
+    vibe ok = leap_year(2000) && !leap_year(1900) && leap_year(2024)
+    ok = ok && days_in_month(2024, 2) == 29
+    ok = ok && days_in_month(2023, 2) == 28
+    ok = ok && valid_date(2024, 2, 29) && !valid_date(2023, 2, 29)
+    ok = ok && day_of_year(2024, 3, 1) == 61
+    ok = ok && date_to_days(1970, 1, 1) == 0
+    ok = ok && weekday_date(1970, 1, 1) == 4
+    ok = ok && date_add_days(2024, 2, 28, 1) == [2024, 2, 29]
+    ok = ok && date_add_days(2024, 12, 31, 1) == [2025, 1, 1]
+    drop ok
+}
