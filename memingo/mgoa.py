@@ -288,9 +288,43 @@ def _resolve_archive_url(url):
     )
 
 
+def _resolve_local_mgo_file(source_file):
+    """Wrap one local .mgo source file as an installable, project-local module."""
+    source_file = source_file.resolve()
+    if not source_file.is_file() or source_file.suffix.lower() != ".mgo":
+        raise PackageError("Local source dependencies must be existing .mgo files")
+    raw_name = re.sub(r"[^A-Za-z0-9._-]+", "-", source_file.stem).strip(".-_")
+    if not raw_name:
+        raw_name = "local-module"
+    if not raw_name[0].isalnum():
+        raw_name = "module-" + raw_name
+    name = _validate_package_name(raw_name)
+    temporary = Path(tempfile.mkdtemp(prefix="mgoa-local-module-"))
+    package_root = temporary / name
+    package_root.mkdir()
+    entry_name = source_file.name
+    shutil.copy2(source_file, package_root / entry_name)
+    (package_root / MANIFEST).write_text(
+        "[package]\\n"
+        f'name = "{name}"\\n'
+        'version = "0.0.0-local"\\n'
+        f'entry = "{entry_name}"\\n'
+        'description = "Local Memingo source module"\\n',
+        encoding="utf-8",
+    )
+    return ResolvedPackage(
+        path=package_root,
+        local=True,
+        source={"source": "local", "path": str(source_file)},
+        approved=False,
+    )
+
+
 def resolve_package(spec, registry_url=None):
     local = Path(spec).expanduser()
     if local.exists():
+        if local.is_file() and local.suffix.lower() == ".mgo":
+            return _resolve_local_mgo_file(local)
         if local.is_file() and local.suffix.lower() == ".zip":
             temporary = Path(tempfile.mkdtemp(prefix="mgoa-"))
             digest = hashlib.sha256(local.read_bytes()).hexdigest()
