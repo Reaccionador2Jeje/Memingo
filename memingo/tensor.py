@@ -192,6 +192,29 @@ class Tensor:
             result._backward = lambda gradient: ((self, [gradient[0]] * self.size),)
         return result
 
+    def mean_tensor(self):
+        result = Tensor([self.mean()])
+        if self.requires_grad:
+            result.requires_grad = True
+            result._parents = (self,)
+            result._backward = lambda gradient: ((self, [gradient[0] / self.size] * self.size),)
+        return result
+
+    def relu(self):
+        return _unary(self, lambda value: max(0.0, value),
+                      lambda source, output: 1.0 if source > 0 else 0.0)
+
+    def sigmoid(self):
+        def activate(value):
+            if value >= 0:
+                return 1.0 / (1.0 + math.exp(-value))
+            exp_value = math.exp(value)
+            return exp_value / (1.0 + exp_value)
+        return _unary(self, activate, lambda source, output: output * (1.0 - output))
+
+    def tanh(self):
+        return _unary(self, math.tanh, lambda source, output: 1.0 - output * output)
+
     def sum(self):
         return math.fsum(_flat(self._data))
 
@@ -254,6 +277,21 @@ class Tensor:
                 return ((self, local[0] if self.ndim == 1 else _flat(local)),)
             result._backward = backward
         return result
+
+
+def _unary(value, operation, derivative):
+    source = as_tensor(value)
+    source_values = _flat(source._data)
+    output_values = [_inspect(operation(item)) for item in source_values]
+    result = Tensor(_reshape(output_values, source.shape))
+    if source.requires_grad:
+        result.requires_grad = True
+        result._parents = (source,)
+        result._backward = lambda gradient: (
+            (source, [gradient[index] * derivative(original, output_values[index])
+                      for index, original in enumerate(source_values)]),
+        )
+    return result
 
 
 def _elementwise(left, right, operation, name):
@@ -328,6 +366,35 @@ def grad(value):
 
 def sum_tensor(value):
     return as_tensor(value).sum_tensor()
+
+
+def mean_tensor(value):
+    return as_tensor(value).mean_tensor()
+
+
+def relu(value):
+    return as_tensor(value).relu()
+
+
+def sigmoid(value):
+    return as_tensor(value).sigmoid()
+
+
+def tanh(value):
+    return as_tensor(value).tanh()
+
+
+def linear(inputs, weights, bias):
+    result = matmul(inputs, weights)
+    return add(result, bias)
+
+
+def mse_loss(prediction, target):
+    predicted, expected = as_tensor(prediction), as_tensor(target)
+    if predicted.shape != expected.shape:
+        raise TensorError("mse_loss prediction and target shapes must match")
+    difference = add(predicted, scale(expected, -1.0))
+    return mean_tensor(multiply(difference, difference))
 
 
 def shape(value):
