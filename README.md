@@ -272,6 +272,8 @@ Memingo A0 adds native Android metadata and validation. A1 generates a Kotlin + 
 ```bash
 memingo android init my-android-app --application-id com.example.my_app
 memingo android check my-android-app
+memingo android generate my-android-app
+memingo android build my-android-app
 ```
 
 The command adds a versioned `[android]` section to the project's existing `memingo.toml`, using Jetpack Compose as the planned native UI toolkit. It preserves existing source files and refuses to replace an existing Android configuration. See [Native Android architecture and roadmap](docs/ANDROID_NATIVE.md).
