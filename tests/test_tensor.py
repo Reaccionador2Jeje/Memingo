@@ -2,7 +2,7 @@ import math
 import unittest
 
 from memingo.tensor import (
-    TensorError, add, matmul, random_tensor, shape, softmax, tensor,
+    TensorError, add, matmul, multiply, random_tensor, shape, softmax, tensor,
     to_list, transpose,
 )
 
