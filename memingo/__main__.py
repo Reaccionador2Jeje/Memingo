@@ -25,7 +25,10 @@ from .cli import (
 )
 from .completion import memingo_completion
 from .lsp import run_language_server
-from .android import AndroidProjectError, initialize_android_project, validate_android_project
+from .android import (
+    AndroidProjectError, initialize_android_project, validate_android_project,
+    generate_android_project, build_android_debug,
+)
 
 
 def run_ide_web(host="127.0.0.1", port=3000) -> int:
@@ -565,6 +568,12 @@ def _main(argv=None) -> int:
     android_check_parser = android_subparsers.add_parser("check", help="Validate native Android project configuration")
     android_check_parser.add_argument("directory", nargs="?", default=".")
 
+    android_generate_parser = android_subparsers.add_parser("generate", help="Generate native Kotlin and Jetpack Compose project files")
+    android_generate_parser.add_argument("directory", nargs="?", default=".")
+
+    android_build_parser = android_subparsers.add_parser("build", help="Build a native Android debug APK")
+    android_build_parser.add_argument("directory", nargs="?", default=".")
+
     subparsers.add_parser("repl", help="Open the interactive REPL")
     subparsers.add_parser("doctor", help="Check the Memingo installation")
     subparsers.add_parser("update-self", help="Update Memingo from the official installer")
@@ -679,6 +688,31 @@ def _main(argv=None) -> int:
                 return 0
             except (AndroidProjectError, OSError) as exception:
                 error(f"Memingo Android init error: {exception}")
+                return 1
+        if args.android_command == "generate":
+            try:
+                config = generate_android_project(args.directory)
+                heading("Native Android project generated", config["name"])
+                key_value([
+                    ("Application ID", config["application_id"]),
+                    ("Project", str(config["android_project"])),
+                    ("Generated files", str(len(config["generated_files"]))),
+                    ("MainActivity", str(config["main_activity"].relative_to(config["root"]))),
+                ])
+                success("Kotlin + Jetpack Compose project is ready")
+                tip("Build it with: memingo android build")
+                return 0
+            except (AndroidProjectError, OSError) as exception:
+                error(f"Memingo Android generate error: {exception}")
+                return 1
+        if args.android_command == "build":
+            try:
+                result = build_android_debug(args.directory)
+                heading("Android debug build complete")
+                success(f"APK: {result['apk']}")
+                return 0
+            except (AndroidProjectError, OSError) as exception:
+                error(f"Memingo Android build error: {exception}")
                 return 1
         if args.android_command == "check":
             try:
