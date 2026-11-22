@@ -1,0 +1,9 @@
+[package]
+name = "hoarding"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Meme-named collection helpers: compacting, deduplication, frequencies and partitioning"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]
