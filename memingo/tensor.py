@@ -451,6 +451,108 @@ def matmul(left, right):
     return output
 
 
+class Optimizer:
+    """Base optimizer for explicitly registered trainable tensors."""
+
+    def __init__(self, parameters, learning_rate):
+        if not isinstance(parameters, (list, tuple)) or not parameters:
+            raise TensorError("optimizer parameters must be a non-empty list")
+        if len({id(parameter) for parameter in parameters}) != len(parameters):
+            raise TensorError("optimizer parameters cannot contain duplicates")
+        if any(not isinstance(parameter, Tensor) or not parameter.requires_grad
+               for parameter in parameters):
+            raise TensorError("optimizer parameters must be tensors with requires_grad enabled")
+        self.parameters = list(parameters)
+        self.learning_rate = _inspect(learning_rate)
+        if not 0 < self.learning_rate <= 1:
+            raise TensorError("learning_rate must be greater than 0 and at most 1")
+
+    def zero_grad(self):
+        for parameter in self.parameters:
+            parameter.grad = None
+
+    def _apply(self, updates):
+        # Validate every parameter update before mutating any parameter.
+        candidates = []
+        for parameter, values in zip(self.parameters, updates):
+            if len(values) != parameter.size:
+                raise TensorError("optimizer gradient shape mismatch")
+            candidates.append([_inspect(value) for value in values])
+        for parameter, values in zip(self.parameters, candidates):
+            parameter._data = _reshape(values, parameter.shape)
+
+
+class SGDOptimizer(Optimizer):
+    def step(self):
+        updates = []
+        for parameter in self.parameters:
+            if parameter.grad is None:
+                updates.append(_flat(parameter._data))
+            else:
+                updates.append([
+                    value - self.learning_rate * gradient
+                    for value, gradient in zip(_flat(parameter._data), parameter.grad)
+                ])
+        self._apply(updates)
+        return True
+
+
+class AdamOptimizer(Optimizer):
+    def __init__(self, parameters, learning_rate=0.001,
+                 beta1=0.9, beta2=0.999, epsilon=1e-8):
+        super().__init__(parameters, learning_rate)
+        self.beta1, self.beta2 = _inspect(beta1), _inspect(beta2)
+        self.epsilon = _inspect(epsilon)
+        if not 0 <= self.beta1 < 1 or not 0 <= self.beta2 < 1:
+            raise TensorError("Adam beta values must be in the range [0, 1)")
+        if self.epsilon <= 0:
+            raise TensorError("Adam epsilon must be greater than zero")
+        self._step = 0
+        self._first = {id(parameter): [0.0] * parameter.size for parameter in self.parameters}
+        self._second = {id(parameter): [0.0] * parameter.size for parameter in self.parameters}
+
+    def step(self):
+        self._step += 1
+        updates = []
+        for parameter in self.parameters:
+            values = _flat(parameter._data)
+            gradients = parameter.grad or [0.0] * parameter.size
+            first = self._first[id(parameter)]
+            second = self._second[id(parameter)]
+            next_values = []
+            for index, (value, gradient) in enumerate(zip(values, gradients)):
+                first[index] = self.beta1 * first[index] + (1 - self.beta1) * gradient
+                second[index] = self.beta2 * second[index] + (1 - self.beta2) * gradient * gradient
+                corrected_first = first[index] / (1 - self.beta1 ** self._step)
+                corrected_second = second[index] / (1 - self.beta2 ** self._step)
+                next_values.append(value - self.learning_rate * corrected_first /
+                                   (math.sqrt(corrected_second) + self.epsilon))
+            updates.append(next_values)
+        self._apply(updates)
+        return True
+
+
+def sgd(parameters, learning_rate=0.01):
+    return SGDOptimizer(parameters, learning_rate)
+
+
+def adam(parameters, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    return AdamOptimizer(parameters, learning_rate, beta1, beta2, epsilon)
+
+
+def optimizer_step(optimizer):
+    if not isinstance(optimizer, Optimizer):
+        raise TensorError("step expects an optimizer created by ai.sgd or ai.adam")
+    return optimizer.step()
+
+
+def optimizer_zero_grad(optimizer):
+    if not isinstance(optimizer, Optimizer):
+        raise TensorError("zero_grad expects an optimizer created by ai.sgd or ai.adam")
+    optimizer.zero_grad()
+    return True
+
+
 def random_tensor(dimensions, seed=None, low=-0.1, high=0.1):
     """Create a reproducible rank-1 or rank-2 tensor with uniform values."""
     if not isinstance(dimensions, (list, tuple)) or len(dimensions) not in (1, 2):
