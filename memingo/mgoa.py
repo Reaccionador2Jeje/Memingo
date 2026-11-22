@@ -486,13 +486,25 @@ def install_package(project_directory=".", spec="", registry_url=None, expected_
 
 def add_package(project_directory=".", spec="", registry_url=None):
     _ensure_project(project_directory)
-    installed = install_package(project_directory, spec, registry_url)
-    project = Path(project_directory)
+    project = Path(project_directory).resolve()
+    installed = install_package(project, spec, registry_url)
     from .packages import _write_simple_toml
     manifest = read_manifest(project)
     dependencies = manifest.setdefault("dependencies", {})
     dependencies[installed["name"]] = installed["version"]
     _write_simple_toml(project / MANIFEST, manifest)
+
+    # Store local sources relative to the project so the project can be moved.
+    source = installed.get("source") or {}
+    if source.get("source") == "local" and source.get("path"):
+        source_path = Path(source["path"]).resolve()
+        relative_path = os.path.relpath(source_path, project)
+        lock = _read_lock(project / LOCKFILE)
+        record = lock.get("dependencies", {}).get(installed["name"])
+        if isinstance(record, dict):
+            record["path"] = relative_path
+            _write_lock(project / LOCKFILE, lock)
+        installed["source"] = {**source, "path": relative_path}
     return installed
 
 
@@ -539,7 +551,10 @@ def install_project(project_directory=".", registry_url=None, frozen=True):
         if record.get("url"):
             spec = record["url"]
         elif record.get("path"):
-            spec = record["path"]
+            local_path = Path(record["path"]).expanduser()
+            if not local_path.is_absolute():
+                local_path = project / local_path
+            spec = str(local_path)
         elif isinstance(version, str) and _is_url(version):
             spec = version
         else:
