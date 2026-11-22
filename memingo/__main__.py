@@ -479,7 +479,43 @@ def update_self() -> int:
             script_path.chmod(0o755)
             command = ["sh", str(script_path)]
         result = subprocess.run(command, check=False)
-        return result.returncode
+        if result.returncode != 0:
+            return result.returncode
+
+        if os.name == "nt":
+            install_dir = Path(
+                os.environ.get("MEMINGO_INSTALL_DIR", Path.home() / "AppData/Local/Memingo")
+            )
+            launcher = install_dir / "launcher.py"
+            command_dir = install_dir / "bin"
+        else:
+            data_home = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
+            install_dir = Path(os.environ.get("MEMINGO_INSTALL_DIR", data_home / "memingo"))
+            launcher = install_dir / "launcher.py"
+            command_dir = Path(os.environ.get("MEMINGO_BIN_DIR", Path.home() / ".local/bin"))
+
+        if launcher.is_file():
+            check = subprocess.run(
+                [sys.executable, "-I", str(launcher), "--version"],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            if check.returncode == 0 and check.stdout.strip():
+                success(f"Updated runtime: {check.stdout.strip()}")
+            else:
+                warning(f"Runtime installed at {install_dir}, but its version could not be queried")
+        else:
+            warning(f"Installer completed, but launcher was not found at {launcher}")
+
+        active_command = shutil.which("memingo")
+        expected_command = command_dir / ("memingo.cmd" if os.name == "nt" else "memingo")
+        if active_command and Path(active_command).resolve() != expected_command.resolve():
+            warning(f"Your current PATH selects {active_command}, not {expected_command}")
+            info("Check your PATH order, then run 'hash -r' in Bash.")
+        elif os.name != "nt":
+            info("If Bash still uses a cached command, run: hash -r")
+        return 0
     except Exception as exception:
         error(f"Memingo update failed: {exception}")
         return 1

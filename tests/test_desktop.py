@@ -11,7 +11,7 @@ class DesktopAppTests(unittest.TestCase):
 
     def test_setup_wizard_starter_has_expected_project_entry(self):
         self.assertIn('greet("creator")', STARTER)
-        self.assertTrue(str(CONFIG_FILE).endswith("Memingo/desktop.json"))
+        self.assertEqual(CONFIG_FILE.parts[-2:], ("Memingo", "desktop.json"))
 
     def test_desktop_entry_imports_gui(self):
         source = (Path(__file__).resolve().parents[1] / "scripts" / "desktop_entry.py").read_text(encoding="utf-8")

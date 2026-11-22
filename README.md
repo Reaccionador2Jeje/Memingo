@@ -42,6 +42,12 @@ Operators include arithmetic, comparison, equality, `&&`, `||`, and `!`.
 Built-ins include `headcount()`, `whatkind()`, `json_parse()`, `json_stringify()`, `env()`, `range()`, `keys()`, `push()`, `append()`, `set_value()`, `delete_key()`, `random()`, `random_int()`, `http_get()`, and `http_post()`.
 Lists and objects can span multiple lines, including trailing commas.
 
+## MGOA package manager
+
+MGOA installs packages from the public GitHub Pages mirror and can publish a Memingo project or package with `mgoa publish .`. Configure `MGOA_PUBLISH_TOKEN` with Contents: write access to the Memingo repository before publishing. Published archives, SHA-256 checksums and the community package index are committed to `site/mgoa/`; GitHub Pages deploys them automatically from the main branch. Official packages remain curated separately from community publications.
+
+See [MGOA publishing documentation](docs/MGOA_PUBLISHING.md) for setup, security and registry details. For local `.mgo` dependencies, see [MGOA local modules](docs/MGOA_LOCAL_MODULES.md).
+
 ## Memingo Language Server
 
 Memingo includes a dependency-free Language Server Protocol server. Start it with `memingo lsp --stdio` after installing the runtime. It provides parser diagnostics, keyword and standard-library completions, hover documentation, go-to-definition, references, safe local symbol rename and document symbols. See [docs/LANGUAGE_SERVER.md](docs/LANGUAGE_SERVER.md).

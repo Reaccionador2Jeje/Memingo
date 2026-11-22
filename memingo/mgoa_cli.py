@@ -9,7 +9,7 @@ from .cli import (
 from .completion import mgoa_completion
 from .mgoa import (
     PackageError, add_package, install_project, list_installed, package_info,
-    publish_package, remove_package, search_registry,
+    publish_package, publish_to_mirror, remove_package, search_registry,
 )
 
 
@@ -36,7 +36,7 @@ def main(argv=None):
     add_parser = subparsers.add_parser("add", help="Install a package into a project")
     add_parser.add_argument(
         "spec",
-        help="name, name@version, HTTP(S) archive URL, local directory, or package archive",
+        help="name, name@version, local .mgo file or directory, HTTP(S) archive URL, or ZIP archive",
     )
     add_parser.add_argument("--project", default=".")
     add_parser.add_argument("--registry", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
@@ -53,9 +53,14 @@ def main(argv=None):
     remove_parser.add_argument("name")
     remove_parser.add_argument("--project", default=".")
 
-    publish_parser = subparsers.add_parser("publish", help="Build a package archive for submission")
+    publish_parser = subparsers.add_parser(
+        "publish", help="Publish a Memingo project or package to the GitHub Pages mirror"
+    )
     publish_parser.add_argument("directory", nargs="?", default=".")
-    publish_parser.add_argument("--output", default="dist")
+    publish_parser.add_argument("--output", default="dist", help="Local archive output directory")
+    publish_parser.add_argument("--repository", help="Mirror repository (default: MGOA_PUBLISH_REPOSITORY)")
+    publish_parser.add_argument("--branch", help="Mirror branch (default: MGOA_PUBLISH_BRANCH or main)")
+    publish_parser.add_argument("--base-url", help="Public mirror base URL (default: GitHub Pages URL)")
 
     completion_parser = subparsers.add_parser("completion", help="Print shell completion scripts")
     completion_parser.add_argument("shell", choices=("bash", "zsh", "fish"))
@@ -76,7 +81,7 @@ def main(argv=None):
                 "mgoa search <text>      Find packages",
                 "mgoa add <package>      Install into a project",
                 "mgoa list               Inspect installed dependencies",
-                "mgoa publish <dir>      Build a package archive",
+                "mgoa publish <dir>      Publish a package to the public mirror",
             ])
             tip("Use mgoa --help for the complete command catalog.")
             return 0
@@ -160,9 +165,18 @@ def main(argv=None):
             success(f"Removed package {args.name}")
             return 0
         if args.command == "publish":
-            archive = publish_package(args.directory, args.output)
-            heading("Package archive")
-            success(str(archive))
+            published = publish_to_mirror(
+                args.directory,
+                args.output,
+                repository=args.repository,
+                branch=args.branch,
+                base_url=args.base_url,
+            )
+            heading("Package published to GitHub Pages")
+            success(f"{published['name']}@{published['version']}")
+            info(f"Archive: {published['archive_url']}")
+            info(f"Registry: {published['registry_url']}")
+            info(f"Commit: {published['commit']}")
             return 0
         banner(__version__, "MEMINGO PACKAGE MANAGER")
         parser.print_help()
