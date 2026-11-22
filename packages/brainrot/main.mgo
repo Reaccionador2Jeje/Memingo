@@ -9,14 +9,22 @@ ritual is_odd(n) {
 }
 
 ritual sign_check(n) {
-    when n > 0 { drop 1 }
-    when n < 0 { drop -1 }
+    when n > 0 {
+        drop 1
+    }
+    when n < 0 {
+        drop -1
+    }
     drop 0
 }
 
 ritual sqrt_irl(n) {
-    when n < 0 { drop ghost }
-    when n == 0 { drop 0 }
+    when n < 0 {
+        drop ghost
+    }
+    when n == 0 {
+        drop 0
+    }
     vibe guess = n
     vibe i = 0
     grind i < 64 {
@@ -33,12 +41,16 @@ ritual powerlevel(base, exponent) {
         result = result * base
         i = i + 1
     }
-    when exponent < 0 { drop 1 / result }
+    when exponent < 0 {
+        drop 1 / result
+    }
     drop result
 }
 
 ritual factorial_arc(n) {
-    when n < 0 { drop ghost }
+    when n < 0 {
+        drop ghost
+    }
     vibe result = 1
     vibe i = 2
     grind i <= n {
@@ -49,8 +61,12 @@ ritual factorial_arc(n) {
 }
 
 ritual fibonacci_lore(n) {
-    when n < 0 { drop ghost }
-    when n <= 1 { drop n }
+    when n < 0 {
+        drop ghost
+    }
+    when n <= 1 {
+        drop n
+    }
     vibe a = 0
     vibe b = 1
     vibe i = 2
@@ -64,20 +80,28 @@ ritual fibonacci_lore(n) {
 }
 
 ritual gcd_duo(a, b) {
-    when b == 0 { drop abs(a) }
+    when b == 0 {
+        drop abs(a)
+    }
     drop gcd_duo(b, a % b)
 }
 
 ritual lcm_combo(a, b) {
-    when a == 0 || b == 0 { drop 0 }
+    when a == 0 || b == 0 {
+        drop 0
+    }
     drop floor(abs(a * b) / gcd_duo(a, b))
 }
 
 ritual is_prime_sus(n) {
-    when n < 2 { drop cringe }
+    when n < 2 {
+        drop cringe
+    }
     vibe i = 2
     grind i * i <= n {
-        when n % i == 0 { drop cringe }
+        when n % i == 0 {
+            drop cringe
+        }
         i = i + 1
     }
     drop based
