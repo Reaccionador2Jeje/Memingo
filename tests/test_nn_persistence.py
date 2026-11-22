@@ -48,6 +48,23 @@ class BrainPersistenceTests(unittest.TestCase):
             self.assertEqual(restored.out_features, 1)
             self.assertEqual(len(restored.parameters()), 4)
 
+    def test_model_summary_reports_architecture_and_parameter_count(self):
+        from memingo.nn import summary
+        report = summary(self.make_model())
+        self.assertEqual(report["type"], "sequential")
+        self.assertEqual(report["layers"], 2)
+        self.assertEqual(report["input_features"], 2)
+        self.assertEqual(report["output_features"], 1)
+        self.assertEqual(report["parameters"], 13)
+        self.assertEqual(report["trainable_parameters"], 13)
+        self.assertEqual(report["layer_details"][0]["activation"], "tanh")
+        self.assertEqual(report["layer_details"][1]["activation"], "sigmoid")
+
+    def test_model_summary_rejects_non_models(self):
+        from memingo.nn import summary
+        with self.assertRaises(TensorError):
+            summary("not a brain")
+
     def test_memingo_script_save_load_api(self):
         from memingo.interpreter import execute
         with tempfile.TemporaryDirectory() as directory:
