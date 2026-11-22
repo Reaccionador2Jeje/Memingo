@@ -294,6 +294,10 @@ def deserialize(source):
     return result
 
 
+def softmax(value):
+    return as_tensor(value).softmax()
+
+
 def matmul(left, right):
     """Multiply two rank-2 matrices using a cache-friendlier CPU kernel."""
     a, b = as_tensor(left), as_tensor(right)
