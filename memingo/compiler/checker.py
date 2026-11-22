@@ -61,12 +61,19 @@ class TypeChecker:
         self._functions: dict[str, Type] = {}
 
     def check(self, program) -> TypeCheckResult:
+        # A checker instance can safely be reused for independent programs.
+        self.expression_types.clear()
+        self._functions.clear()
+        self.scope = Scope()
+
         # Predeclare rituals so calls can resolve regardless of declaration order.
         for statement in program.statements:
             if statement.__class__.__name__ == "Function":
                 signature = function_of(tuple(ANY for _ in statement.params), ANY)
-                self._functions[statement.name] = signature
-                self.scope.define(statement.name, signature)
+                if not self.scope.define(statement.name, signature):
+                    self._error("M1001", f"'{statement.name}' is already declared in this scope", statement)
+                else:
+                    self._functions[statement.name] = signature
 
         for statement in program.statements:
             self._statement(statement)
@@ -128,7 +135,7 @@ class TypeChecker:
             self.scope = previous
 
     def _require_boolean(self, value_type: Type, node, construct: str) -> None:
-        if value_type is not ANY and value_type is not BASED:
+        if value_type != ANY and value_type != BASED:
             self._error("M1004", f"'{construct}' condition must be based-or-cringe, got {value_type}", node)
 
     def _remember(self, node, value_type: Type) -> Type:
@@ -219,7 +226,7 @@ class TypeChecker:
     def _binary_type(self, operator: str, left: Type, right: Type, node) -> Type:
         numeric = (WHOLE, DECIMAL, ANY)
         if operator in ("+", "-", "*", "/", "%"):
-            if operator == "+" and left is CAPTION and right is CAPTION:
+            if operator == "+" and left == CAPTION and right == CAPTION:
                 return CAPTION
             if left not in numeric or right not in numeric:
                 self._error("M1011", f"operator '{operator}' requires compatible numbers, got {left} and {right}", node)
