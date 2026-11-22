@@ -69,7 +69,7 @@ Safe Memingo code must not require raw pointer operations. Ownership and borrowi
 ## Milestones
 
 1. **Foundation:** source maps and structured diagnostics.
-2. **Semantic model:** symbol tables, scopes, and type representations.
+2. **Semantic model:** initial scopes, primitive/collection types, inference, and type diagnostics (in progress).
 3. **Typed HIR:** lower existing AST nodes into a typed representation.
 4. **Analysis:** type checking and safe ownership rules.
 5. **Execution:** bytecode format and virtual machine.
