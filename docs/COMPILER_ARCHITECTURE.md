@@ -39,7 +39,7 @@ Memingo will evolve incrementally. Its interpreter, package ecosystem, CLI, LSP,
                      v        v
                     VM    Native backend
 
-The first implementation will reuse the existing lexer and parser where practical. New compiler structures must not silently change interpreter semantics.
+The first implementation reuses the existing lexer and parser. The public Python API is `memingo.compiler.compile_source(source, source_id)`, and the CLI exposes `memingo analyze [files-or-directories]` to run parsing, static checks, and typed HIR lowering without executing the program. New compiler structures must not silently change interpreter semantics.
 
 ## Compiler package boundaries
 
