@@ -28,7 +28,7 @@
 - [x] Text, number, collection and higher-order standard library
 - [x] Project-scoped text file helpers
 - [ ] Render parser and lexer errors with source snippets
-- [ ] Add CLI `memingo compile` command backed by compiler pipeline
+- [x] Add CLI `memingo analyze` command backed by compiler pipeline
 - [ ] Modules and imports
 - [ ] Standard library for games and apps
 - [ ] Native compiler or bytecode VM
