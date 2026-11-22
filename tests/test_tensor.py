@@ -47,6 +47,57 @@ class TensorTests(unittest.TestCase):
         with self.assertRaises(TensorError):
             matmul([1, 2], [[1], [2]])
 
+    def test_broadcast_vector_over_matrix(self):
+        self.assertEqual(to_list(add([[1, 2], [3, 4]], [10, 20])),
+                         [[11.0, 22.0], [13.0, 24.0]])
+
+    def test_broadcast_singleton_dimensions(self):
+        self.assertEqual(to_list(add([[1], [2]], [10, 20, 30])),
+                         [[11.0, 21.0, 31.0], [12.0, 22.0, 32.0]])
+
+    def test_rejects_incompatible_broadcast(self):
+        with self.assertRaises(TensorError):
+            add([[1, 2, 3]], [1, 2])
+
+    def test_elementwise_multiply(self):
+        from memingo.tensor import multiply
+        self.assertEqual(to_list(multiply([[1, 2], [3, 4]], [2, 3])),
+                         [[2.0, 6.0], [6.0, 12.0]])
+
+    def test_reductions(self):
+        from memingo.tensor import mean, min_value, max_value
+        matrix = [[1, 2], [3, 8]]
+        self.assertEqual(mean(matrix), 3.5)
+        self.assertEqual(min_value(matrix), 1.0)
+        self.assertEqual(max_value(matrix), 8.0)
+
+    def test_indexing_and_slicing(self):
+        from memingo.tensor import get, slice_tensor
+        matrix = tensor([[1, 2, 3], [4, 5, 6]])
+        self.assertEqual(to_list(get(matrix, 1)), [4.0, 5.0, 6.0])
+        self.assertEqual(get(matrix, [1, 2]), 6.0)
+        self.assertEqual(get(tensor([7, 8, 9]), -1), 9.0)
+        self.assertEqual(to_list(slice_tensor(matrix, axis=1, start=0, stop=2)),
+                         [[1.0, 2.0], [4.0, 5.0]])
+
+    def test_versioned_serialization_round_trip(self):
+        from memingo.tensor import serialize, deserialize
+        original = tensor([[1, 2], [3.5, 4]])
+        encoded = serialize(original)
+        self.assertEqual(serialize(deserialize(encoded)), encoded)
+        self.assertEqual(to_list(deserialize(encoded)), to_list(original))
+
+    def test_serialization_rejects_unknown_version_and_bad_shape(self):
+        from memingo.tensor import deserialize
+        with self.assertRaises(TensorError):
+            deserialize('{"format":"memingo.tensor","version":99,"shape":[1],"data":[1]}')
+        with self.assertRaises(TensorError):
+            deserialize('{"format":"memingo.tensor","version":1,"shape":[2],"data":[1]}')
+
+    def test_numeric_overflow_is_rejected(self):
+        with self.assertRaises(TensorError):
+            add([1e308], [1e308])
+
     def test_memingo_script_api(self):
         from memingo.interpreter import execute
         source = '''
