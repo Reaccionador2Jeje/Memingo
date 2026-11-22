@@ -8,8 +8,8 @@ class SourceFileTests(unittest.TestCase):
         source = SourceFile("hello.mgo", "vibe x = 1\nspill x")
         self.assertEqual(source.location_at(0).line, 1)
         self.assertEqual(source.location_at(5).column, 6)
-        self.assertEqual(source.location_at(10).line, 2)
-        self.assertEqual(source.location_at(10).column, 1)
+        self.assertEqual(source.location_at(11).line, 2)
+        self.assertEqual(source.location_at(11).column, 1)
 
     def test_unicode_offsets_use_python_character_positions(self):
         source = SourceFile("unicode.mgo", 'spill "🚀"')
