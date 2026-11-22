@@ -1,6 +1,6 @@
 # A1.7 — Native Tensor Optimizers
 
-Status: implemented on `feat/neural-tensor-foundation`.
+Status: implemented; cross-platform CI validation is pending.
 
 ## API
 
