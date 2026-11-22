@@ -386,6 +386,7 @@ spill report.loss
 - `ai.sequential(layers)` validates and connects an ordered list of dense layers.
 - `ai.forward(model, batch)` runs a rank-2 input batch through the model.
 - `ai.parameters(model)` returns the trainable tensors.
+- `ai.summary(model)` returns model dimensions, layer activations, and trainable parameter counts.
 - `ai.train_loop(model, inputs, targets, epochs?, learning_rate?, optimizer?)` performs full-batch training with autograd and SGD or Adam, returning a report with epoch count, loss, and sample count.
 
 A1.9 is CPU-only and currently full-batch; it supports dense layers with rank-2 batches. It does not yet include mini-batch shuffling, dropout, convolution, recurrent/transformer layers, GPU execution, or optimizer checkpoint persistence.
