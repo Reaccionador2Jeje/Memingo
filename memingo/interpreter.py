@@ -15,6 +15,10 @@ from .parser import (
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
 )
 from . import ai as memingo_ai
+from . import tensor as memingo_tensor
+from . import nn as memingo_nn
+from . import checkpoint as memingo_checkpoint
+from . import studio as memingo_studio
 
 
 class RuntimeErrorMemingo(Exception):
@@ -102,6 +106,52 @@ class Interpreter:
             "evaluate": lambda model, data: model.evaluate(data),
             "save": lambda model, path: model.save(path, self.project_directory),
             "load": lambda path: memingo_ai.load(path, self.project_directory),
+            "tensor": memingo_tensor.tensor,
+            "backward": memingo_tensor.backward,
+            "grad": memingo_tensor.grad,
+            "sum_tensor": memingo_tensor.sum_tensor,
+            "mean_tensor": memingo_tensor.mean_tensor,
+            "relu": memingo_tensor.relu,
+            "sigmoid": memingo_tensor.sigmoid,
+            "tanh": memingo_tensor.tanh,
+            "linear": memingo_tensor.linear,
+            "mse_loss": memingo_tensor.mse_loss,
+            "sgd": memingo_tensor.sgd,
+            "adam": memingo_tensor.adam,
+            "step": memingo_tensor.optimizer_step,
+            "zero_grad": memingo_tensor.optimizer_zero_grad,
+            "dense": memingo_nn.dense,
+            "sequential": memingo_nn.sequential,
+            "parameters": memingo_nn.parameters,
+            "forward": memingo_nn.forward,
+            "summary": memingo_nn.summary,
+            "train_loop": memingo_nn.train_loop,
+            "save_brain": lambda model, path: memingo_nn.save_brain(model, path, self.project_directory),
+            "load_brain": lambda path: memingo_nn.load_brain(path, self.project_directory),
+            "save_checkpoint": lambda model, optimizer, path: memingo_checkpoint.save_checkpoint(model, optimizer, path, self.project_directory),
+            "load_checkpoint": lambda path: memingo_checkpoint.load_checkpoint(path, self.project_directory),
+            "save_dataset": lambda data, path: memingo_studio.save_dataset(data, path, self.project_directory),
+            "load_dataset": lambda path: memingo_studio.load_dataset(path, self.project_directory),
+            "dataset_summary": memingo_studio.dataset_summary,
+            "workspace": lambda: memingo_studio.workspace(self.project_directory),
+            "inspect_brain": lambda path: memingo_studio.inspect_brain(path, self.project_directory),
+            "shape": memingo_tensor.shape,
+            "to_list": memingo_tensor.to_list,
+            "transpose": memingo_tensor.transpose,
+            "matmul": memingo_tensor.matmul,
+            "add": memingo_tensor.add,
+            "scale": memingo_tensor.scale,
+            "sum": memingo_tensor.sum_values,
+            "mean": memingo_tensor.mean,
+            "min": memingo_tensor.min_value,
+            "max": memingo_tensor.max_value,
+            "get": memingo_tensor.get,
+            "slice": memingo_tensor.slice_tensor,
+            "multiply": memingo_tensor.multiply,
+            "serialize": memingo_tensor.serialize,
+            "deserialize": memingo_tensor.deserialize,
+            "softmax": memingo_tensor.softmax,
+            "random_tensor": memingo_tensor.random_tensor,
         })
         self.global_environment.define("random_int", lambda low, high: random.randint(low, high))
         self.global_environment.define("shuffle", self._shuffle)

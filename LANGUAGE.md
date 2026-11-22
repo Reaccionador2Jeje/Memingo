@@ -256,3 +256,214 @@ Available operations:
 - `ai.load(path)` loads a saved model from inside the project directory.
 
 The built-in engine is CPU-based and intended for learning and small models. Training limits epochs to 100,000 and network size to 8,192 total neurons. It does not currently provide GPU acceleration, transformer/LLM training, image pipelines, or automatic dataset downloads. Python and external ML frameworks remain optional integrations.
+
+
+### Tensor primitives (CPU)
+
+Memingo exposes a small dense tensor API through the `ai` namespace. The first
+implementation supports numeric vectors (rank 1) and rectangular matrices
+(rank 2), uses finite floating-point values, and runs on the CPU.
+
+```mgo
+vibe a = ai.tensor([[1, 2, 3], [4, 5, 6]])
+vibe b = ai.tensor([[7, 8], [9, 10], [11, 12]])
+
+vibe product = ai.matmul(a, b)
+spill ai.shape(product)
+spill ai.to_list(product)
+spill ai.to_list(ai.transpose(a))
+spill ai.to_list(ai.softmax([1, 2, 3]))
+```
+
+Available operations:
+
+- `ai.tensor(data)` creates a validated rank-1 or rank-2 tensor.
+- `ai.shape(tensor)` returns its dimensions as a list.
+- `ai.to_list(tensor)` converts it back to ordinary Memingo lists.
+- `ai.matmul(left, right)` multiplies two compatible rank-2 matrices.
+- `ai.transpose(tensor)` transposes a rank-2 matrix.
+- `ai.add(left, right)` performs elementwise addition with NumPy-style
+  trailing-dimension broadcasting for rank-1 and rank-2 tensors.
+- `ai.multiply(left, right)` performs elementwise multiplication with the same
+  broadcasting rules.
+- `ai.scale(tensor, factor)` multiplies every value by a scalar.
+- `ai.sum(tensor)`, `ai.mean(tensor)`, `ai.min(tensor)`, and `ai.max(tensor)`
+  return scalar reductions over all elements.
+- `ai.get(tensor, index)` reads a vector element, matrix row, or matrix element
+  using `[row, column]`; negative indices count from the end.
+- `ai.slice(tensor, axis?, start?, stop?, step?)` returns a non-empty slice.
+  Slicing currently creates an independent tensor copy, not a shared-memory view.
+- `ai.serialize(tensor)` returns deterministic, versioned JSON;
+  `ai.deserialize(text)` validates and restores it.
+- `ai.softmax(tensor)` applies numerically stable softmax over the last axis.
+- `ai.random_tensor(dimensions, seed?, low?, high?)` creates reproducible rank-1
+  or rank-2 uniform random values when a seed is supplied.
+
+A1.5 safety and runtime limits: tensors are limited to 1,000,000 elements,
+each dimension is limited to 4,096, and the runtime rejects non-finite input or
+results. Broadcasting supports rank-1/rank-2 tensors with compatible trailing
+dimensions. Matrix multiplication uses a transposed right-hand matrix and
+accurate `math.fsum` accumulation. The engine remains CPU-only: arbitrary rank,
+shared-storage tensor views, automatic differentiation, GPU acceleration, and
+Transformer operations are not part of this stage.
+
+
+### Automatic differentiation (A1.6)
+
+Memingo tensors can record operations and calculate gradients with reverse-mode autodiff.
+
+```mgo
+vibe weights = ai.tensor([2, 3], based)
+vibe loss = ai.sum_tensor(ai.multiply(weights, [4, 5]))
+ai.backward(loss)
+spill ai.grad(weights)
+```
+
+- `ai.tensor(data, requires_grad?)` enables gradient tracking.
+- `ai.sum_tensor(tensor)` creates a one-element differentiable loss.
+- `ai.backward(loss, gradient?)` runs reverse-mode graph traversal.
+- `ai.grad(tensor)` returns gradients in the original tensor shape, or `ghost` before backpropagation.
+
+A1.6 supports gradients for addition and broadcasting, elementwise multiplication, scalar scaling, matrix multiplication, transpose, softmax, and sum reduction. Non-one-element outputs require an explicit gradient with the same element count. Gradients are reset for the traversed graph on each backward call. Optimizers, GPU kernels, higher-order derivatives, and graph checkpointing remain out of scope.
+
+
+### Optimizers (A1.7)
+
+Trainable tensors can be updated with built-in CPU optimizers after reverse-mode differentiation:
+
+```mgo
+vibe weights = ai.tensor([2, 3], based)
+vibe loss = ai.sum_tensor(ai.multiply(weights, [4, 5]))
+ai.backward(loss)
+vibe optimizer = ai.sgd([weights], 0.1)
+ai.step(optimizer)
+ai.zero_grad(optimizer)
+```
+
+- `ai.sgd(parameters, learning_rate?)` creates stochastic gradient descent.
+- `ai.adam(parameters, learning_rate?, beta1?, beta2?, epsilon?)` creates Adam.
+- `ai.step(optimizer)` applies one update.
+- `ai.zero_grad(optimizer)` clears registered parameter gradients.
+
+Optimizers accept only non-empty lists of unique tensors with gradient tracking enabled. Updates are checked for finite values before parameter data is changed. Optimizer state is in-memory and is not included in model serialization yet.
+
+
+### Neural-network building blocks (A1.8)
+
+The tensor engine now includes differentiable activation and loss operations:
+
+- `ai.relu(tensor)`, `ai.sigmoid(tensor)`, and `ai.tanh(tensor)` apply elementwise activations.
+- `ai.linear(inputs, weights, bias)` performs a dense matrix layer: `inputs × weights + bias`.
+- `ai.mean_tensor(tensor)` returns a one-element differentiable mean.
+- `ai.mse_loss(prediction, target)` returns mean squared error and requires matching shapes.
+
+These operations participate in `ai.backward`, so gradients flow from an MSE loss through a dense layer and supported activations into trainable tensors. This is a low-level CPU foundation; it does not yet provide a sequential model container, batching utilities, or automatic optimizer registration.
+
+### Sequential neural models and training loop (A1.9)
+
+The tensor engine now supports a simple ordered dense-network container. Memingo keeps its meme-flavored API while the math stays native and differentiable:
+
+```mgo
+vibe hidden = ai.dense(2, 4, "tanh", 21)
+vibe output = ai.dense(4, 1, "sigmoid", 22)
+vibe brain = ai.sequential([hidden, output])
+
+vibe prediction = ai.forward(brain, [[0, 1], [1, 0]])
+spill ai.shape(prediction)
+
+vibe report = ai.train_loop(
+    brain,
+    [[0, 0], [0, 1], [1, 0], [1, 1]],
+    [[0], [1], [1], [0]],
+    100,
+    0.1,
+    "adam"
+)
+spill report.loss
+```
+
+- `ai.dense(in_features, out_features, activation?, seed?)` creates trainable weights and bias. Activations: `relu`, `sigmoid`, `tanh`, or `linear`.
+- `ai.sequential(layers)` validates and connects an ordered list of dense layers.
+- `ai.forward(model, batch)` runs a rank-2 input batch through the model.
+- `ai.parameters(model)` returns the trainable tensors.
+- `ai.summary(model)` returns model dimensions, layer activations, and trainable parameter counts.
+- `ai.train_loop(model, inputs, targets, epochs?, learning_rate?, optimizer?)` performs full-batch training with autograd and SGD or Adam, returning a report with epoch count, loss, and sample count.
+
+A1.9 is CPU-only and currently full-batch; it supports dense layers with rank-2 batches. It does not yet include mini-batch shuffling, dropout, convolution, recurrent/transformer layers, GPU execution, or optimizer checkpoint persistence.
+
+
+### Model persistence — A2
+
+Memingo can save and reload native sequential dense models ("brains") in a versioned `.mgoai` JSON file.
+
+```mgo
+vibe hidden = ai.dense(2, 4, "tanh", 21)
+vibe output = ai.dense(4, 1, "sigmoid", 22)
+vibe brain = ai.sequential([hidden, output])
+
+ai.save_brain(brain, "models/my-brain.mgoai")
+vibe loaded = ai.load_brain("models/my-brain.mgoai")
+spill ai.to_list(ai.forward(loaded, [[0, 1]]))
+```
+
+- `ai.save_brain(model, path)` writes architecture, activation names, weights, and biases atomically.
+- `ai.load_brain(path)` validates the format/version, layer connectivity, activation names, parameter shapes, finite values, and model size before returning a trainable model.
+
+The model format is `memingo.sequential`, version 1. Files are limited to 16 MB, models to 128 dense layers and 1,000,000 parameters. Paths must remain inside the current project directory. This saves model weights and architecture only; optimizer moments and training history are not persisted in A2.
+
+
+
+### Resumable training checkpoints — A2.2
+
+Save the model and optimizer together to continue training with the same Adam
+moments and timestep:
+
+```mgo
+vibe brain = ai.sequential([
+    ai.dense(2, 4, "tanh", 21),
+    ai.dense(4, 1, "sigmoid", 22)
+])
+vibe optimizer = ai.adam(ai.parameters(brain), 0.01)
+
+ai.save_checkpoint(brain, optimizer, "models/brain.mgochk")
+vibe resumed = ai.load_checkpoint("models/brain.mgochk")
+vibe brain2 = resumed.model
+vibe optimizer2 = resumed.optimizer
+```
+
+- `ai.save_checkpoint(model, optimizer, path)` saves weights plus optimizer configuration/state.
+- `ai.load_checkpoint(path)` returns an object with `model` and `optimizer`.
+- SGD checkpoints retain the learning rate. Adam checkpoints also retain beta
+  values, epsilon, update step, and both moment arrays.
+
+Checkpoint files use the versioned `memingo.training_checkpoint` format,
+are limited to 32 MB, and remain inside the project directory. Training data,
+gradients, epoch history, random-generator state, and sampler state are not
+included; supply the same data/order when resuming for comparable training.
+
+
+### Memingo AI Studio — A2.5
+
+The local AI Studio catalog indexes models, resumable checkpoints and reusable datasets without executing project code:
+
+```bash
+memingo studio
+memingo studio --json
+```
+
+Datasets can be persisted from Memingo scripts:
+
+```mgo
+vibe data = ai.dataset([[0, 0], [0, 1]], [[0], [1]])
+ai.save_dataset(data, "datasets/training.mgodata")
+vibe restored = ai.load_dataset("datasets/training.mgodata")
+spill ai.dataset_summary(restored).samples
+```
+
+- `ai.save_dataset(dataset, path)` saves a validated versioned `.mgodata` file.
+- `ai.load_dataset(path)` loads and validates a dataset.
+- `ai.dataset_summary(dataset)` returns sample count and input/output shapes.
+- `ai.workspace()` returns a JSON-friendly catalog of the current project.
+- `ai.inspect_brain(path)` validates a saved brain and returns its architecture summary.
+
+Dataset files are limited to 16 MB and paths remain inside the project directory. Studio skips generated/dependency directories and symbolic links. This stage establishes the local asset/catalog layer; graphical live charts and background training are future work. See [docs/AI_A2_5_STUDIO.md](docs/AI_A2_5_STUDIO.md).
