@@ -301,7 +301,7 @@ Use `--registry <url>` or `MGOA_REGISTRY` to install from a different registry. 
 
 ### Registry catalog
 
-The curated registry ships with real packages covering math, text, collections, files, validation, CLI output, tests, games and memes. Every package includes a `self_test()` ritual that returns `based` when its checks pass.
+The curated registry ships with real packages covering math, text, collections, files, paths, runtime metadata, logging, validation, CLI output, tests, games and memes. Every package includes a `self_test()` ritual that returns `based` when its checks pass.
 
 | Package | What it provides |
 | --- | --- |
@@ -331,6 +331,9 @@ The curated registry ships with real packages covering math, text, collections, 
 | `notfloating` | Fixed-point decimal arithmetic and predictable rounding |
 | `brokefractions` | Normalized rational arithmetic and fraction comparisons |
 | `touchgrass` | Gregorian leap years, date validation, weekdays and date arithmetic |
+| `wherefile` | Portable path normalization, joining, basename, dirname and extensions |
+| `themachine` | Runtime platform, architecture, home, user and CI metadata |
+| `snitch` | Structured log levels and append-only project log files |
 
 Package sources live in `packages/<name>/`. Regenerate the published ZIPs, SHA-256 checksums and `site/mgoa/index.json` after changing a package:
 

@@ -6,7 +6,7 @@ from memingo.parser import parse
 
 
 ROOT = Path(__file__).resolve().parent.parent
-MEME_PACKAGES = ("brainrot", "yapstats", "luckymeme", "whenisbro", "notfloating", "brokefractions", "touchgrass")
+MEME_PACKAGES = ("brainrot", "yapstats", "luckymeme", "whenisbro", "notfloating", "brokefractions", "touchgrass", "wherefile", "themachine", "snitch")
 
 
 class MemeStandardLibraryTests(unittest.TestCase):

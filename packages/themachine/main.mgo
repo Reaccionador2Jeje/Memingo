@@ -1,0 +1,32 @@
+ritual machine_platform() {
+    vibe configured = env("MEMINGO_PLATFORM", ghost)
+    when configured != ghost { drop lower(configured) }
+    vibe system = env("OS", ghost)
+    when system != ghost { drop lower(system) }
+    drop "unknown"
+}
+ritual machine_architecture() { drop env("MEMINGO_ARCH", "unknown") }
+ritual machine_home() { drop env("HOME", env("USERPROFILE", "")) }
+ritual machine_working_directory() { drop env("PWD", "") }
+ritual machine_user() { drop env("USER", env("USERNAME", "")) }
+ritual machine_is_ci() {
+    vibe value = lower(env("CI", ""))
+    drop contains(["1", "true", "yes", "on"], value)
+}
+ritual machine_is_windows() {
+    vibe platform = machine_platform()
+    drop contains(platform, "windows") || contains(platform, "win32")
+}
+ritual machine_is_linux() { drop contains(machine_platform(), "linux") }
+ritual machine_is_macos() {
+    vibe platform = machine_platform()
+    drop contains(platform, "darwin") || contains(platform, "mac")
+}
+ritual self_test() {
+    vibe ok = whatkind(machine_platform()) == "caption"
+    ok = ok && whatkind(machine_architecture()) == "caption"
+    ok = ok && whatkind(machine_home()) == "caption"
+    ok = ok && whatkind(machine_is_ci()) == "based-or-cringe"
+    ok = ok && whatkind(machine_is_windows()) == "based-or-cringe"
+    drop ok
+}

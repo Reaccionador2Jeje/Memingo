@@ -361,6 +361,42 @@
         },
         "license": "BSD-3-Clause",
         "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "wherefile": {
+        "description": "Portable path parsing, joining and normalization helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/wherefile-0.1.0.zip",
+            "sha256": "908310f81cc23adce9079713ff25f76a09eaf14969436e28b243594608cbd011"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "themachine": {
+        "description": "Portable runtime and environment metadata helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/themachine-0.1.0.zip",
+            "sha256": "a36433d0eb5b01196972cc8b73d77702e54d703fb2933ab3ce806c57100a1482"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "snitch": {
+        "description": "Structured log levels, formatting and append-only log files",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/snitch-0.1.0.zip",
+            "sha256": "3e4e42ed29e68ec6f8d5c139e3d044c08c9e3aec76b8057416fca59b1f675360"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
       }
     }
   }

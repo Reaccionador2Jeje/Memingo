@@ -1,0 +1,30 @@
+ritual log_debug(message) { drop format_log("DEBUG", message) }
+ritual log_info(message) { drop format_log("INFO", message) }
+ritual log_warning(message) { drop format_log("WARN", message) }
+ritual log_error(message) { drop format_log("ERROR", message) }
+ritual format_log(level, message) {
+    drop "[" + upper(level) + "] " + join([message], "")
+}
+ritual write_log(path, level, message) {
+    vibe line = format_log(level, message)
+    when file_exists(path) {
+        vibe current = read_file(path)
+        when headcount(current) == 0 { drop write_file(path, line + "\n") }
+        when ends_with(current, "\n") { drop write_file(path, current + line + "\n") }
+        drop write_file(path, current + "\n" + line + "\n")
+    }
+    drop write_file(path, line + "\n")
+}
+ritual self_test() {
+    vibe ok = log_debug("trace") == "[DEBUG] trace"
+    ok = ok && log_info("ready") == "[INFO] ready"
+    ok = ok && log_warning("careful") == "[WARN] careful"
+    ok = ok && log_error("failed") == "[ERROR] failed"
+    vibe path = ".memingo-snitch-test.log"
+    write_file(path, "")
+    write_log(path, "info", "first")
+    write_log(path, "error", "second")
+    vibe content = read_file(path)
+    ok = ok && content == "[INFO] first\n[ERROR] second\n"
+    drop ok
+}
