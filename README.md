@@ -267,7 +267,7 @@ mgoa update
 
 ## Native Android projects
 
-Memingo A0 adds native Android project metadata and validation. It does not generate Kotlin, Gradle files, or APKs yet.
+Memingo A0 adds native Android metadata and validation. A1 generates a Kotlin + Jetpack Compose Gradle project; building an APK requires a local JDK, Android SDK and Gradle installation.
 
 ```bash
 memingo android init my-android-app --application-id com.example.my_app
