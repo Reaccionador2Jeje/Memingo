@@ -479,7 +479,7 @@ def build_android_debug(directory="."):
     if result.returncode != 0:
         tail = "\n".join(result.stdout.splitlines()[-30:])
         raise AndroidProjectError(
-            f"Gradle debug build failed (exit {result.returncode}).\\n{tail}"
+            f"Gradle debug build failed (exit {result.returncode}).\n{tail}"
         )
     apk = android_root / "app" / "build" / "outputs" / "apk" / "debug" / "app-debug.apk"
     if not apk.is_file():
