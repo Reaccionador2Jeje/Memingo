@@ -1,0 +1,94 @@
+# infiniteyap — iterables that never run out of things to say.
+
+ritual enumerate_pairs(items, start) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(items) {
+        push(result, [start + i, items[i]])
+        i = i + 1
+    }
+    drop result
+}
+
+ritual zip_pairs(left, right) {
+    vibe result = []
+    vibe total = headcount(left)
+    when headcount(right) < total {
+        total = headcount(right)
+    }
+    vibe i = 0
+    grind i < total {
+        push(result, [left[i], right[i]])
+        i = i + 1
+    }
+    drop result
+}
+
+ritual chain_lists(first, second) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(first) {
+        push(result, first[i])
+        i = i + 1
+    }
+    i = 0
+    grind i < headcount(second) {
+        push(result, second[i])
+        i = i + 1
+    }
+    drop result
+}
+
+ritual windows(items, size) {
+    vibe result = []
+    when size <= 0 {
+        drop result
+    }
+    vibe i = 0
+    grind i + size <= headcount(items) {
+        push(result, slice(items, i, i + size))
+        i = i + 1
+    }
+    drop result
+}
+
+ritual take_every(items, step) {
+    vibe result = []
+    when step <= 0 {
+        drop result
+    }
+    vibe i = 0
+    grind i < headcount(items) {
+        push(result, items[i])
+        i = i + step
+    }
+    drop result
+}
+
+ritual flatten_one(items) {
+    vibe result = []
+    vibe i = 0
+    grind i < headcount(items) {
+        when whatkind(items[i]) == "party" && headcount(keys(items[i])) == 0 {
+            vibe j = 0
+            grind j < headcount(items[i]) {
+                push(result, items[i][j])
+                j = j + 1
+            }
+        } nah {
+            push(result, items[i])
+        }
+        i = i + 1
+    }
+    drop result
+}
+
+ritual self_test() {
+    vibe ok = enumerate_pairs(["a", "b"], 1) == [[1, "a"], [2, "b"]]
+    ok = ok && zip_pairs([1, 2, 3], ["a", "b"]) == [[1, "a"], [2, "b"]]
+    ok = ok && chain_lists([1, 2], [3, 4]) == [1, 2, 3, 4]
+    ok = ok && windows([1, 2, 3, 4], 3) == [[1, 2, 3], [2, 3, 4]]
+    ok = ok && take_every([0, 1, 2, 3, 4], 2) == [0, 2, 4]
+    ok = ok && flatten_one([1, [2, 3], 4]) == [1, 2, 3, 4]
+    drop ok
+}
