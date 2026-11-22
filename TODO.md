@@ -34,6 +34,7 @@
 - [x] Universal subcommand headers for interactive CLI workflows
 - [x] Native Linux package repositories
 - [x] Automatic project manifest scaffolding
+
 ## Package manager
 - [x] `memingo.toml` package specification
 - [x] `memingo add`, `remove`, `install` and `update` local workflows
@@ -83,3 +84,16 @@
 - [ ] Contributor guide
 - [x] Package documentation
 - [x] Curated package catalog and self-tests
+
+## Native Android applications
+Architecture and milestones: [docs/ANDROID_NATIVE.md](docs/ANDROID_NATIVE.md)
+
+- [x] Versioned Android project configuration and validation (A0: `[android]` manifest section)
+- [x] `memingo android init` and `memingo android check` CLI commands
+- [x] Deterministic native Kotlin/Jetpack Compose project generator
+- [x] Android Gradle build driver and toolchain diagnostics
+- [ ] Debug APK generation in CI and install smoke test
+- [ ] Versioned Memingo application/UI representation
+- [ ] Native UI components, state and event generation
+- [ ] Memingo Studio integration through the existing Memingo IDE repository
+- [ ] Release APK/AAB packaging and secure signing workflow

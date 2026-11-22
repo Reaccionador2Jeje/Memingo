@@ -1,5 +1,5 @@
 MEMINGO_COMMANDS = (
-    "repl doctor update-self init run eval check stats info deps clean dev build test serve ide",
+    "repl doctor update-self init run eval check stats info deps clean dev build test serve ide android",
     "add remove install update fmt completion",
 )
 

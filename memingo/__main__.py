@@ -25,6 +25,10 @@ from .cli import (
 )
 from .completion import memingo_completion
 from .lsp import run_language_server
+from .android import (
+    AndroidProjectError, initialize_android_project, validate_android_project,
+    generate_android_project, build_android_debug,
+)
 
 
 def run_ide_web(host="127.0.0.1", port=3000) -> int:
@@ -588,6 +592,24 @@ def _main(argv=None) -> int:
     parser.add_argument("--version", action="version", version=f"Memingo {__version__}")
     subparsers = parser.add_subparsers(dest="command")
 
+    android_parser = subparsers.add_parser("android", help="Manage native Android application projects")
+    android_subparsers = android_parser.add_subparsers(dest="android_command")
+
+    android_init_parser = android_subparsers.add_parser("init", help="Add native Android configuration to a Memingo project")
+    android_init_parser.add_argument("directory", nargs="?", default=".")
+    android_init_parser.add_argument("--application-id", default=None, help="Android application ID (for example com.example.my_app)")
+    android_init_parser.add_argument("--min-sdk", type=int, default=23)
+    android_init_parser.add_argument("--target-sdk", type=int, default=35)
+
+    android_check_parser = android_subparsers.add_parser("check", help="Validate native Android project configuration")
+    android_check_parser.add_argument("directory", nargs="?", default=".")
+
+    android_generate_parser = android_subparsers.add_parser("generate", help="Generate native Kotlin and Jetpack Compose project files")
+    android_generate_parser.add_argument("directory", nargs="?", default=".")
+
+    android_build_parser = android_subparsers.add_parser("build", help="Build a native Android debug APK")
+    android_build_parser.add_argument("directory", nargs="?", default=".")
+
     subparsers.add_parser("repl", help="Open the interactive REPL")
     subparsers.add_parser("doctor", help="Check the Memingo installation")
     subparsers.add_parser("update-self", help="Update Memingo from the official installer")
@@ -679,6 +701,74 @@ def _main(argv=None) -> int:
     lsp_parser.add_argument("--stdio", action="store_true", help="Use the standard LSP stdio transport")
 
     args = parser.parse_args(argv)
+
+    if args.command == "android":
+        if args.android_command == "init":
+            try:
+                config = initialize_android_project(
+                    args.directory,
+                    application_id=args.application_id,
+                    min_sdk=args.min_sdk,
+                    target_sdk=args.target_sdk,
+                )
+                heading("Android project configured", config["name"])
+                key_value([
+                    ("Application ID", config["application_id"]),
+                    ("Minimum SDK", str(config["min_sdk"])),
+                    ("Target SDK", str(config["target_sdk"])),
+                    ("UI toolkit", "Jetpack Compose"),
+                    ("Entry", config["entry"]),
+                ])
+                success("Native Android configuration added to memingo.toml")
+                tip("Next milestone: generate native Kotlin and Gradle project files.")
+                return 0
+            except (AndroidProjectError, OSError) as exception:
+                error(f"Memingo Android init error: {exception}")
+                return 1
+        if args.android_command == "generate":
+            try:
+                config = generate_android_project(args.directory)
+                heading("Native Android project generated", config["name"])
+                key_value([
+                    ("Application ID", config["application_id"]),
+                    ("Project", str(config["android_project"])),
+                    ("Generated files", str(len(config["generated_files"]))),
+                    ("MainActivity", str(config["main_activity"].relative_to(config["root"]))),
+                ])
+                success("Kotlin + Jetpack Compose project is ready")
+                tip("Build it with: memingo android build")
+                return 0
+            except (AndroidProjectError, OSError) as exception:
+                error(f"Memingo Android generate error: {exception}")
+                return 1
+        if args.android_command == "build":
+            try:
+                result = build_android_debug(args.directory)
+                heading("Android debug build complete")
+                success(f"APK: {result['apk']}")
+                return 0
+            except (AndroidProjectError, OSError) as exception:
+                error(f"Memingo Android build error: {exception}")
+                return 1
+        if args.android_command == "check":
+            try:
+                config = validate_android_project(args.directory)
+                heading("Android project valid", config["name"])
+                key_value([
+                    ("Application ID", config["application_id"]),
+                    ("Minimum SDK", str(config["min_sdk"])),
+                    ("Target SDK", str(config["target_sdk"])),
+                    ("Version", config["version_name"]),
+                    ("UI toolkit", "Jetpack Compose"),
+                    ("Entry", config["entry"]),
+                ])
+                success("Android project configuration is valid")
+                return 0
+            except (AndroidProjectError, OSError) as exception:
+                error(f"Memingo Android check error: {exception}")
+                return 1
+        android_parser.print_help()
+        return 2
 
     raw_output_commands = {"completion", "ide", "lsp", "run", "debug", "eval", "repl", "dev", "serve", "api", "test"}
     if args.command not in raw_output_commands and args.command is not None:
