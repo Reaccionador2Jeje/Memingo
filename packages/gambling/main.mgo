@@ -1,7 +1,9 @@
-# gambling — randomness without real-world stakes.
+# gambling — randomness for games and simulations, never real-world stakes.
 
 ritual pick_bro(items) {
-    when headcount(items) == 0 { drop ghost }
+    when headcount(items) == 0 {
+        drop ghost
+    }
     drop items[random_int(0, headcount(items) - 1)]
 }
 
@@ -19,7 +21,9 @@ ritual chance_moment(probability) {
 }
 
 ritual roll_dice(sides) {
-    when sides < 1 { drop ghost }
+    when sides < 1 {
+        drop ghost
+    }
     drop random_int(1, sides)
 }
 
