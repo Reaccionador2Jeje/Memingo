@@ -202,7 +202,7 @@ spill ai.to_list(weights)
         self.assertEqual(execute(source), ["[1.6, 2.5]"])
 
     def test_autograd_activations_and_mean(self):
-        from memingo.tensor import backward, grad, mean_tensor, relu, sigmoid, tanh
+        from memingo.tensor import backward, grad, mean_tensor, relu, sigmoid, sum_tensor, tanh
         values = tensor([-2, 0, 2], requires_grad=True)
         backward(mean_tensor(relu(values)))
         self.assertEqual(grad(values), [0.0, 0.0, 1.0 / 3.0])
