@@ -21,7 +21,7 @@ ritual days_in_month(year, month) {
 }
 
 ritual valid_date(year, month, day) {
-    drop year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= days_in_month(year, month)
+    drop year >= 1 && year <= 9999 && month >= 1 && month <= 12 && day >= 1 && day <= days_in_month(year, month)
 }
 
 ritual days_before_year(year) {
@@ -63,7 +63,7 @@ ritual date_add_days(year, month, day, offset) {
         drop ghost
     }
     ordinal = ordinal + floor(offset)
-    when ordinal < -719162 {
+    when ordinal < -719162 || ordinal > (days_before_year(10000) - days_before_year(1970) - 1) {
         drop ghost
     }
     vibe result_year = 1970
