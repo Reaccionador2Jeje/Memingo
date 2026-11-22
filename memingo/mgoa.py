@@ -302,7 +302,7 @@ def _resolve_local_mgo_file(source_file):
     temporary = Path(tempfile.mkdtemp(prefix="mgoa-local-module-"))
     package_root = temporary / name
     package_root.mkdir()
-    entry_name = source_file.name
+    entry_name = "main.mgo"
     shutil.copy2(source_file, package_root / entry_name)
     (package_root / MANIFEST).write_text(
         "[package]\\n"
