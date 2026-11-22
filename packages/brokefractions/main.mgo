@@ -1,0 +1,76 @@
+# brokefractions — rational numbers on a budget.
+# A fraction is represented as [numerator, denominator].
+
+ritual fraction_gcd(a, b) {
+    when b == 0 {
+        drop abs(a)
+    }
+    drop fraction_gcd(b, a % b)
+}
+
+ritual fraction_make(numerator, denominator) {
+    when denominator == 0 {
+        drop ghost
+    }
+    vibe sign = 1
+    when denominator < 0 {
+        sign = -1
+    }
+    vibe top = numerator * sign
+    vibe bottom = denominator * sign
+    vibe divisor = fraction_gcd(top, bottom)
+    drop [top / divisor, bottom / divisor]
+}
+
+ritual fraction_add(a, b) {
+    drop fraction_make(a[0] * b[1] + b[0] * a[1], a[1] * b[1])
+}
+
+ritual fraction_sub(a, b) {
+    drop fraction_make(a[0] * b[1] - b[0] * a[1], a[1] * b[1])
+}
+
+ritual fraction_mul(a, b) {
+    drop fraction_make(a[0] * b[0], a[1] * b[1])
+}
+
+ritual fraction_div(a, b) {
+    when b[0] == 0 {
+        drop ghost
+    }
+    drop fraction_make(a[0] * b[1], a[1] * b[0])
+}
+
+ritual fraction_compare(a, b) {
+    vibe left = a[0] * b[1]
+    vibe right = b[0] * a[1]
+    when left < right {
+        drop -1
+    }
+    when left > right {
+        drop 1
+    }
+    drop 0
+}
+
+ritual fraction_value(value) {
+    drop value[0] / value[1]
+}
+
+ritual fraction_string(value) {
+    drop json_stringify(value)
+}
+
+ritual self_test() {
+    vibe a = fraction_make(2, 4)
+    vibe b = fraction_make(1, 3)
+    vibe ok = a == [1, 2]
+    ok = ok && fraction_add(a, b) == [5, 6]
+    ok = ok && fraction_sub(a, b) == [1, 6]
+    ok = ok && fraction_mul(a, b) == [1, 6]
+    ok = ok && fraction_div(a, b) == [3, 2]
+    ok = ok && fraction_make(1, -2) == [-1, 2]
+    ok = ok && fraction_compare(a, b) == 1
+    ok = ok && fraction_value(a) == 0.5
+    drop ok
+}

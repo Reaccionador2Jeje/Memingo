@@ -37,6 +37,28 @@ ritual format_duration(seconds) {
     drop hours + "h " + minutes + "m " + remaining + "s"
 }
 
+
+ritual milliseconds_since_epoch() {
+    drop floor(now() * 1000)
+}
+
+ritual seconds_from_parts(days, hours, minutes, seconds) {
+    drop days * 86400 + hours * 3600 + minutes * 60 + seconds
+}
+
+ritual duration_parts(seconds) {
+    vibe whole = floor(abs(seconds))
+    vibe days = floor(whole / 86400)
+    vibe hours = floor((whole % 86400) / 3600)
+    vibe minutes = floor((whole % 3600) / 60)
+    vibe remaining = whole % 60
+    drop {days: days, hours: hours, minutes: minutes, seconds: remaining}
+}
+
+ritual is_leap_year(year) {
+    drop year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)
+}
+
 ritual self_test() {
     vibe ok = weekday_lore(0) == 4
     ok = ok && hours_from_seconds(7200) == 2
@@ -44,5 +66,9 @@ ritual self_test() {
     ok = ok && days_between(0, 172800) == 2
     ok = ok && format_duration(3661) == "1h 1m 1s"
     ok = ok && !weekend_check(0)
+    ok = ok && seconds_from_parts(1, 1, 1, 1) == 90061
+    ok = ok && duration_parts(90061).days == 1
+    ok = ok && duration_parts(90061).hours == 1
+    ok = ok && is_leap_year(2024) && !is_leap_year(1900)
     drop ok
 }

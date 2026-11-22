@@ -1,0 +1,9 @@
+[package]
+name = "brokefractions"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Normalized rational arithmetic with safe fraction operations"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]

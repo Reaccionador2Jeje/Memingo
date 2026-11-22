@@ -325,6 +325,42 @@
         },
         "license": "BSD-3-Clause",
         "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "notfloating": {
+        "description": "Fixed-point decimal arithmetic and predictable rounding helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/notfloating-0.1.0.zip",
+            "sha256": "4c0c47776fe642d2b8c9f4988db28e1a057508d403ab7cf7e942c57ec6d3537c"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "brokefractions": {
+        "description": "Normalized rational arithmetic with safe fraction operations",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/brokefractions-0.1.0.zip",
+            "sha256": "cde851bc4acb0793e91db9d605cb11b543f4a71818c7369a25221dcabe98b8f5"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "touchgrass": {
+        "description": "Gregorian calendar helpers for leap years, dates, weekdays and date arithmetic",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/touchgrass-0.1.0.zip",
+            "sha256": "78fbc910203186d2b924e35a0bbc7bc2197847999971e101756195bd826284db"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
       }
     }
   }

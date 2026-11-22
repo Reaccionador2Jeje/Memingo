@@ -117,6 +117,87 @@ ritual digit_sum_lore(n) {
     drop total
 }
 
+
+ritual pi_moment() {
+    drop 3.141592653589793
+}
+
+ritual e_moment() {
+    drop 2.718281828459045
+}
+
+ritual radians(degrees_value) {
+    drop degrees_value * pi_moment() / 180
+}
+
+ritual degrees(radians_value) {
+    drop radians_value * 180 / pi_moment()
+}
+
+ritual hypot(x, y) {
+    drop sqrt_irl(x * x + y * y)
+}
+
+ritual distance2d(x1, y1, x2, y2) {
+    drop hypot(x2 - x1, y2 - y1)
+}
+
+ritual isclose(a, b, tolerance) {
+    drop abs(a - b) <= abs(tolerance)
+}
+
+ritual log2_irl(value) {
+    when value <= 0 {
+        drop ghost
+    }
+    vibe result = 0
+    vibe scaled = value
+    grind scaled >= 2 {
+        scaled = scaled / 2
+        result = result + 1
+    }
+    grind scaled < 1 {
+        scaled = scaled * 2
+        result = result - 1
+    }
+    vibe weight = 0.5
+    vibe i = 0
+    grind i < 24 {
+        scaled = scaled * scaled
+        when scaled >= 2 {
+            scaled = scaled / 2
+            result = result + weight
+        }
+        weight = weight / 2
+        i = i + 1
+    }
+    drop result
+}
+
+ritual sin_irl(angle) {
+    vibe x = angle
+    vibe tau = pi_moment() * 2
+    grind x > pi_moment() {
+        x = x - tau
+    }
+    grind x < -pi_moment() {
+        x = x + tau
+    }
+    vibe term = x
+    vibe total = x
+    vibe n = 1
+    grind n <= 10 {
+        term = -term * x * x / ((2 * n) * (2 * n + 1))
+        total = total + term
+        n = n + 1
+    }
+    drop total
+}
+
+ritual cos_irl(angle) {
+    drop sin_irl(angle + pi_moment() / 2)
+}
+
 ritual self_test() {
     vibe ok = sqrt_irl(81) > 8.999999
     ok = ok && sqrt_irl(81) < 9.000001

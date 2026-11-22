@@ -325,6 +325,12 @@ The curated registry ships with real packages covering math, text, collections, 
 | `clikit` | Terminal messages, progress bars, byte sizes and banners |
 | `testing` | Expectation objects and pass/fail summaries |
 | `memes` | Hype, roast, meme case and based-or-cringe helpers |
+| `brainrot` | Square roots, powers, factorials, Fibonacci, primes and trigonometry |
+| `yapstats` | Descriptive statistics, sample variance, geometric and weighted means |
+| `whenisbro` | Timestamps, durations, weekday and leap-year helpers |
+| `notfloating` | Fixed-point decimal arithmetic and predictable rounding |
+| `brokefractions` | Normalized rational arithmetic and fraction comparisons |
+| `touchgrass` | Gregorian leap years, date validation, weekdays and date arithmetic |
 
 Package sources live in `packages/<name>/`. Regenerate the published ZIPs, SHA-256 checksums and `site/mgoa/index.json` after changing a package:
 
