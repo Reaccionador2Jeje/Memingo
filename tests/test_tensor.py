@@ -98,6 +98,30 @@ class TensorTests(unittest.TestCase):
         with self.assertRaises(TensorError):
             add([1e308], [1e308])
 
+    def test_runtime_limits(self):
+        with self.assertRaises(TensorError):
+            random_tensor([4096, 4096])
+
+    def test_memingo_a15_api(self):
+        from memingo.interpreter import execute
+        source = '''
+vibe matrix = ai.tensor([[1, 2], [3, 4]])
+vibe shifted = ai.add(matrix, [10, 20])
+spill ai.to_list(shifted)
+spill ai.mean(matrix)
+spill ai.get(matrix, [1, 0])
+spill ai.to_list(ai.slice(matrix, 1, 0, 1))
+vibe restored = ai.deserialize(ai.serialize(matrix))
+spill ai.to_list(restored)
+'''
+        self.assertEqual(execute(source), [
+            "[[11.0, 22.0], [13.0, 24.0]]",
+            "2.5",
+            "3.0",
+            "[[1.0], [3.0]]",
+            "[[1.0, 2.0], [3.0, 4.0]]",
+        ])
+
     def test_memingo_script_api(self):
         from memingo.interpreter import execute
         source = '''
