@@ -241,6 +241,54 @@
         },
         "license": "BSD-3-Clause",
         "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "brainrot": {
+        "description": "Meme-powered mathematics: square roots, powers, factorials, Fibonacci and primes",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/brainrot-0.1.0.zip",
+            "sha256": "def8f6a9c01a2f3f8d07538ac997b6c5ea0e63a54b952fd0971154e1d8b57b97"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "yapstats": {
+        "description": "Meme-named statistical helpers for averages, medians, variance and percentiles",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/yapstats-0.1.0.zip",
+            "sha256": "1dc8fd5eb5e20b67d48ff0218d2be22678a3e5d71f16bdfddd5aa1607cb2584c"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "luckymeme": {
+        "description": "Random utilities for games, simulations and playful programs",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/luckymeme-0.1.0.zip",
+            "sha256": "6b5bb0bf98c6ad8d82d583898b021c298bb5da9298f42c1bd50f4907c309d5ca"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "whenisbro": {
+        "description": "Meme-named time, timestamp, duration and weekday helpers",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/whenisbro-0.1.0.zip",
+            "sha256": "05adb67554f217b34793ddbbeccf105f9e1df2c38cff2c2eee255d00685fd3d8"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
       }
     }
   }
