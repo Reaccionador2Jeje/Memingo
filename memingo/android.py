@@ -196,6 +196,7 @@ def initialize_android_project(
         "",
     ]
 
+    original = manifest_path.read_text(encoding="utf-8")
     temporary_path = manifest_path.with_name(manifest_path.name + ".tmp")
     try:
         temporary_path.write_text(original.rstrip() + "\n" + "\n".join(lines), encoding="utf-8")
