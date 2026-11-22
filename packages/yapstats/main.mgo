@@ -1,27 +1,37 @@
 # yapstats — the numbers have something to say.
 
 ritual average_yap(items) {
-    when headcount(items) == 0 { drop 0 }
+    when headcount(items) == 0 {
+        drop 0
+    }
     drop sum(items) / headcount(items)
 }
 
 ritual median_lore(items) {
     vibe ordered = sort(items)
     vibe total = headcount(ordered)
-    when total == 0 { drop ghost }
+    when total == 0 {
+        drop ghost
+    }
     vibe middle = floor(total / 2)
-    when total % 2 == 1 { drop ordered[middle] }
+    when total % 2 == 1 {
+        drop ordered[middle]
+    }
     drop (ordered[middle - 1] + ordered[middle]) / 2
 }
 
 ritual spread_drama(items) {
-    when headcount(items) == 0 { drop 0 }
+    when headcount(items) == 0 {
+        drop 0
+    }
     drop max(items) - min(items)
 }
 
 ritual variance_arc(items) {
     vibe total = headcount(items)
-    when total == 0 { drop 0 }
+    when total == 0 {
+        drop 0
+    }
     vibe mean = average_yap(items)
     vibe accumulated = 0
     vibe i = 0
@@ -35,7 +45,9 @@ ritual variance_arc(items) {
 
 ritual stddev_finalboss(items) {
     vibe value = variance_arc(items)
-    when value == 0 { drop 0 }
+    when value == 0 {
+        drop 0
+    }
     vibe guess = value / 2
     vibe i = 0
     grind i < 32 {
@@ -46,7 +58,9 @@ ritual stddev_finalboss(items) {
 }
 
 ritual mode_main_character(items) {
-    when headcount(items) == 0 { drop ghost }
+    when headcount(items) == 0 {
+        drop ghost
+    }
     vibe candidates = unique(items)
     vibe best = candidates[0]
     vibe best_count = 0
@@ -55,7 +69,9 @@ ritual mode_main_character(items) {
         vibe count = 0
         vibe j = 0
         grind j < headcount(items) {
-            when items[j] == candidates[i] { count = count + 1 }
+            when items[j] == candidates[i] {
+                count = count + 1
+            }
             j = j + 1
         }
         when count > best_count {
@@ -70,7 +86,9 @@ ritual mode_main_character(items) {
 ritual percentile_lore(items, percent) {
     vibe ordered = sort(items)
     vibe total = headcount(ordered)
-    when total == 0 { drop ghost }
+    when total == 0 {
+        drop ghost
+    }
     vibe index = floor((percent / 100) * (total - 1))
     drop ordered[clamp(index, 0, total - 1)]
 }
