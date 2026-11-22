@@ -90,9 +90,9 @@ Architecture and milestones: [docs/ANDROID_NATIVE.md](docs/ANDROID_NATIVE.md)
 
 - [x] Versioned Android project configuration and validation (A0: `[android]` manifest section)
 - [x] `memingo android init` and `memingo android check` CLI commands
-- [ ] Deterministic native Kotlin/Jetpack Compose project generator
-- [ ] Android Gradle build driver and toolchain diagnostics
-- [ ] Debug APK generation and install smoke test
+- [x] Deterministic native Kotlin/Jetpack Compose project generator
+- [x] Android Gradle build driver and toolchain diagnostics
+- [ ] Debug APK generation in CI and install smoke test
 - [ ] Versioned Memingo application/UI representation
 - [ ] Native UI components, state and event generation
 - [ ] Memingo Studio integration through the existing Memingo IDE repository
