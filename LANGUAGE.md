@@ -358,3 +358,34 @@ The tensor engine now includes differentiable activation and loss operations:
 - `ai.mse_loss(prediction, target)` returns mean squared error and requires matching shapes.
 
 These operations participate in `ai.backward`, so gradients flow from an MSE loss through a dense layer and supported activations into trainable tensors. This is a low-level CPU foundation; it does not yet provide a sequential model container, batching utilities, or automatic optimizer registration.
+
+### Sequential neural models and training loop (A1.9)
+
+The tensor engine now supports a simple ordered dense-network container. Memingo keeps its meme-flavored API while the math stays native and differentiable:
+
+```mgo
+vibe hidden = ai.dense(2, 4, "tanh", 21)
+vibe output = ai.dense(4, 1, "sigmoid", 22)
+vibe brain = ai.sequential([hidden, output])
+
+vibe prediction = ai.forward(brain, [[0, 1], [1, 0]])
+spill ai.shape(prediction)
+
+vibe report = ai.train_loop(
+    brain,
+    [[0, 0], [0, 1], [1, 0], [1, 1]],
+    [[0], [1], [1], [0]],
+    100,
+    0.1,
+    "adam"
+)
+spill report.loss
+```
+
+- `ai.dense(in_features, out_features, activation?, seed?)` creates trainable weights and bias. Activations: `relu`, `sigmoid`, `tanh`, or `linear`.
+- `ai.sequential(layers)` validates and connects an ordered list of dense layers.
+- `ai.forward(model, batch)` runs a rank-2 input batch through the model.
+- `ai.parameters(model)` returns the trainable tensors.
+- `ai.train_loop(model, inputs, targets, epochs?, learning_rate?, optimizer?)` performs full-batch training with autograd and SGD or Adam, returning a report with epoch count, loss, and sample count.
+
+A1.9 is CPU-only and currently full-batch; it supports dense layers with rank-2 batches. It does not yet include mini-batch shuffling, dropout, convolution, recurrent/transformer layers, GPU execution, or optimizer checkpoint persistence.
