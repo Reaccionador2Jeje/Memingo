@@ -1,5 +1,17 @@
 # Memingo Roadmap
 
+## Compiler
+- [x] Compiler package foundation
+- [x] Source files, Unicode-aware offsets, spans and source maps
+- [x] Structured diagnostics with terminal rendering
+- [ ] Source spans on lexer tokens and AST nodes
+- [ ] Symbol tables and lexical scopes
+- [ ] Static type representations and inference
+- [ ] Typed HIR and lowering from the existing AST
+- [ ] Type checker and ownership analysis
+- [ ] Bytecode format and virtual machine
+- [ ] Native backend prototype and benchmarks
+
 ## Language
 - [x] Lexer with keywords, literals, operators and comments
 - [x] Parser for variables, functions, blocks, conditions and loops
