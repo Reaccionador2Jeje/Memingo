@@ -1,0 +1,60 @@
+# functionjuice — functions with extra sauce.
+
+ritual identity(value) {
+    drop value
+}
+
+ritual apply_twice(value, operation) {
+    drop operation(operation(value))
+}
+
+ritual pipe2(value, first, second) {
+    drop second(first(value))
+}
+
+ritual compose2(value, outer, inner) {
+    drop outer(inner(value))
+}
+
+ritual tap(value, observer) {
+    observer(value)
+    drop value
+}
+
+ritual map_chain(items, first, second) {
+    drop map(map(items, first), second)
+}
+
+ritual filter_map(items, predicate, transform) {
+    vibe selected = filter(items, predicate)
+    drop map(selected, transform)
+}
+
+ritual apply_if(value, condition, operation) {
+    when condition {
+        drop operation(value)
+    }
+    drop value
+}
+
+ritual self_test() {
+    ritual double(n) {
+        drop n * 2
+    }
+    ritual add_one(n) {
+        drop n + 1
+    }
+    ritual is_even(n) {
+        drop n % 2 == 0
+    }
+    vibe ok = identity(7) == 7
+    ok = ok && apply_twice(2, double) == 8
+    ok = ok && pipe2(3, double, add_one) == 7
+    ok = ok && compose2(3, add_one, double) == 7
+    ok = ok && tap(9, identity) == 9
+    ok = ok && map_chain([1, 2, 3], double, add_one) == [3, 5, 7]
+    ok = ok && filter_map([1, 2, 3, 4], is_even, double) == [4, 8]
+    ok = ok && apply_if(5, based, double) == 10
+    ok = ok && apply_if(5, cringe, double) == 5
+    drop ok
+}
