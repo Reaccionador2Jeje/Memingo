@@ -305,11 +305,11 @@ def _resolve_local_mgo_file(source_file):
     entry_name = "main.mgo"
     shutil.copy2(source_file, package_root / entry_name)
     (package_root / MANIFEST).write_text(
-        "[package]\\n"
-        f'name = "{name}"\\n'
-        'version = "0.0.0-local"\\n'
-        f'entry = "{entry_name}"\\n'
-        'description = "Local Memingo source module"\\n',
+        "[package]\n"
+        f'name = "{name}"\n'
+        'version = "0.0.0-local"\n'
+        f'entry = "{entry_name}"\n'
+        'description = "Local Memingo source module"\n',
         encoding="utf-8",
     )
     return ResolvedPackage(
