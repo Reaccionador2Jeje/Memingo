@@ -742,6 +742,7 @@ def publish_to_mirror(
     token=None,
     repository=None,
     branch=None,
+    base_url=None,
 ):
     """Build a package and atomically publish it to the Memingo GitHub Pages mirror.
 
@@ -797,7 +798,16 @@ def publish_to_mirror(
             f"{name}@{version} already exists with a different checksum; publish a new version"
         )
 
-    public_base = DEFAULT_REGISTRY.rsplit("/", 1)[0]
+    public_base = base_url or os.environ.get("MGOA_PUBLISH_BASE_URL")
+    if public_base:
+        if not _URL_PATTERN.match(public_base):
+            raise PackageError("MGOA_PUBLISH_BASE_URL must be an HTTP(S) URL")
+        public_base = public_base.rstrip("/")
+    elif repository == "Reaccionador2Jeje/Memingo":
+        public_base = DEFAULT_REGISTRY.rsplit("/", 1)[0]
+    else:
+        owner, repository_name = repository.split("/", 1)
+        public_base = f"https://{owner.lower()}.github.io/{repository_name}/mgoa"
     archive_name = archive.name
     archive_url = f"{public_base}/packages/{archive_name}"
     versions[version] = {
@@ -901,7 +911,7 @@ def publish_to_mirror(
         "archive": archive,
         "archive_url": archive_url,
         "sha256": digest,
-        "registry_url": DEFAULT_REGISTRY,
+        "registry_url": f"{public_base}/index.json",
         "commit": commit_sha,
         "repository": repository,
         "branch": branch,
