@@ -55,7 +55,7 @@ class TypeCheckResult:
 
 class TypeChecker:
     def __init__(self, diagnostics: DiagnosticBag | None = None):
-        self.diagnostics = diagnostics or DiagnosticBag()
+        self.diagnostics = diagnostics if diagnostics is not None else DiagnosticBag()
         self.expression_types: dict[int, Type] = {}
         self.scope = Scope()
         self._functions: dict[str, Type] = {}
