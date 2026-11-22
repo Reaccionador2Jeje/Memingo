@@ -176,16 +176,33 @@ def save_brain(model, path, project_directory="."):
     encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
     if len(encoded.encode("utf-8")) > MAX_MODEL_FILE_BYTES:
         raise ops.TensorError("brain file exceeds the 16 MB limit")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_name(target.name + ".tmp")
+    import os
+    import tempfile
+    temporary_name = None
     try:
-        temporary.write_text(encoded, encoding="utf-8")
-        temporary.replace(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        # Use a unique temporary file in the destination directory. This avoids
+        # collisions when two processes save the same brain concurrently.
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=str(target.parent),
+            prefix=f".{target.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as stream:
+            temporary_name = stream.name
+            stream.write(encoded)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_name, target)
+        temporary_name = None
     except OSError as error:
-        try:
-            temporary.unlink(missing_ok=True)
-        except OSError:
-            pass
+        if temporary_name is not None:
+            try:
+                os.unlink(temporary_name)
+            except OSError:
+                pass
         raise ops.TensorError(f"could not save brain: {error}") from error
     return str(target)
 
