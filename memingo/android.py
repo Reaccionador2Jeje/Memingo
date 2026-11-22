@@ -376,7 +376,7 @@ private fun WelcomeScreen() {{
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold
         )
-        Text(text = "{title}")
+        Text(text = {title})
     }}
 }}
 '''
