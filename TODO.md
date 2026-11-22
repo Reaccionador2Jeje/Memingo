@@ -5,8 +5,11 @@
 - [x] Source files, Unicode-aware offsets, spans and source maps
 - [x] Structured diagnostics with terminal rendering
 - [x] Source offsets on lexer tokens and statement/expression AST roots
-- [ ] Symbol tables and lexical scopes
-- [ ] Static type representations and inference
+- [x] Initial lexical scopes and symbol lookup
+- [x] Primitive and collection type representations
+- [x] Basic expression type inference and numeric widening
+- [x] Initial static checks for names, assignments, conditions, and calls
+- [ ] Full function signature and return-type inference
 - [ ] Typed HIR and lowering from the existing AST
 - [ ] Type checker and ownership analysis
 - [ ] Bytecode format and virtual machine
