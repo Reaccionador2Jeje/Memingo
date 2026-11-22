@@ -346,3 +346,15 @@ ai.zero_grad(optimizer)
 - `ai.zero_grad(optimizer)` clears registered parameter gradients.
 
 Optimizers accept only non-empty lists of unique tensors with gradient tracking enabled. Updates are checked for finite values before parameter data is changed. Optimizer state is in-memory and is not included in model serialization yet.
+
+
+### Neural-network building blocks (A1.8)
+
+The tensor engine now includes differentiable activation and loss operations:
+
+- `ai.relu(tensor)`, `ai.sigmoid(tensor)`, and `ai.tanh(tensor)` apply elementwise activations.
+- `ai.linear(inputs, weights, bias)` performs a dense matrix layer: `inputs × weights + bias`.
+- `ai.mean_tensor(tensor)` returns a one-element differentiable mean.
+- `ai.mse_loss(prediction, target)` returns mean squared error and requires matching shapes.
+
+These operations participate in `ai.backward`, so gradients flow from an MSE loss through a dense layer and supported activations into trainable tensors. This is a low-level CPU foundation; it does not yet provide a sequential model container, batching utilities, or automatic optimizer registration.
