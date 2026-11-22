@@ -162,6 +162,45 @@ spill ai.grad(x)
 '''
         self.assertEqual(execute(source), ["[4.0, 5.0]"])
 
+    def test_sgd_optimizer_updates_parameters(self):
+        from memingo.tensor import backward, grad, sgd, sum_tensor
+        weights = tensor([2, 3], requires_grad=True)
+        loss = sum_tensor(multiply(weights, [4, 5]))
+        backward(loss)
+        optimizer = sgd([weights], learning_rate=0.1)
+        optimizer.step()
+        self.assertEqual(to_list(weights), [1.6, 2.5])
+        optimizer.zero_grad()
+        self.assertIsNone(grad(weights))
+
+    def test_adam_optimizer_updates_parameters(self):
+        from memingo.tensor import adam, backward, sum_tensor
+        weights = tensor([1.0, -1.0], requires_grad=True)
+        backward(sum_tensor(multiply(weights, [2.0, -3.0])))
+        optimizer = adam([weights], learning_rate=0.01)
+        optimizer.step()
+        self.assertAlmostEqual(to_list(weights)[0], 0.99, places=6)
+        self.assertAlmostEqual(to_list(weights)[1], -0.99, places=6)
+
+    def test_optimizer_rejects_invalid_parameters(self):
+        from memingo.tensor import sgd
+        with self.assertRaises(TensorError):
+            sgd([tensor([1, 2])], learning_rate=0.1)
+        with self.assertRaises(TensorError):
+            sgd([tensor([1, 2], requires_grad=True)], learning_rate=0)
+
+    def test_memingo_optimizer_api(self):
+        from memingo.interpreter import execute
+        source = '''
+vibe weights = ai.tensor([2, 3], based)
+vibe loss = ai.sum_tensor(ai.multiply(weights, [4, 5]))
+ai.backward(loss)
+vibe optimizer = ai.sgd([weights], 0.1)
+ai.step(optimizer)
+spill ai.to_list(weights)
+'''
+        self.assertEqual(execute(source), ["[1.6, 2.5]"])
+
     def test_memingo_script_api(self):
         from memingo.interpreter import execute
         source = '''
