@@ -306,3 +306,22 @@ dimensions. Matrix multiplication uses a transposed right-hand matrix and
 accurate `math.fsum` accumulation. The engine remains CPU-only: arbitrary rank,
 shared-storage tensor views, automatic differentiation, GPU acceleration, and
 Transformer operations are not part of this stage.
+
+
+### Automatic differentiation (A1.6)
+
+Memingo tensors can record operations and calculate gradients with reverse-mode autodiff.
+
+```mgo
+vibe weights = ai.tensor([2, 3], based)
+vibe loss = ai.sum_tensor(ai.multiply(weights, [4, 5]))
+ai.backward(loss)
+spill ai.grad(weights)
+```
+
+- `ai.tensor(data, requires_grad?)` enables gradient tracking.
+- `ai.sum_tensor(tensor)` creates a one-element differentiable loss.
+- `ai.backward(loss, gradient?)` runs reverse-mode graph traversal.
+- `ai.grad(tensor)` returns gradients in the original tensor shape, or `ghost` before backpropagation.
+
+A1.6 supports gradients for addition and broadcasting, elementwise multiplication, scalar scaling, matrix multiplication, transpose, softmax, and sum reduction. Non-one-element outputs require an explicit gradient with the same element count. Gradients are reset for the traversed graph on each backward call. Optimizers, GPU kernels, higher-order derivatives, and graph checkpointing remain out of scope.
