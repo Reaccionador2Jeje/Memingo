@@ -440,3 +440,30 @@ Checkpoint files use the versioned `memingo.training_checkpoint` format,
 are limited to 32 MB, and remain inside the project directory. Training data,
 gradients, epoch history, random-generator state, and sampler state are not
 included; supply the same data/order when resuming for comparable training.
+
+
+### Memingo AI Studio — A2.5
+
+The local AI Studio catalog indexes models, resumable checkpoints and reusable datasets without executing project code:
+
+```bash
+memingo studio
+memingo studio --json
+```
+
+Datasets can be persisted from Memingo scripts:
+
+```mgo
+vibe data = ai.dataset([[0, 0], [0, 1]], [[0], [1]])
+ai.save_dataset(data, "datasets/training.mgodata")
+vibe restored = ai.load_dataset("datasets/training.mgodata")
+spill ai.dataset_summary(restored).samples
+```
+
+- `ai.save_dataset(dataset, path)` saves a validated versioned `.mgodata` file.
+- `ai.load_dataset(path)` loads and validates a dataset.
+- `ai.dataset_summary(dataset)` returns sample count and input/output shapes.
+- `ai.workspace()` returns a JSON-friendly catalog of the current project.
+- `ai.inspect_brain(path)` validates a saved brain and returns its architecture summary.
+
+Dataset files are limited to 16 MB and paths remain inside the project directory. Studio skips generated/dependency directories and symbolic links. This stage establishes the local asset/catalog layer; graphical live charts and background training are future work. See [docs/AI_A2_5_STUDIO.md](docs/AI_A2_5_STUDIO.md).
