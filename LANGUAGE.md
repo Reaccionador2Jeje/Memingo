@@ -256,3 +256,39 @@ Available operations:
 - `ai.load(path)` loads a saved model from inside the project directory.
 
 The built-in engine is CPU-based and intended for learning and small models. Training limits epochs to 100,000 and network size to 8,192 total neurons. It does not currently provide GPU acceleration, transformer/LLM training, image pipelines, or automatic dataset downloads. Python and external ML frameworks remain optional integrations.
+
+
+### Tensor primitives (CPU)
+
+Memingo exposes a small dense tensor API through the `ai` namespace. The first
+implementation supports numeric vectors (rank 1) and rectangular matrices
+(rank 2), uses finite floating-point values, and runs on the CPU.
+
+```mgo
+vibe a = ai.tensor([[1, 2, 3], [4, 5, 6]])
+vibe b = ai.tensor([[7, 8], [9, 10], [11, 12]])
+
+vibe product = ai.matmul(a, b)
+spill ai.shape(product)
+spill ai.to_list(product)
+spill ai.to_list(ai.transpose(a))
+spill ai.to_list(ai.softmax([1, 2, 3]))
+```
+
+Available operations:
+
+- `ai.tensor(data)` creates a validated rank-1 or rank-2 tensor.
+- `ai.shape(tensor)` returns its dimensions as a list.
+- `ai.to_list(tensor)` converts it back to ordinary Memingo lists.
+- `ai.matmul(left, right)` multiplies two compatible rank-2 matrices.
+- `ai.transpose(tensor)` transposes a rank-2 matrix.
+- `ai.add(left, right)` performs shape-matched elementwise addition.
+- `ai.scale(tensor, factor)` multiplies every value by a scalar.
+- `ai.sum(tensor)` returns the sum of all values.
+- `ai.softmax(tensor)` applies numerically stable softmax over the last axis.
+- `ai.random_tensor(dimensions, seed?, low?, high?)` creates reproducible rank-1
+  or rank-2 uniform random values when a seed is supplied.
+
+The initial CPU tensor engine is intentionally small: no broadcasting, arbitrary
+rank, automatic differentiation, GPU acceleration, or Transformer implementation
+is provided yet. Those capabilities will be introduced independently with tests.
