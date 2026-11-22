@@ -17,6 +17,7 @@ from .parser import (
 from . import ai as memingo_ai
 from . import tensor as memingo_tensor
 from . import nn as memingo_nn
+from . import checkpoint as memingo_checkpoint
 
 
 class RuntimeErrorMemingo(Exception):
@@ -126,6 +127,8 @@ class Interpreter:
             "train_loop": memingo_nn.train_loop,
             "save_brain": lambda model, path: memingo_nn.save_brain(model, path, self.project_directory),
             "load_brain": lambda path: memingo_nn.load_brain(path, self.project_directory),
+            "save_checkpoint": lambda model, optimizer, path: memingo_checkpoint.save_checkpoint(model, optimizer, path, self.project_directory),
+            "load_checkpoint": lambda path: memingo_checkpoint.load_checkpoint(path, self.project_directory),
             "shape": memingo_tensor.shape,
             "to_list": memingo_tensor.to_list,
             "transpose": memingo_tensor.transpose,
