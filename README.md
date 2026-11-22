@@ -253,6 +253,8 @@ memingo manifest
 memingo doctor
 memingo update-self
 memingo fmt examples
+memingo android init my-android-app --application-id com.example.my_app
+memingo android check my-android-app
 mgoa search
 mgoa info hello-memes
 mgoa list
@@ -262,6 +264,17 @@ mgoa update
 ```
 
 `memingo install`, `memingo update`, `memingo add`, `mgoa install` and `mgoa add` create the project scaffolding and `memingo.toml` automatically when they are missing. An existing manifest is never overwritten. Use `memingo manifest` to create just the missing manifest for the current directory.
+
+## Native Android projects
+
+Memingo A0 adds native Android project metadata and validation. It does not generate Kotlin, Gradle files, or APKs yet.
+
+```bash
+memingo android init my-android-app --application-id com.example.my_app
+memingo android check my-android-app
+```
+
+The command adds a versioned `[android]` section to the project's existing `memingo.toml`, using Jetpack Compose as the planned native UI toolkit. It preserves existing source files and refuses to replace an existing Android configuration. See [Native Android architecture and roadmap](docs/ANDROID_NATIVE.md).
 
 ## Package manager (mgoa)
 
