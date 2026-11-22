@@ -4,7 +4,7 @@
 - [x] Compiler package foundation
 - [x] Source files, Unicode-aware offsets, spans and source maps
 - [x] Structured diagnostics with terminal rendering
-- [ ] Source spans on lexer tokens and AST nodes
+- [x] Source offsets on lexer tokens and statement/expression AST roots
 - [ ] Symbol tables and lexical scopes
 - [ ] Static type representations and inference
 - [ ] Typed HIR and lowering from the existing AST
@@ -22,7 +22,7 @@
 - [x] Standard library for JSON, environment and collections
 - [x] Text, number, collection and higher-order standard library
 - [x] Project-scoped text file helpers
-- [ ] Better error locations and source snippets
+- [ ] Render parser and lexer errors with source snippets
 - [ ] Modules and imports
 - [ ] Standard library for games and apps
 - [ ] Native compiler or bytecode VM
