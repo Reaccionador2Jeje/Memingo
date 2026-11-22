@@ -32,8 +32,9 @@ MGOA also accepts:
 
 - `MGOA_PUBLISH_REPOSITORY` (default: `Reaccionador2Jeje/Memingo`)
 - `MGOA_PUBLISH_BRANCH` (default: `main`)
+- `MGOA_PUBLISH_BASE_URL` (optional public mirror base URL; defaults to the GitHub Pages URL derived from the repository)
 
-Or pass `--repository owner/name` and `--branch branch-name` to the publish command. The token is never stored in the project manifest, package archive, lockfile, or repository.
+Or pass `--repository owner/name`, `--branch branch-name` and `--base-url https://example.github.io/project/mgoa` to the publish command. The token is never stored in the project manifest, package archive, lockfile, or repository.
 
 ## What publication does
 
