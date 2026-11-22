@@ -36,7 +36,7 @@ def test_adam_checkpoint_restores_moments_and_resumes_identically(tmp_path):
     _step(model, optimizer)
     _step(restored["model"], restored["optimizer"])
     for expected, actual in zip(model.parameters(), restored["model"].parameters()):
-        assert ops.to_list(expected) == pytest.approx(ops.to_list(actual))
+        assert ops._flat(expected._data) == pytest.approx(ops._flat(actual._data))
 
 
 def test_sgd_checkpoint_round_trip(tmp_path):
