@@ -29,6 +29,25 @@ class BrainPersistenceTests(unittest.TestCase):
                              [layer.in_features for layer in model.layers])
             self.assertEqual(to_list(restored.forward(sample)), before)
 
+    def test_concurrent_saves_leave_a_valid_brain(self):
+        from concurrent.futures import ThreadPoolExecutor
+        first = self.make_model()
+        second = sequential([
+            dense(2, 3, "relu", seed=41),
+            dense(3, 1, "linear", seed=42),
+        ])
+        with tempfile.TemporaryDirectory() as directory:
+            def save(model):
+                return save_brain(model, "shared.mgoai", directory)
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                results = list(executor.map(save, (first, second)))
+            self.assertEqual(len(set(results)), 1)
+            restored = load_brain("shared.mgoai", directory)
+            self.assertEqual(len(restored.layers), 2)
+            self.assertEqual(restored.in_features, 2)
+            self.assertEqual(restored.out_features, 1)
+            self.assertEqual(len(restored.parameters()), 4)
+
     def test_memingo_script_save_load_api(self):
         from memingo.interpreter import execute
         with tempfile.TemporaryDirectory() as directory:
