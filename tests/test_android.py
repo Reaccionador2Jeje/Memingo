@@ -17,6 +17,7 @@ class AndroidProjectTests(unittest.TestCase):
             config = initialize_android_project(root)
 
             self.assertEqual(config["application_id"], "com.example.demo_app")
+            self.assertEqual(config["schema_version"], 1)
             self.assertEqual(config["min_sdk"], 23)
             self.assertEqual(config["target_sdk"], 35)
             self.assertEqual(config["ui"], "compose")
@@ -106,6 +107,18 @@ class AndroidProjectTests(unittest.TestCase):
             source = manifest.read_text(encoding="utf-8").replace("target_sdk = 35", "target_sdk = 22")
             manifest.write_text(source, encoding="utf-8")
             with self.assertRaisesRegex(AndroidProjectError, "target_sdk"):
+                validate_android_project(root)
+
+    def test_validation_rejects_unsupported_schema_version(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initialize_android_project(root)
+            manifest = root / "memingo.toml"
+            source = manifest.read_text(encoding="utf-8").replace(
+                "schema_version = 1", "schema_version = 2"
+            )
+            manifest.write_text(source, encoding="utf-8")
+            with self.assertRaisesRegex(AndroidProjectError, "schema_version"):
                 validate_android_project(root)
 
     def test_cli_android_init_and_check(self):
