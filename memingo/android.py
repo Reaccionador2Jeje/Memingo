@@ -15,7 +15,6 @@ ANDROID_DEFAULTS = {
     "min_sdk": 23,
     "target_sdk": 35,
     "version_code": 1,
-    "ui": "compose",
 }
 ANDROID_ALLOWED_KEYS = frozenset({
     "schema_version",
