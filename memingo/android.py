@@ -125,6 +125,7 @@ def validate_android_project(directory="."):
     return {
         "root": root,
         "manifest": manifest_path,
+        "schema_version": schema_version,
         "name": package.get("name", root.name),
         "application_id": application_id,
         "min_sdk": values["min_sdk"],
