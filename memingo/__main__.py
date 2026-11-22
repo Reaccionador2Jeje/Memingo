@@ -25,6 +25,7 @@ from .cli import (
 )
 from .completion import memingo_completion
 from .lsp import run_language_server
+from . import studio as memingo_studio
 
 
 def run_ide_web(host="127.0.0.1", port=3000) -> int:
@@ -675,12 +676,16 @@ def _main(argv=None) -> int:
     ide_parser.add_argument("--host", default="127.0.0.1", help="Local interface (loopback only)")
     ide_parser.add_argument("--port", type=int, default=3000, help="HTTP port (default: 3000)")
 
+    studio_parser = subparsers.add_parser("studio", help="Open the local Memingo AI Studio workspace catalog")
+    studio_parser.add_argument("directory", nargs="?", default=".")
+    studio_parser.add_argument("--json", action="store_true", help="Print the workspace catalog as JSON")
+
     lsp_parser = subparsers.add_parser("lsp", help="Start the Memingo Language Server Protocol server")
     lsp_parser.add_argument("--stdio", action="store_true", help="Use the standard LSP stdio transport")
 
     args = parser.parse_args(argv)
 
-    raw_output_commands = {"completion", "ide", "lsp", "run", "debug", "eval", "repl", "dev", "serve", "api", "test"}
+    raw_output_commands = {"completion", "ide", "lsp", "run", "debug", "eval", "repl", "dev", "serve", "api", "test", "studio"}
     if args.command not in raw_output_commands and args.command is not None:
         command_header("memingo", args.command)
 
@@ -737,6 +742,35 @@ def _main(argv=None) -> int:
         return run_source(" ".join(args.code), args.project)
     if args.command == "check":
         return check_sources(args.paths)
+    if args.command == "studio":
+        try:
+            catalog = memingo_studio.workspace(args.directory)
+            if args.json:
+                print(json.dumps(catalog, ensure_ascii=False, indent=2))
+                return 0
+            heading("Memingo AI Studio", catalog["workspace"])
+            key_value([
+                ("Models", catalog["counts"]["models"]),
+                ("Checkpoints", catalog["counts"]["checkpoints"]),
+                ("Datasets", catalog["counts"]["datasets"]),
+            ])
+            for label in ("models", "checkpoints", "datasets"):
+                entries = catalog[label]
+                heading(label.capitalize())
+                if entries:
+                    rows = []
+                    for item in entries:
+                        state = "valid" if item.get("valid") else "check"
+                        detail = item.get("summary", {}).get("parameters", item.get("size_bytes", 0))
+                        rows.append([item["name"], state, detail, item["path"]])
+                    table(["asset", "status", "parameters / bytes", "path"], rows)
+                else:
+                    info("No assets found")
+            tip("Create datasets with ai.dataset() and save them using ai.save_dataset().")
+            return 0
+        except (OSError, ValueError) as exception:
+            error(f"Memingo AI Studio error: {exception}")
+            return 1
     if args.command == "lsp":
         return run_language_server()
     if args.command == "ide":
