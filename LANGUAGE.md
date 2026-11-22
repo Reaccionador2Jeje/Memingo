@@ -410,3 +410,33 @@ spill ai.to_list(ai.forward(loaded, [[0, 1]]))
 - `ai.load_brain(path)` validates the format/version, layer connectivity, activation names, parameter shapes, finite values, and model size before returning a trainable model.
 
 The model format is `memingo.sequential`, version 1. Files are limited to 16 MB, models to 128 dense layers and 1,000,000 parameters. Paths must remain inside the current project directory. This saves model weights and architecture only; optimizer moments and training history are not persisted in A2.
+
+
+
+### Resumable training checkpoints — A2.2
+
+Save the model and optimizer together to continue training with the same Adam
+moments and timestep:
+
+```mgo
+vibe brain = ai.sequential([
+    ai.dense(2, 4, "tanh", 21),
+    ai.dense(4, 1, "sigmoid", 22)
+])
+vibe optimizer = ai.adam(ai.parameters(brain), 0.01)
+
+ai.save_checkpoint(brain, optimizer, "models/brain.mgochk")
+vibe resumed = ai.load_checkpoint("models/brain.mgochk")
+vibe brain2 = resumed.model
+vibe optimizer2 = resumed.optimizer
+```
+
+- `ai.save_checkpoint(model, optimizer, path)` saves weights plus optimizer configuration/state.
+- `ai.load_checkpoint(path)` returns an object with `model` and `optimizer`.
+- SGD checkpoints retain the learning rate. Adam checkpoints also retain beta
+  values, epsilon, update step, and both moment arrays.
+
+Checkpoint files use the versioned `memingo.training_checkpoint` format,
+are limited to 32 MB, and remain inside the project directory. Training data,
+gradients, epoch history, random-generator state, and sampler state are not
+included; supply the same data/order when resuming for comparable training.
