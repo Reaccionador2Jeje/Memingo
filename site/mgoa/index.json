@@ -289,6 +289,42 @@
         },
         "license": "BSD-3-Clause",
         "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "hoarding": {
+        "description": "Meme-named collection helpers: compacting, deduplication, frequencies and partitioning",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/hoarding-0.1.0.zip",
+            "sha256": "11e2444e99ed13d62b83ccca65d41c53a48dbdee0e26ec2adda541fa49a383c4"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "infiniteyap": {
+        "description": "Iterable helpers for enumeration, zipping, chaining, windows and stepped selection",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/infiniteyap-0.1.0.zip",
+            "sha256": "39027a5cebf81201e8111cf9860035d2c6bc2a8e769a6aba2ee4044bb73aee57"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
+      },
+      "functionjuice": {
+        "description": "Functional helpers for pipelines, composition, conditional application and callback chains",
+        "latest": "0.1.0",
+        "versions": {
+          "0.1.0": {
+            "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/functionjuice-0.1.0.zip",
+            "sha256": "eaeb8fba533c0db519db7619eab8b854e8be94ee4079b6a7b180b4393932271e"
+          }
+        },
+        "license": "BSD-3-Clause",
+        "homepage": "https://github.com/Reaccionador2Jeje/Memingo"
       }
     }
   }

@@ -1,0 +1,9 @@
+[package]
+name = "infiniteyap"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Iterable helpers for enumeration, zipping, chaining, windows and stepped selection"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]
