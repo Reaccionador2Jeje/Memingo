@@ -6,6 +6,7 @@ import re
 import shutil
 import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 from dataclasses import dataclass
@@ -774,6 +775,15 @@ def publish_to_mirror(
     license_name = str(metadata.get("license") or "")
 
     registry = _read_github_registry(repository, branch, token)
+    approved_table = registry.get("approved", {})
+    approved_names = (
+        approved_table.get("packages", {})
+        if isinstance(approved_table, dict) else {}
+    )
+    if isinstance(approved_names, dict) and name in approved_names:
+        raise PackageError(
+            f"'{name}' is an official package name; community publishing cannot replace it"
+        )
     community = registry.setdefault("packages", {})
     record = community.get(name, {})
     if not isinstance(record, dict):
@@ -793,6 +803,7 @@ def publish_to_mirror(
     versions[version] = {
         "archive": archive_url,
         "sha256": digest,
+        "published_at": datetime.now(timezone.utc).isoformat(),
     }
     record.update({
         "description": description,
