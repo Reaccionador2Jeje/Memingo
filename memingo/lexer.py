@@ -7,6 +7,12 @@ class Token:
     value: object
     line: int
     column: int
+    start_offset: int = 0
+    end_offset: int = 0
+
+    @property
+    def length(self) -> int:
+        return self.end_offset - self.start_offset
 
 
 KEYWORDS = {
@@ -36,7 +42,8 @@ class Lexer:
             if char in " \t\r":
                 self._advance()
             elif char == "\n":
-                tokens.append(Token("NEWLINE", "\n", self.line, self.column))
+                start = self.index
+                tokens.append(Token("NEWLINE", "\n", self.line, self.column, start, start + 1))
                 self._advance()
             elif char == "#":
                 while self.index < len(self.source) and self.source[self.index] != "\n":
@@ -48,9 +55,10 @@ class Lexer:
             elif char.isalpha() or char == "_":
                 tokens.append(self._identifier())
             else:
+                start = self.index
                 pair = self.source[self.index:self.index + 2]
                 if pair in self.two_character:
-                    tokens.append(Token("OP", pair, self.line, self.column))
+                    tokens.append(Token("OP", pair, self.line, self.column, start, start + 2))
                     self._advance()
                     self._advance()
                 elif char in "=+-*/%<>!(){}[],;:.?":
@@ -61,13 +69,12 @@ class Lexer:
                         "}": "RBRACE", "[": "LBRACKET", "]": "RBRACKET",
                         ",": "COMMA", ";": "SEMICOLON", ":": "COLON", ".": "DOT",
                     }[char]
-                    value = char if kind == "OP" else char
-                    tokens.append(Token(kind, value, self.line, self.column))
+                    tokens.append(Token(kind, char, self.line, self.column, start, start + 1))
                     self._advance()
                 else:
                     raise LexerError(f"Unexpected character {char!r} at line {self.line}, column {self.column}")
 
-        tokens.append(Token("EOF", None, self.line, self.column))
+        tokens.append(Token("EOF", None, self.line, self.column, self.index, self.index))
         return tokens
 
     def _advance(self):
@@ -82,6 +89,7 @@ class Lexer:
 
     def _string(self):
         line, column = self.line, self.column
+        start = self.index
         self._advance()
         result = []
         escapes = {"n": "\n", "t": "\t", '"': '"', "\\": "\\"}
@@ -101,7 +109,7 @@ class Lexer:
         if self.index >= len(self.source):
             raise LexerError(f"Unterminated string at line {line}, column {column}")
         self._advance()
-        return Token("STRING", "".join(result), line, column)
+        return Token("STRING", "".join(result), line, column, start, self.index)
 
     def _number(self):
         line, column = self.line, self.column
@@ -118,7 +126,7 @@ class Lexer:
                 break
         text = self.source[start:self.index]
         value = float(text) if dots else int(text)
-        return Token("NUMBER", value, line, column)
+        return Token("NUMBER", value, line, column, start, self.index)
 
     def _identifier(self):
         line, column = self.line, self.column
@@ -131,4 +139,4 @@ class Lexer:
                 break
         text = self.source[start:self.index]
         kind = text.upper() if text in KEYWORDS else "IDENTIFIER"
-        return Token(kind, text, line, column)
+        return Token(kind, text, line, column, start, self.index)

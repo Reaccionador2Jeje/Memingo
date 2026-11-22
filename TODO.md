@@ -1,5 +1,22 @@
 # Memingo Roadmap
 
+## Compiler
+- [x] Compiler package foundation
+- [x] Source files, Unicode-aware offsets, spans and source maps
+- [x] Structured diagnostics with terminal rendering
+- [x] Source offsets on lexer tokens and statement/expression AST roots
+- [x] Initial lexical scopes and symbol lookup
+- [x] Primitive and collection type representations
+- [x] Basic expression type inference and numeric widening
+- [x] Initial static checks for names, assignments, conditions, and calls
+- [ ] Full function signature and return-type inference
+- [x] Initial typed HIR and lowering from the existing AST
+- [x] Public parse → type-check → HIR compilation API
+- [x] Type model invariants and reusable checker state
+- [ ] Type checker and ownership analysis
+- [ ] Bytecode format and virtual machine
+- [ ] Native backend prototype and benchmarks
+
 ## Language
 - [x] Lexer with keywords, literals, operators and comments
 - [x] Parser for variables, functions, blocks, conditions and loops
@@ -10,7 +27,8 @@
 - [x] Standard library for JSON, environment and collections
 - [x] Text, number, collection and higher-order standard library
 - [x] Project-scoped text file helpers
-- [ ] Better error locations and source snippets
+- [ ] Render parser and lexer errors with source snippets
+- [x] Add CLI `memingo analyze` command backed by compiler pipeline
 - [ ] Modules and imports
 - [ ] Standard library for games and apps
 - [ ] Native compiler or bytecode VM

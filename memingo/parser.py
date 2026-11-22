@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from .lexer import Lexer, LexerError, Token
+
+from .compiler.source import Span
+from .lexer import Lexer, Token
 
 
 @dataclass
@@ -104,9 +106,10 @@ class ParseError(Exception):
 
 
 class Parser:
-    def __init__(self, tokens):
+    def __init__(self, tokens, source_id="<memory>"):
         self.tokens = tokens
         self.index = 0
+        self.source_id = source_id
 
     def parse(self):
         statements = []
@@ -120,8 +123,10 @@ class Parser:
         token = self._peek()
         node = self._statement_impl()
         if hasattr(node, "__dict__"):
+            end_token = self._previous()
             node.line = token.line
             node.column = token.column
+            node.span = Span(self.source_id, token.start_offset, end_token.end_offset)
         return node
 
     def _statement_impl(self):
@@ -144,8 +149,7 @@ class Parser:
             if self._match("EQUAL"):
                 return Assign(name, self._expression())
             self.index -= 1
-        expr = self._expression()
-        return expr
+        return self._expression()
 
     def _let_statement(self):
         name = self._consume("IDENTIFIER", "Expected variable name after 'vibe'").value
@@ -194,7 +198,12 @@ class Parser:
         return statements
 
     def _expression(self):
-        return self._or()
+        start_token = self._peek()
+        expression = self._or()
+        if hasattr(expression, "__dict__"):
+            end_token = self._previous()
+            expression.span = Span(self.source_id, start_token.start_offset, end_token.end_offset)
+        return expression
 
     def _or(self):
         expr = self._and()
@@ -329,7 +338,8 @@ class Parser:
             self._skip_separators()
             self._consume("RBRACE", "Expected '}' after object")
             return MapExpression(entries)
-        raise ParseError(f"Unexpected token {self._peek().value!r} at line {self._peek().line}, column {self._peek().column}")
+        token = self._peek()
+        raise ParseError(f"Unexpected token {token.value!r} at line {token.line}, column {token.column}")
 
     def _skip_separators(self):
         while self._match("NEWLINE") or self._match("SEMICOLON"):
@@ -362,6 +372,6 @@ class Parser:
         raise ParseError(f"{message} at line {token.line}, column {token.column}")
 
 
-def parse(source):
+def parse(source, source_id="<memory>"):
     tokens = Lexer(source).tokenize()
-    return Parser(tokens).parse()
+    return Parser(tokens, source_id=source_id).parse()
