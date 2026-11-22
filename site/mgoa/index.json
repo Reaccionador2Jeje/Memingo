@@ -392,7 +392,7 @@
         "versions": {
           "0.1.0": {
             "archive": "https://reaccionador2jeje.github.io/Memingo/mgoa/packages/snitch-0.1.0.zip",
-            "sha256": "10627021e55faba3fdbc9bb6d9ecaa7861f20a6c7d1ea15fb3a109b7cff9541f"
+            "sha256": "3e4e42ed29e68ec6f8d5c139e3d044c08c9e3aec76b8057416fca59b1f675360"
           }
         },
         "license": "BSD-3-Clause",
