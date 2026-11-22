@@ -65,6 +65,15 @@ class BrainPersistenceTests(unittest.TestCase):
         with self.assertRaises(TensorError):
             summary("not a brain")
 
+    def test_memingo_script_model_summary_api(self):
+        from memingo.interpreter import execute
+        source = '''vibe first = ai.dense(2, 3, "tanh", 31)
+vibe last = ai.dense(3, 1, "sigmoid", 32)
+vibe brain = ai.sequential([first, last])
+spill ai.summary(brain).parameters
+'''
+        self.assertEqual(execute(source), ["13"])
+
     def test_memingo_script_save_load_api(self):
         from memingo.interpreter import execute
         with tempfile.TemporaryDirectory() as directory:
