@@ -122,6 +122,7 @@ class Interpreter:
             "sequential": memingo_nn.sequential,
             "parameters": memingo_nn.parameters,
             "forward": memingo_nn.forward,
+            "summary": memingo_nn.summary,
             "train_loop": memingo_nn.train_loop,
             "save_brain": lambda model, path: memingo_nn.save_brain(model, path, self.project_directory),
             "load_brain": lambda path: memingo_nn.load_brain(path, self.project_directory),
