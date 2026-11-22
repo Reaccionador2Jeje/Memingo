@@ -140,10 +140,11 @@ ui = "compose"
 The first command adds this section to an existing Memingo project without replacing its existing manifest or source files. It refuses to overwrite an existing [android] section. The checker validates the application ID, SDK ranges, version metadata, supported UI toolkit and Memingo entry file. A0 only adds metadata. A1 adds deterministic Kotlin/Compose and Gradle project generation. `memingo android build` invokes the installed Gradle toolchain; it does not download SDKs or wrapper binaries automatically. An APK is reported only after Gradle succeeds and the expected artifact exists.
 
 ### A1 — Native hello-world
-- [ ] Generate a minimal Kotlin/Compose Android project.
-- [ ] Build a debug APK using the official toolchain.
-- [ ] Verify the APK installs and launches.
-- [ ] Add a reproducible CI build.
+- [x] Generate a minimal Kotlin/Compose Android project with pinned Android Gradle Plugin and Kotlin versions.
+- [x] Add safe regeneration rules: only files carrying the Memingo generated marker may be refreshed.
+- [x] Add a debug APK build command using the installed Gradle and Android SDK toolchain, with actionable missing-tool diagnostics.
+- [ ] Build a debug APK in CI and verify the APK installs and launches on an emulator/device.
+- [ ] Add a Gradle wrapper binary and reproducible CI build.
 
 ### A2 — Memingo UI model
 - [ ] Add the first versioned app/UI representation.
