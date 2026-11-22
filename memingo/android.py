@@ -1,7 +1,7 @@
-"""Android project configuration and validation for Memingo.
+"""Android project configuration, native generation and build support for Memingo.
 
-A0 deliberately manages project metadata only. Code generation and Gradle
-invocation belong to later Android backend milestones.
+A0 manages versioned project metadata. A1 generates a native Kotlin/Compose
+Gradle project and invokes an installed Android build toolchain.
 """
 
 import html
@@ -280,7 +280,7 @@ android {{
         minSdk = {config['min_sdk']}
         targetSdk = {config['target_sdk']}
         versionCode = {config['version_code']}
-        versionName = {json.dumps(config["version_name"], ensure_ascii=False)}
+        versionName = {json.dumps(config["version_name"], ensure_ascii=False).replace("$", "\\$")}
     }}
 
     buildFeatures {{
