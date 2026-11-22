@@ -36,7 +36,7 @@ def main(argv=None):
     add_parser = subparsers.add_parser("add", help="Install a package into a project")
     add_parser.add_argument(
         "spec",
-        help="name, name@version, HTTP(S) archive URL, local directory, or package archive",
+        help="name, name@version, local .mgo file or directory, HTTP(S) archive URL, or ZIP archive",
     )
     add_parser.add_argument("--project", default=".")
     add_parser.add_argument("--registry", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
@@ -81,7 +81,7 @@ def main(argv=None):
                 "mgoa search <text>      Find packages",
                 "mgoa add <package>      Install into a project",
                 "mgoa list               Inspect installed dependencies",
-                "mgoa publish <dir>      Build a package archive",
+                "mgoa publish <dir>      Publish a package to the public mirror",
             ])
             tip("Use mgoa --help for the complete command catalog.")
             return 0
