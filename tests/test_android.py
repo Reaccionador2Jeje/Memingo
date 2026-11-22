@@ -6,6 +6,7 @@ from memingo.android import (
     AndroidProjectError,
     initialize_android_project,
     validate_android_project,
+    generate_android_project,
 )
 from memingo.__main__ import main
 
@@ -125,6 +126,57 @@ class AndroidProjectTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             self.assertEqual(main(["android", "init", temporary, "--application-id", "dev.atdev.cli"]), 0)
             self.assertEqual(main(["android", "check", temporary]), 0)
+
+
+    def test_generate_creates_native_compose_gradle_project(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "hello-app"
+            initialize_android_project(root, application_id="dev.atdev.hello")
+            result = generate_android_project(root)
+
+            activity = root / "android/app/src/main/java/dev/atdev/hello/MainActivity.kt"
+            gradle = root / "android/app/build.gradle.kts"
+            manifest = root / "android/app/src/main/AndroidManifest.xml"
+            self.assertTrue(activity.is_file())
+            self.assertTrue(gradle.is_file())
+            self.assertTrue(manifest.is_file())
+            self.assertIn("package dev.atdev.hello", activity.read_text(encoding="utf-8"))
+            self.assertIn("Hello from Memingo!", activity.read_text(encoding="utf-8"))
+            self.assertIn("com.android.application", gradle.read_text(encoding="utf-8"))
+            self.assertEqual(len(result["generated_files"]), 6)
+            self.assertTrue((root / "assets").is_dir())
+
+    def test_generate_is_repeatable_and_refreshes_only_owned_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initialize_android_project(root)
+            first = generate_android_project(root)
+            activity = first["main_activity"]
+            original = activity.read_text(encoding="utf-8")
+            generate_android_project(root)
+            self.assertEqual(activity.read_text(encoding="utf-8"), original)
+
+    def test_generate_refuses_to_overwrite_user_owned_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initialize_android_project(root)
+            target = root / "android/settings.gradle.kts"
+            target.parent.mkdir(parents=True)
+            target.write_text("// my custom settings\\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(AndroidProjectError, "Refusing to overwrite"):
+                generate_android_project(root)
+            self.assertEqual(target.read_text(encoding="utf-8"), "// my custom settings\\n")
+
+    def test_generate_requires_valid_android_configuration(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaises(AndroidProjectError):
+                generate_android_project(temporary)
+
+    def test_cli_android_generate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            initialize_android_project(temporary)
+            self.assertEqual(main(["android", "generate", temporary]), 0)
 
 
 if __name__ == "__main__":
