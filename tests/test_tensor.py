@@ -201,6 +201,43 @@ spill ai.to_list(weights)
 '''
         self.assertEqual(execute(source), ["[1.6, 2.5]"])
 
+    def test_autograd_activations_and_mean(self):
+        from memingo.tensor import backward, grad, mean_tensor, relu, sigmoid, tanh
+        values = tensor([-2, 0, 2], requires_grad=True)
+        backward(mean_tensor(relu(values)))
+        self.assertEqual(grad(values), [0.0, 0.0, 1.0 / 3.0])
+        for activation in (sigmoid, tanh):
+            sample = tensor([0.5, -0.5], requires_grad=True)
+            output = activation(sample)
+            backward(sum_tensor(output))
+            self.assertTrue(all(math.isfinite(value) for value in grad(sample)))
+
+    def test_mse_loss_gradient(self):
+        from memingo.tensor import backward, grad, mse_loss
+        prediction = tensor([1, 2], requires_grad=True)
+        loss = mse_loss(prediction, [0, 0])
+        self.assertAlmostEqual(to_list(loss)[0], 2.5)
+        backward(loss)
+        self.assertEqual(grad(prediction), [1.0, 2.0])
+
+    def test_linear_layer(self):
+        from memingo.tensor import linear
+        result = linear([[1, 2]], [[1, 2], [3, 4]], [0, 1])
+        self.assertEqual(to_list(result), [[7.0, 11.0]])
+
+    def test_memingo_linear_and_loss_api(self):
+        from memingo.interpreter import execute
+        source = '''
+vibe input = ai.tensor([[1, 2]])
+vibe weights = ai.tensor([[1, 2], [3, 4]], based)
+vibe bias = ai.tensor([0, 1], based)
+vibe prediction = ai.linear(input, weights, bias)
+vibe loss = ai.mse_loss(prediction, [[0, 0]])
+spill ai.to_list(prediction)
+spill ai.to_list(loss)
+'''
+        self.assertEqual(execute(source), ["[[7.0, 11.0]]", "[85.0]"])
+
     def test_memingo_script_api(self):
         from memingo.interpreter import execute
         source = '''
