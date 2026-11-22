@@ -1,6 +1,6 @@
 # Memingo Android Native — Architecture
 
-Status: A0 foundation implemented on feat/android-native-foundation; native code generation is not implemented yet.
+Status: A0 and the A1 native project generator/build driver are implemented on feat/android-native-foundation. APK production still requires a local JDK, Android SDK and Gradle installation.
 
 ## Goals
 
@@ -29,15 +29,16 @@ Current A0 CLI surface:
 ```bash
 memingo android init MyApplication --application-id com.example.my_app
 memingo android check MyApplication
+memingo android generate MyApplication
+memingo android build MyApplication
 
 # Planned for later milestones:
-memingo android build --debug
 memingo android build --release
 memingo android run
 memingo android doctor
 ```
 
-The initial project generator should create a predictable project layout:
+The A1 generator creates a predictable project layout (Gradle scripts are pinned; the wrapper is created with the installed Gradle distribution when desired):
 
 ```text
 MyApplication/
@@ -136,7 +137,7 @@ version_name = "0.2.0"
 ui = "compose"
 ```
 
-The first command adds this section to an existing Memingo project without replacing its existing manifest or source files. It refuses to overwrite an existing [android] section. The checker validates the application ID, SDK ranges, version metadata, supported UI toolkit and Memingo entry file. A0 does not generate Kotlin, Gradle files or APKs yet.
+The first command adds this section to an existing Memingo project without replacing its existing manifest or source files. It refuses to overwrite an existing [android] section. The checker validates the application ID, SDK ranges, version metadata, supported UI toolkit and Memingo entry file. A0 only adds metadata. A1 adds deterministic Kotlin/Compose and Gradle project generation. `memingo android build` invokes the installed Gradle toolchain; it does not download SDKs or wrapper binaries automatically. An APK is reported only after Gradle succeeds and the expected artifact exists.
 
 ### A1 — Native hello-world
 - [ ] Generate a minimal Kotlin/Compose Android project.
