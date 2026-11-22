@@ -5,7 +5,10 @@ invocation belong to later Android backend milestones.
 """
 
 import json
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 from .packages import ensure_project, read_manifest, resolve_entry
@@ -474,7 +477,7 @@ def build_android_debug(directory="."):
     except OSError as exception:
         raise AndroidProjectError(f"Could not start Gradle: {exception}") from exception
     if result.returncode != 0:
-        tail = "\\n".join(result.stdout.splitlines()[-30:])
+        tail = "\n".join(result.stdout.splitlines()[-30:])
         raise AndroidProjectError(
             f"Gradle debug build failed (exit {result.returncode}).\\n{tail}"
         )
