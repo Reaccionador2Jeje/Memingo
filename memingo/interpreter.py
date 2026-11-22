@@ -15,6 +15,7 @@ from .parser import (
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
 )
 from . import ai as memingo_ai
+from . import tensor as memingo_tensor
 
 
 class RuntimeErrorMemingo(Exception):
@@ -102,6 +103,16 @@ class Interpreter:
             "evaluate": lambda model, data: model.evaluate(data),
             "save": lambda model, path: model.save(path, self.project_directory),
             "load": lambda path: memingo_ai.load(path, self.project_directory),
+            "tensor": memingo_tensor.tensor,
+            "shape": memingo_tensor.shape,
+            "to_list": memingo_tensor.to_list,
+            "transpose": memingo_tensor.transpose,
+            "matmul": memingo_tensor.matmul,
+            "add": memingo_tensor.add,
+            "scale": memingo_tensor.scale,
+            "sum": memingo_tensor.sum_values,
+            "softmax": memingo_tensor.softmax,
+            "random_tensor": memingo_tensor.random_tensor,
         })
         self.global_environment.define("random_int", lambda low, high: random.randint(low, high))
         self.global_environment.define("shuffle", self._shuffle)
