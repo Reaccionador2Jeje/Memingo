@@ -93,9 +93,15 @@ def _coordinates(index, shape):
 class Tensor:
     """A rank-1 or rank-2 dense tensor backed by Python floats."""
 
-    def __init__(self, data):
+    def __init__(self, data, requires_grad=False):
         self.shape, normalized = _normalize(data)
+        if not isinstance(requires_grad, bool):
+            raise TensorError("requires_grad must be a boolean")
         self._data = normalized
+        self.requires_grad = requires_grad
+        self.grad = None
+        self._parents = ()
+        self._backward = lambda gradient: ()
 
     @property
     def ndim(self):
@@ -110,11 +116,55 @@ class Tensor:
             return list(self._data)
         return [list(row) for row in self._data]
 
+    def grad_values(self):
+        return None if self.grad is None else _reshape(self.grad, self.shape)
+
+    def backward(self, gradient=None):
+        if gradient is None:
+            if self.size != 1:
+                raise TensorError("backward requires an explicit gradient for non-scalar tensors")
+            seed = [1.0]
+        else:
+            seed = _flat(as_tensor(gradient)._data)
+            if len(seed) != self.size:
+                raise TensorError("backward gradient shape does not match the tensor")
+        order, visited = [], set()
+        def visit(node):
+            if id(node) in visited:
+                return
+            visited.add(id(node))
+            for parent in node._parents:
+                visit(parent)
+            order.append(node)
+        visit(self)
+        for node in order:
+            node.grad = None
+        self.grad = list(seed)
+        for node in reversed(order):
+            if node.grad is None:
+                continue
+            for parent, contribution in node._backward(node.grad):
+                if parent.grad is None:
+                    parent.grad = [0.0] * parent.size
+                for index, value in enumerate(contribution):
+                    parent.grad[index] += value
+        return self.grad_values()
+
     def transpose(self):
         if self.ndim != 2:
             raise TensorError("transpose expects a rank-2 matrix")
-        return Tensor([[self._data[row][col] for row in range(self.shape[0])]
-                       for col in range(self.shape[1])])
+        result = Tensor([[self._data[row][col] for row in range(self.shape[0])]
+                         for col in range(self.shape[1])])
+        if self.requires_grad:
+            result.requires_grad = True
+            result._parents = (self,)
+            def backward(gradient):
+                matrix = _reshape(gradient, result.shape)
+                transposed = [[matrix[col][row] for col in range(result.shape[0])]
+                              for row in range(result.shape[1])]
+                return ((self, _flat(transposed)),)
+            result._backward = backward
+        return result
 
     def add(self, other):
         return _elementwise(self, other, lambda a, b: a + b, "add")
@@ -125,7 +175,20 @@ class Tensor:
     def scale(self, factor):
         factor = _inspect(factor)
         values = [_inspect(value * factor) for value in _flat(self._data)]
-        return Tensor(_reshape(values, self.shape))
+        result = Tensor(_reshape(values, self.shape))
+        if self.requires_grad:
+            result.requires_grad = True
+            result._parents = (self,)
+            result._backward = lambda gradient: ((self, [value * factor for value in gradient]),)
+        return result
+
+    def sum_tensor(self):
+        result = Tensor([self.sum()])
+        if self.requires_grad:
+            result.requires_grad = True
+            result._parents = (self,)
+            result._backward = lambda gradient: ((self, [gradient[0]] * self.size),)
+        return result
 
     def sum(self):
         return math.fsum(_flat(self._data))
@@ -174,9 +237,21 @@ class Tensor:
             exps = [math.exp(value - peak) for value in row]
             total = math.fsum(exps)
             return [value / total for value in exps]
-        if self.ndim == 1:
-            return Tensor(normalize_row(self._data))
-        return Tensor([normalize_row(row) for row in self._data])
+        data = normalize_row(self._data) if self.ndim == 1 else [normalize_row(row) for row in self._data]
+        result = Tensor(data)
+        if self.requires_grad:
+            result.requires_grad = True
+            result._parents = (self,)
+            def backward(gradient):
+                rows = [result._data] if result.ndim == 1 else result._data
+                grad_rows = [gradient] if result.ndim == 1 else _reshape(gradient, result.shape)
+                local = []
+                for values, grad_row in zip(rows, grad_rows):
+                    dot = math.fsum(g * value for g, value in zip(grad_row, values))
+                    local.append([value * (g - dot) for g, value in zip(grad_row, values)])
+                return ((self, local[0] if self.ndim == 1 else _flat(local)),)
+            result._backward = backward
+        return result
 
 
 def _elementwise(left, right, operation, name):
@@ -195,26 +270,62 @@ def _elementwise(left, right, operation, name):
     af, bf = _flat(a._data), _flat(b._data)
     a_cols, b_cols = a_shape[-1], b_shape[-1]
     values = []
+    a_indices, b_indices = [], []
     if rank == 1:
         for i in range(output_shape[0]):
-            values.append(_inspect(operation(af[0 if a_shape[0] == 1 else i],
-                                              bf[0 if b_shape[0] == 1 else i])))
+            ai = 0 if a_shape[0] == 1 else i
+            bi = 0 if b_shape[0] == 1 else i
+            a_indices.append(ai)
+            b_indices.append(bi)
+            values.append(_inspect(operation(af[ai], bf[bi])))
     else:
         rows, cols = output_shape
         for row in range(rows):
             for col in range(cols):
                 ai = (0 if a_shape[0] == 1 else row) * a_cols + (0 if a_cols == 1 else col)
                 bi = (0 if b_shape[0] == 1 else row) * b_cols + (0 if b_cols == 1 else col)
+                a_indices.append(ai)
+                b_indices.append(bi)
                 values.append(_inspect(operation(af[ai], bf[bi])))
-    return Tensor(_reshape(values, output_shape))
+    result = Tensor(_reshape(values, output_shape))
+    if a.requires_grad or b.requires_grad:
+        result.requires_grad = True
+        result._parents = tuple(parent for parent in (a, b) if parent.requires_grad)
+        def backward(gradient):
+            grad_a, grad_b = [0.0] * a.size, [0.0] * b.size
+            for index, (ai, bi) in enumerate(zip(a_indices, b_indices)):
+                if a.requires_grad:
+                    grad_a[ai] += gradient[index] * (bf[bi] if name == "multiply" else 1.0)
+                if b.requires_grad:
+                    grad_b[bi] += gradient[index] * (af[ai] if name == "multiply" else 1.0)
+            contributions = []
+            if a.requires_grad:
+                contributions.append((a, grad_a))
+            if b.requires_grad:
+                contributions.append((b, grad_b))
+            return tuple(contributions)
+        result._backward = backward
+    return result
 
 
 def as_tensor(value):
     return value if isinstance(value, Tensor) else Tensor(value)
 
 
-def tensor(data):
-    return Tensor(data)
+def tensor(data, requires_grad=False):
+    return Tensor(data, requires_grad=requires_grad)
+
+
+def backward(value, gradient=None):
+    return as_tensor(value).backward(gradient)
+
+
+def grad(value):
+    return as_tensor(value).grad_values()
+
+
+def sum_tensor(value):
+    return as_tensor(value).sum_tensor()
 
 
 def shape(value):
@@ -318,7 +429,24 @@ def matmul(left, right):
                 a._data[row][k] * bt[col][k] for k in range(inner)
             )))
         result.append(output_row)
-    return Tensor(result)
+    output = Tensor(result)
+    if a.requires_grad or b.requires_grad:
+        output.requires_grad = True
+        output._parents = tuple(parent for parent in (a, b) if parent.requires_grad)
+        def backward(gradient):
+            grad_matrix = _reshape(gradient, output.shape)
+            contributions = []
+            if a.requires_grad:
+                da = [[math.fsum(grad_matrix[i][j] * b._data[k][j] for j in range(cols))
+                       for k in range(inner)] for i in range(rows)]
+                contributions.append((a, _flat(da)))
+            if b.requires_grad:
+                db = [[math.fsum(a._data[i][k] * grad_matrix[i][j] for i in range(rows))
+                       for j in range(cols)] for k in range(inner)]
+                contributions.append((b, _flat(db)))
+            return tuple(contributions)
+        output._backward = backward
+    return output
 
 
 def random_tensor(dimensions, seed=None, low=-0.1, high=0.1):
