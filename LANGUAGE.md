@@ -277,7 +277,7 @@ borrow "yapstats"
 borrow "luckymeme"
 borrow "whenisbro"
 
-spill brainrot.sqrt_irl(81)
+spill sqrt_irl(81)
 ```
 
 Each package exposes a `self_test()` ritual for a quick behavior check. Meme-inspired names are the public API; implementations remain deterministic where appropriate, validated, and suitable for normal software projects.
