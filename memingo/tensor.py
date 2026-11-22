@@ -39,13 +39,15 @@ def _normalize(data):
         if any(shape != (width,) for shape, _ in rows):
             raise TensorError("tensor rows must have identical dimensions")
         shape = (len(rows), width)
+        if any(size > MAX_TENSOR_DIMENSION for size in shape):
+            raise TensorError("tensor dimensions cannot exceed 4096")
         if shape[0] * shape[1] > MAX_TENSOR_ELEMENTS:
             raise TensorError("tensor exceeds the 1,000,000 element limit")
         return shape, [row for _, row in rows]
     if any(isinstance(item, (list, tuple)) for item in data):
         raise TensorError("tensor dimensions must be rectangular")
-    if len(data) > MAX_TENSOR_ELEMENTS:
-        raise TensorError("tensor exceeds the 1,000,000 element limit")
+    if len(data) > MAX_TENSOR_DIMENSION:
+        raise TensorError("tensor dimensions cannot exceed 4096")
     return (len(data),), [_inspect(item) for item in data]
 
 
@@ -276,6 +278,8 @@ def deserialize(source):
     """Restore a tensor from its versioned JSON representation."""
     if not isinstance(source, str):
         raise TensorError("serialized tensor must be a string")
+    if len(source) > 32_000_000:
+        raise TensorError("serialized tensor exceeds the 32 MB input limit")
     try:
         payload = json.loads(source)
     except (json.JSONDecodeError, TypeError) as error:
