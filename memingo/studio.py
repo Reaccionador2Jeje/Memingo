@@ -7,6 +7,8 @@ selected workspace.
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from pathlib import Path
 
 from . import ai, nn
@@ -58,16 +60,25 @@ def save_dataset(dataset, path, project_directory="."):
     raw = encoded.encode("utf-8")
     if len(raw) > MAX_DATASET_BYTES:
         raise ai.AIError("dataset file exceeds the 16 MB limit")
-    temporary = target.with_name("." + target.name + ".tmp")
+    temporary_name = None
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
-        temporary.write_bytes(raw)
-        temporary.replace(target)
+        with tempfile.NamedTemporaryFile(
+            mode="wb", dir=str(target.parent), prefix=f".{target.name}.",
+            suffix=".tmp", delete=False,
+        ) as stream:
+            temporary_name = stream.name
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_name, target)
+        temporary_name = None
     except OSError as error:
-        try:
-            temporary.unlink(missing_ok=True)
-        except OSError:
-            pass
+        if temporary_name is not None:
+            try:
+                os.unlink(temporary_name)
+            except OSError:
+                pass
         raise ai.AIError(f"could not save dataset: {error}") from error
     return str(target)
 
@@ -118,41 +129,40 @@ def workspace(project_directory="."):
         ".mgochk": "checkpoints",
         ".mgodata": "datasets",
     }
-    for path in sorted(root.rglob("*")):
-        try:
-            relative = path.relative_to(root)
-        except ValueError:
-            continue
-        if any(part in IGNORED_DIRECTORIES for part in relative.parts):
-            continue
-        if path.is_symlink() or not path.is_file():
-            continue
-        category = extensions.get(path.suffix.lower())
-        if category is None:
-            continue
-        try:
-            size = path.stat().st_size
-        except OSError:
-            continue
-        record = {"name": path.name, "path": relative.as_posix(), "size_bytes": size}
-        if category == "models":
+    for directory, names, filenames in os.walk(root, followlinks=False):
+        names[:] = sorted(
+            name for name in names
+            if name not in IGNORED_DIRECTORIES
+            and not (Path(directory) / name).is_symlink()
+        )
+        for filename in sorted(filenames):
+            path = Path(directory) / filename
+            if path.is_symlink():
+                continue
+            category = extensions.get(path.suffix.lower())
+            if category is None:
+                continue
             try:
-                model = nn.load_brain(str(path), str(root))
-                record.update({
-                    "valid": True,
-                    "summary": nn.summary(model),
-                })
-            except (OSError, ValueError, TypeError) as error:
-                record.update({"valid": False, "error": str(error)})
-        elif category == "datasets":
-            try:
-                data = load_dataset(relative.as_posix(), root)
-                record.update({"valid": True, "summary": dataset_summary(data)})
-            except (OSError, ValueError, TypeError) as error:
-                record.update({"valid": False, "error": str(error)})
-        else:
-            record["valid"] = size <= 32 * 1024 * 1024
-        assets[category].append(record)
+                relative = path.relative_to(root)
+                size = path.stat().st_size
+            except (OSError, ValueError):
+                continue
+            record = {"name": path.name, "path": relative.as_posix(), "size_bytes": size}
+            if category == "models":
+                try:
+                    model = nn.load_brain(str(path), str(root))
+                    record.update({"valid": True, "summary": nn.summary(model)})
+                except (OSError, ValueError, TypeError) as error:
+                    record.update({"valid": False, "error": str(error)})
+            elif category == "datasets":
+                try:
+                    data = load_dataset(relative.as_posix(), root)
+                    record.update({"valid": True, "summary": dataset_summary(data)})
+                except (OSError, ValueError, TypeError) as error:
+                    record.update({"valid": False, "error": str(error)})
+            else:
+                record["valid"] = size <= 32 * 1024 * 1024
+            assets[category].append(record)
     return {
         "studio": "Memingo AI Studio",
         "version": 1,
