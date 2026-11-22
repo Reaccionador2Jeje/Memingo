@@ -21,7 +21,7 @@ class MgoaLocalSourceTests(unittest.TestCase):
             (project / "main.mgo").write_text(
                 'borrow "greetings"\ngreet("MGOA")\n', encoding="utf-8"
             )
-            source = root / "greetings.mgo"
+            source = project / "greetings.mgo"
             source.write_text(
                 'vibe greeting = "Hello"\n'
                 'ritual greet(name) { spill greeting + " " + name }\n',
@@ -40,7 +40,7 @@ class MgoaLocalSourceTests(unittest.TestCase):
             lock = json.loads((project / "memingo.lock.json").read_text(encoding="utf-8"))
             record = lock["dependencies"]["greetings"]
             self.assertEqual(record["source"], "local")
-            self.assertEqual(record["path"], str(source.resolve()))
+            self.assertEqual(record["path"], "greetings.mgo")
 
             installed_path = project / ".memingo" / "packages" / "greetings"
             self.assertTrue((installed_path / "main.mgo").is_file())
