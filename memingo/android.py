@@ -18,6 +18,7 @@ ANDROID_DEFAULTS = {
     "ui": "compose",
 }
 ANDROID_ALLOWED_KEYS = frozenset({
+    "schema_version",
     "application_id",
     "min_sdk",
     "target_sdk",
@@ -75,6 +76,10 @@ def validate_android_project(directory="."):
         raise AndroidProjectError(
             "Unknown [android] setting(s): " + ", ".join(unknown)
         )
+
+    schema_version = config.get("schema_version", 1)
+    if isinstance(schema_version, bool) or schema_version != 1:
+        raise AndroidProjectError("[android].schema_version must be 1")
 
     application_id = config.get("application_id")
     if not isinstance(application_id, str) or not APPLICATION_ID_PATTERN.fullmatch(application_id):
@@ -161,6 +166,7 @@ def initialize_android_project(
         package.get("name", root.name)
     )
     config = {
+        "schema_version": 1,
         "application_id": selected_id,
         "min_sdk": min_sdk,
         "target_sdk": target_sdk,
@@ -187,6 +193,7 @@ def initialize_android_project(
         "",
         "# Native Android application configuration (Memingo A0)",
         "[android]",
+        "schema_version = 1",
         f"application_id = {json.dumps(selected_id)}",
         f"min_sdk = {min_sdk}",
         f"target_sdk = {target_sdk}",
