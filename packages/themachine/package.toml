@@ -1,0 +1,9 @@
+[package]
+name = "themachine"
+version = "0.1.0"
+entry = "main.mgo"
+description = "Portable runtime and environment metadata helpers"
+license = "BSD-3-Clause"
+homepage = "https://github.com/Reaccionador2Jeje/Memingo"
+
+[dependencies]
