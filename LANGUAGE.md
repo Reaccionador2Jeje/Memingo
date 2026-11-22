@@ -389,3 +389,23 @@ spill report.loss
 - `ai.train_loop(model, inputs, targets, epochs?, learning_rate?, optimizer?)` performs full-batch training with autograd and SGD or Adam, returning a report with epoch count, loss, and sample count.
 
 A1.9 is CPU-only and currently full-batch; it supports dense layers with rank-2 batches. It does not yet include mini-batch shuffling, dropout, convolution, recurrent/transformer layers, GPU execution, or optimizer checkpoint persistence.
+
+
+### Model persistence — A2
+
+Memingo can save and reload native sequential dense models ("brains") in a versioned `.mgoai` JSON file.
+
+```mgo
+vibe hidden = ai.dense(2, 4, "tanh", 21)
+vibe output = ai.dense(4, 1, "sigmoid", 22)
+vibe brain = ai.sequential([hidden, output])
+
+ai.save_brain(brain, "models/my-brain.mgoai")
+vibe loaded = ai.load_brain("models/my-brain.mgoai")
+spill ai.to_list(ai.forward(loaded, [[0, 1]]))
+```
+
+- `ai.save_brain(model, path)` writes architecture, activation names, weights, and biases atomically.
+- `ai.load_brain(path)` validates the format/version, layer connectivity, activation names, parameter shapes, finite values, and model size before returning a trainable model.
+
+The model format is `memingo.sequential`, version 1. Files are limited to 16 MB, models to 128 dense layers and 1,000,000 parameters. Paths must remain inside the current project directory. This saves model weights and architecture only; optimizer moments and training history are not persisted in A2.
