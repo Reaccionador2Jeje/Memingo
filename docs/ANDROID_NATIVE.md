@@ -127,6 +127,7 @@ A0 configuration example:
 
 ```toml
 [android]
+schema_version = 1
 application_id = "com.example.my_app"
 min_sdk = 23
 target_sdk = 35
