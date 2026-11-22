@@ -16,6 +16,7 @@ from .parser import (
 )
 from . import ai as memingo_ai
 from . import tensor as memingo_tensor
+from . import nn as memingo_nn
 
 
 class RuntimeErrorMemingo(Exception):
@@ -117,6 +118,11 @@ class Interpreter:
             "adam": memingo_tensor.adam,
             "step": memingo_tensor.optimizer_step,
             "zero_grad": memingo_tensor.optimizer_zero_grad,
+            "dense": memingo_nn.dense,
+            "sequential": memingo_nn.sequential,
+            "parameters": memingo_nn.parameters,
+            "forward": memingo_nn.forward,
+            "train_loop": memingo_nn.train_loop,
             "shape": memingo_tensor.shape,
             "to_list": memingo_tensor.to_list,
             "transpose": memingo_tensor.transpose,
