@@ -199,7 +199,7 @@ class Interpreter:
         except RuntimeErrorMemingo as exception:
             line = getattr(node, "line", None)
             column = getattr(node, "column", None)
-            if line is not None and column is not None and not re.search(r"line \\d+, column \\d+", str(exception)):
+            if line is not None and column is not None and not re.search(r"line \d+, column \d+", str(exception)):
                 exception.args = (f"{exception} at line {line}, column {column}",)
             raise
 
