@@ -151,6 +151,26 @@ The route ritual receives a request object with `method`, `path`, `query`, `para
 - `shuffle(list)` returns a shuffled copy of a list
 - `uuid()` returns a random UUID string
 
+### Game and app helpers
+
+- `vec2(x, y)` and `vec3(x, y, z)` create named vector objects.
+- `distance2(a, b)` and `distance3(a, b)` calculate Euclidean distance between vectors. Vectors may be objects with `x`, `y`, `z` fields or lists of matching length.
+- `normalize2(vector)` and `normalize3(vector)` return unit vectors; a zero vector stays zero.
+- `lerp(start, end, amount)` interpolates between numbers. Amounts outside 0–1 are allowed for extrapolation.
+- `move_toward(current, target, max_delta)` moves a number toward its target without overshooting.
+- `chance(probability)` returns a random boolean for a probability from 0 to 1.
+- `pick(list)` chooses a random item from a non-empty list.
+- `weighted_pick(values, weights)` chooses an item using matching non-negative weights with a positive total.
+
+```mgo
+vibe player = vec2(10, 20)
+vibe spawn = vec2(0, 0)
+spill distance2(player, spawn)
+spill normalize2(player)
+spill move_toward(0, 100, 12)
+spill pick(["coin", "gem", "power-up"])
+```
+
 ### Numbers
 
 - `abs(value)`, `floor(value)`, `ceil(value)` and `round(value)`
