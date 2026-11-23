@@ -49,6 +49,7 @@ def _suggestion(message, source):
         return None
     candidates = set(re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", source))
     candidates.difference_update(KEYWORDS)
+    candidates.discard(missing.group(1))
     matches = difflib.get_close_matches(missing.group(1), sorted(candidates), n=1, cutoff=0.72)
     return f"Did you mean '{matches[0]}'?" if matches else "Check the spelling or declare the variable with 'vibe'."
 
