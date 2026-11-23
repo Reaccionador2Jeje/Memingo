@@ -32,9 +32,9 @@ class MemeDiagnosticTests(unittest.TestCase):
     def test_runtime_errors_receive_statement_source_location(self):
         interpreter = Interpreter()
         with self.assertRaises(RuntimeErrorMemingo) as context:
-            interpreter.run(parse('vibe player = 1\\nspill plaeyr'))
+            interpreter.run(parse('vibe player = 1\nspill plaeyr'))
         self.assertIn("line 2, column 1", str(context.exception))
-        rendered = format_diagnostic(context.exception, 'vibe player = 1\\nspill plaeyr', "main.mgo")
+        rendered = format_diagnostic(context.exception, 'vibe player = 1\nspill plaeyr', "main.mgo")
         self.assertIn("main.mgo:2:1", rendered)
         self.assertIn("Did you mean 'player'?", rendered)
 
