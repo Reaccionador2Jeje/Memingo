@@ -118,6 +118,36 @@ api_listen(app)
 
 The route ritual receives a request object with `method`, `path`, `query`, `params`, `headers`, `body`, `form`, and `files`. Request bodies are limited to 10 MB and individual uploaded files to 5 MB. Upload storage stays inside the project directory. See the upload example at `examples/native_uploads.mgo`. Return an object or list for JSON, a string for text, or `ghost` for an empty 204 response. Middleware runs in registration order; call `next()` to continue, or return an object to stop the chain early. `next()` returns a response that can be changed with the response helpers. Run a server with `memingo api server.mgo`. See [docs/SERVER.md](docs/SERVER.md).
 
+## Meme-native standard library
+
+Memingo's meme identity is part of the language API itself. These names are real built-ins
+with defined behavior, not decorative aliases:
+
+- `momento(value)` prints a value using Memingo formatting and also returns it.
+- `cuanto_es(value)` counts the items/characters in a list, object or string.
+- `azar()` returns a random decimal from 0 (inclusive) to 1 (exclusive).
+- `dado(sides?)` rolls an integer from 1 through `sides` (default: 6).
+- `memeate(text)` turns text into alternating upper/lowercase meme text.
+- `yeet(list)` removes and returns the last item; an empty list is an error.
+- `cope(value, fallback?)` returns the fallback for `ghost` or `cringe`, while preserving values such as 0 and an empty string.
+- `skill_issue(message?)` deliberately raises a Memingo runtime error (default message: `skill issue`).
+
+Example:
+
+```mgo
+vibe comments = ["first", "second", "ratio"]
+momento("we are so back")
+momento(cuanto_es(comments))
+momento(memeate("this is based"))
+momento(dado())
+vibe result = cope(ghost, "the meme was deleted")
+momento(result)
+yeet(comments)
+when cuanto_es(comments) == 2 {
+    momento("still based")
+}
+```
+
 ## Standard library
 
 ### Values and collections
