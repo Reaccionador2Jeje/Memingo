@@ -13,6 +13,12 @@ class Borrow:
 
 
 @dataclass
+class Import:
+    path: object
+    alias: str
+
+
+@dataclass
 class Let:
     name: str
     value: object
@@ -139,6 +145,11 @@ class Parser:
             return Say(self._expression())
         if self._match("BORROW"):
             return Borrow(self._expression())
+        if self._match("IMPORT"):
+            path = self._consume("STRING", "Expected a quoted module path after import").value
+            self._consume("AS", "Expected as after module path")
+            alias = self._consume("IDENTIFIER", "Expected module alias after as").value
+            return Import(Literal(path), alias)
         if self._check("IDENTIFIER"):
             name = self._advance().value
             if self._match("EQUAL"):
