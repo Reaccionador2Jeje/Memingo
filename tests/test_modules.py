@@ -57,8 +57,8 @@ class ModuleImportTests(unittest.TestCase):
     def test_detects_circular_imports(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "first.mgo").write_text('import "second.mgo" as second\\n', encoding="utf-8")
-            (root / "second.mgo").write_text('import "first.mgo" as first\\n', encoding="utf-8")
+            (root / "first.mgo").write_text('import "second.mgo" as second\n', encoding="utf-8")
+            (root / "second.mgo").write_text('import "first.mgo" as first\n', encoding="utf-8")
             with self.assertRaisesRegex(RuntimeErrorMemingo, "Circular module import"):
                 self.run_source(root, 'import "first.mgo" as first')
 
