@@ -194,6 +194,16 @@ class Interpreter:
             self.environment = previous
 
     def execute(self, node):
+        try:
+            return self._execute_node(node)
+        except RuntimeErrorMemingo as exception:
+            line = getattr(node, "line", None)
+            column = getattr(node, "column", None)
+            if line is not None and column is not None and not re.search(r"line \\d+, column \\d+", str(exception)):
+                exception.args = (f"{exception} at line {line}, column {column}",)
+            raise
+
+    def _execute_node(self, node):
         if self.debug_trace is not None:
             if len(self.debug_trace) >= 10000:
                 raise RuntimeErrorMemingo("Debug trace limit reached (10,000 steps). Check for an endless loop.")
