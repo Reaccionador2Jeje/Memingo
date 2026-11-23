@@ -1,7 +1,8 @@
 import unittest
 
 from memingo.diagnostics import classify_error, format_diagnostic
-from memingo.interpreter import RuntimeErrorMemingo
+from memingo.interpreter import Interpreter, RuntimeErrorMemingo
+from memingo.parser import parse
 from memingo.lexer import LexerError
 from memingo.parser import ParseError
 
@@ -26,6 +27,15 @@ class MemeDiagnosticTests(unittest.TestCase):
     def test_undefined_name_suggests_close_identifier(self):
         error = RuntimeErrorMemingo("Undefined variable 'plaeyr'")
         rendered = format_diagnostic(error, "vibe player = 1\nspill plaeyr")
+        self.assertIn("Did you mean 'player'?", rendered)
+
+    def test_runtime_errors_receive_statement_source_location(self):
+        interpreter = Interpreter()
+        with self.assertRaises(RuntimeErrorMemingo) as context:
+            interpreter.run(parse('vibe player = 1\\nspill plaeyr'))
+        self.assertIn("line 2, column 1", str(context.exception))
+        rendered = format_diagnostic(context.exception, 'vibe player = 1\\nspill plaeyr', "main.mgo")
+        self.assertIn("main.mgo:2:1", rendered)
         self.assertIn("Did you mean 'player'?", rendered)
 
     def test_serious_mode_is_plain_and_machine_friendly(self):
