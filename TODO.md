@@ -12,7 +12,7 @@
 - [x] Project-scoped text file helpers
 - [ ] Better error locations and source snippets
 - [ ] Modules and imports
-- [ ] Standard library for games and apps
+- [x] Standard library for games and apps (vectors, distance, normalization, interpolation, movement, random selection)
 - [ ] Native compiler or bytecode VM
 
 ## CLI

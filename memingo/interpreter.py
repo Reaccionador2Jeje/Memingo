@@ -137,6 +137,17 @@ class Interpreter:
         self.global_environment.define("ceil", self._ceil)
         self.global_environment.define("round", self._round)
         self.global_environment.define("clamp", self._clamp)
+        self.global_environment.define("vec2", self._vec2)
+        self.global_environment.define("vec3", self._vec3)
+        self.global_environment.define("distance2", self._distance2)
+        self.global_environment.define("distance3", self._distance3)
+        self.global_environment.define("normalize2", self._normalize2)
+        self.global_environment.define("normalize3", self._normalize3)
+        self.global_environment.define("lerp", self._lerp)
+        self.global_environment.define("move_toward", self._move_toward)
+        self.global_environment.define("chance", self._chance)
+        self.global_environment.define("pick", self._pick)
+        self.global_environment.define("weighted_pick", self._weighted_pick)
         self.global_environment.define("parse_int", self._parse_int)
         self.global_environment.define("parse_float", self._parse_float)
         self.global_environment.define("map", self._map)
@@ -664,6 +675,101 @@ class Interpreter:
         if not isinstance(value, list):
             raise RuntimeErrorMemingo(f"{function}() requires a list")
         return value
+
+
+    def _vector_components(self, function, value, dimensions):
+        names = ("x", "y", "z")[:dimensions]
+        if isinstance(value, dict):
+            if any(name not in value for name in names):
+                raise RuntimeErrorMemingo(f"{function}() requires vector fields: {', '.join(names)}")
+            components = [value[name] for name in names]
+        elif isinstance(value, (list, tuple)) and len(value) == dimensions:
+            components = list(value)
+        else:
+            raise RuntimeErrorMemingo(f"{function}() requires a {dimensions}D vector")
+        return [self._number_argument(function, component) for component in components]
+
+    def _vec2(self, x, y):
+        return {"x": self._number_argument("vec2", x), "y": self._number_argument("vec2", y)}
+
+    def _vec3(self, x, y, z):
+        return {
+            "x": self._number_argument("vec3", x),
+            "y": self._number_argument("vec3", y),
+            "z": self._number_argument("vec3", z),
+        }
+
+    def _distance2(self, first, second):
+        a = self._vector_components("distance2", first, 2)
+        b = self._vector_components("distance2", second, 2)
+        return math.hypot(b[0] - a[0], b[1] - a[1])
+
+    def _distance3(self, first, second):
+        a = self._vector_components("distance3", first, 3)
+        b = self._vector_components("distance3", second, 3)
+        return math.sqrt(sum((right - left) ** 2 for left, right in zip(a, b)))
+
+    def _normalize2(self, value):
+        x, y = self._vector_components("normalize2", value, 2)
+        length = math.hypot(x, y)
+        if length == 0:
+            return {"x": 0, "y": 0}
+        return {"x": x / length, "y": y / length}
+
+    def _normalize3(self, value):
+        x, y, z = self._vector_components("normalize3", value, 3)
+        length = math.sqrt(x * x + y * y + z * z)
+        if length == 0:
+            return {"x": 0, "y": 0, "z": 0}
+        return {"x": x / length, "y": y / length, "z": z / length}
+
+    def _lerp(self, start, end, amount):
+        start = self._number_argument("lerp", start)
+        end = self._number_argument("lerp", end)
+        amount = self._number_argument("lerp", amount)
+        return start + (end - start) * amount
+
+    def _move_toward(self, current, target, max_delta):
+        current = self._number_argument("move_toward", current)
+        target = self._number_argument("move_toward", target)
+        max_delta = self._number_argument("move_toward", max_delta)
+        if max_delta < 0:
+            raise RuntimeErrorMemingo("move_toward() requires a non-negative max_delta")
+        difference = target - current
+        if abs(difference) <= max_delta:
+            return target
+        return current + (max_delta if difference > 0 else -max_delta)
+
+    def _chance(self, probability):
+        probability = self._number_argument("chance", probability)
+        if not 0 <= probability <= 1:
+            raise RuntimeErrorMemingo("chance() probability must be between 0 and 1")
+        return random.random() < probability
+
+    def _pick(self, values):
+        values = self._list_argument("pick", values)
+        if not values:
+            raise RuntimeErrorMemingo("pick() cannot choose from an empty list")
+        return random.choice(values)
+
+    def _weighted_pick(self, values, weights):
+        values = self._list_argument("weighted_pick", values)
+        weights = self._list_argument("weighted_pick", weights)
+        if not values or len(values) != len(weights):
+            raise RuntimeErrorMemingo("weighted_pick() requires equally sized, non-empty value and weight lists")
+        checked = [self._number_argument("weighted_pick", weight) for weight in weights]
+        if any(weight < 0 for weight in checked):
+            raise RuntimeErrorMemingo("weighted_pick() weights cannot be negative")
+        total = sum(checked)
+        if total <= 0:
+            raise RuntimeErrorMemingo("weighted_pick() requires a positive total weight")
+        threshold = random.random() * total
+        cumulative = 0
+        for value, weight in zip(values, checked):
+            cumulative += weight
+            if threshold < cumulative:
+                return value
+        return values[-1]
 
     def _range(self, *arguments):
         if not 1 <= len(arguments) <= 3:
