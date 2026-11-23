@@ -163,7 +163,7 @@ class MemingoLanguageTests(unittest.TestCase):
     def test_text_helpers_repeat_lines_and_unique(self):
         source = (
             'spill repeat("ab", 3)\n'
-            'spill lines("uno\\ndos\\ntres")\n'
+            'spill lines("uno\ndos\ntres")\n'
             'spill unique([1, 2, 2, 3, 1])'
         )
         self.assertEqual(
@@ -200,7 +200,7 @@ class MemingoLanguageTests(unittest.TestCase):
         self.assertEqual(output[6:], ["ratio", '["first"]', "7"])
 
     def test_meme_native_random_and_intentional_error(self):
-        output = execute('spill azar() >= 0 && azar() < 1\\nspill dado(20) >= 1 && dado(20) <= 20')
+        output = execute('spill azar() >= 0 && azar() < 1\nspill dado(20) >= 1 && dado(20) <= 20')
         self.assertEqual(output, ["based", "based"])
         with self.assertRaises(RuntimeErrorMemingo) as context:
             execute('skill_issue("the build is cursed")')
