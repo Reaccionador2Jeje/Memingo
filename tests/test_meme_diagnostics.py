@@ -18,14 +18,14 @@ class MemeDiagnosticTests(unittest.TestCase):
 
     def test_meme_diagnostic_shows_location_and_source_caret(self):
         error = ParseError("Expected ')' after expression at line 2, column 7")
-        rendered = format_diagnostic(error, 'spill "ok"\\nspill (2 +', "main.mgo")
+        rendered = format_diagnostic(error, 'spill "ok"\nspill (2 +', "main.mgo")
         self.assertIn("BRUH", rendered)
         self.assertIn("main.mgo:2:7", rendered)
         self.assertIn("^", rendered)
 
     def test_undefined_name_suggests_close_identifier(self):
         error = RuntimeErrorMemingo("Undefined variable 'plaeyr'")
-        rendered = format_diagnostic(error, "vibe player = 1\\nspill plaeyr")
+        rendered = format_diagnostic(error, "vibe player = 1\nspill plaeyr")
         self.assertIn("Did you mean 'player'?", rendered)
 
     def test_serious_mode_is_plain_and_machine_friendly(self):
