@@ -188,7 +188,19 @@ class Interpreter:
         try:
             result = None
             for statement in statements:
-                result = self.execute(statement)
+                try:
+                    result = self.execute(statement)
+                except RuntimeErrorMemingo as exception:
+                    if getattr(exception, "_memingo_located", False):
+                        raise
+                    line = getattr(statement, "line", None)
+                    column = getattr(statement, "column", None)
+                    if line is None:
+                        raise
+                    location = f" at line {line}, column {column or 1}"
+                    located = RuntimeErrorMemingo(f"{exception}{location}")
+                    located._memingo_located = True
+                    raise located from exception
             return result
         finally:
             self.environment = previous
