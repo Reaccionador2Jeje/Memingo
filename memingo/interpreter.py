@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .server import MAX_UPLOAD_FILE_SIZE, MemingoApp, Response, serve_app
 from .parser import (
-    Assign, Binary, Borrow, Call, Function, Get, If, Let, ListExpression,
+    Assign, Binary, Borrow, Call, Function, Get, If, Import, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
 )
 from . import ai as memingo_ai
@@ -79,6 +79,8 @@ class Interpreter:
         self.project_directory = Path(project_directory).resolve()
         self.output = []
         self.debug_trace = None
+        self._module_cache = {}
+        self._module_loading = []
         env_path = self.project_directory / ".env"
         if env_path.exists():
             for line in env_path.read_text(encoding="utf-8").splitlines():
@@ -217,6 +219,39 @@ class Interpreter:
             return value
         if isinstance(node, Return):
             raise ReturnSignal(self.evaluate(node.value))
+        if isinstance(node, Import):
+            module_path = self.evaluate(node.path)
+            if not isinstance(module_path, str) or not module_path.strip():
+                raise RuntimeErrorMemingo("import requires a non-empty quoted module path")
+            candidate = (self.project_directory / module_path).resolve()
+            root = self.project_directory.resolve()
+            if candidate != root and root not in candidate.parents:
+                raise RuntimeErrorMemingo("Module path must stay inside the project directory")
+            if candidate.suffix != ".mgo":
+                raise RuntimeErrorMemingo("Imported modules must use the .mgo extension")
+            if not candidate.is_file():
+                raise RuntimeErrorMemingo(f"Module not found: {module_path}")
+            key = str(candidate)
+            if key in self._module_loading:
+                chain = " -> ".join(Path(item).name for item in self._module_loading + [key])
+                raise RuntimeErrorMemingo(f"Circular module import detected: {chain}")
+            if key not in self._module_cache:
+                try:
+                    module_source = candidate.read_text(encoding="utf-8")
+                    module_program = parse(module_source)
+                except (OSError, UnicodeError) as exception:
+                    raise RuntimeErrorMemingo(f"Could not read module '{module_path}': {exception}") from exception
+                module_environment = Environment(self.global_environment)
+                self._module_loading.append(key)
+                previous_environment = self.environment
+                try:
+                    self.execute_block(module_program.statements, module_environment)
+                finally:
+                    self.environment = previous_environment
+                    self._module_loading.pop()
+                self._module_cache[key] = dict(module_environment.values)
+            self.environment.define(node.alias, self._module_cache[key])
+            return self._module_cache[key]
         if isinstance(node, Borrow):
             package_name = self.evaluate(node.package)
             if not isinstance(package_name, str):
