@@ -25,6 +25,7 @@ from .cli import (
 )
 from .completion import memingo_completion
 from .lsp import run_language_server
+from .diagnostics import format_diagnostic
 
 
 def run_ide_web(host="127.0.0.1", port=3000) -> int:
@@ -82,8 +83,12 @@ def run_file(path: str) -> int:
             for line in execute(source_file.read(), project_directory=project_directory):
                 print(line)
         return 0
-    except (LexerError, ParseError, RuntimeErrorMemingo) as error:
-        print(f"Memingo error: {error}", file=sys.stderr)
+    except (LexerError, ParseError, RuntimeErrorMemingo) as exception:
+        try:
+            source = source_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            source = ""
+        print(format_diagnostic(exception, source, source_path), file=sys.stderr)
         return 1
     except UnicodeError:
         print(f"Memingo error: {path} is not valid UTF-8", file=sys.stderr)
@@ -103,8 +108,8 @@ def run_source(source: str, project_directory=".") -> int:
         for line in execute(source, project_directory=project_directory):
             print(line)
         return 0
-    except (LexerError, ParseError, RuntimeErrorMemingo) as error:
-        print(f"Memingo error: {error}", file=sys.stderr)
+    except (LexerError, ParseError, RuntimeErrorMemingo) as exception:
+        print(format_diagnostic(exception, source, "<eval>"), file=sys.stderr)
         return 1
     except RecursionError:
         print("Memingo error: Maximum recursion depth exceeded", file=sys.stderr)
@@ -166,8 +171,12 @@ def check_sources(paths) -> int:
     for source_file in files:
         try:
             parse(source_file.read_text(encoding="utf-8"))
-        except (LexerError, ParseError, UnicodeError, OSError) as error:
-            print(f"Memingo error: {source_file}: {error}", file=sys.stderr)
+        except (LexerError, ParseError, UnicodeError, OSError) as exception:
+            try:
+                source = source_file.read_text(encoding="utf-8")
+            except (OSError, UnicodeError):
+                source = ""
+            print(format_diagnostic(exception, source, source_file), file=sys.stderr)
             return 1
         checked += 1
     success(f"{checked} file(s) checked")
