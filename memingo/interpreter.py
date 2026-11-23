@@ -94,6 +94,15 @@ class Interpreter:
         self.global_environment.define("json_stringify", lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":")))
         self.global_environment.define("env", lambda name, default=None: os.environ.get(name, default))
         self.global_environment.define("random", random.random)
+        # Meme-native vocabulary: these are first-class Memingo APIs, not parser tricks.
+        self.global_environment.define("momento", self._momento)
+        self.global_environment.define("cuanto_es", len)
+        self.global_environment.define("azar", random.random)
+        self.global_environment.define("dado", self._dado)
+        self.global_environment.define("memeate", self._meme_case)
+        self.global_environment.define("yeet", self._yeet)
+        self.global_environment.define("cope", self._cope)
+        self.global_environment.define("skill_issue", self._skill_issue)
         self.global_environment.define("ai", {
             "create": memingo_ai.create,
             "dataset": memingo_ai.dataset,
@@ -726,6 +735,32 @@ class Interpreter:
         text = self._string_argument("ends_with", text)
         suffix = self._string_argument("ends_with", suffix, "suffix")
         return text.endswith(suffix)
+
+    def _momento(self, value):
+        """Print a value using Memingo's native display format and return it."""
+        self.output.append(self._display(value))
+        return value
+
+    def _dado(self, sides=6):
+        if not isinstance(sides, int) or isinstance(sides, bool) or sides < 1:
+            raise RuntimeErrorMemingo("dado() sides must be a positive whole number")
+        return random.randint(1, sides)
+
+    def _yeet(self, items):
+        if not isinstance(items, list):
+            raise RuntimeErrorMemingo("yeet() requires a list")
+        if not items:
+            raise RuntimeErrorMemingo("yeet() cannot yeet an empty list")
+        return items.pop()
+
+    def _cope(self, value, fallback=None):
+        """Use fallback only for ghost/cringe; preserve valid falsy data like 0."""
+        return fallback if value is None or value is False else value
+
+    def _skill_issue(self, message="skill issue"):
+        if not isinstance(message, str):
+            raise RuntimeErrorMemingo("skill_issue() message must be text")
+        raise RuntimeErrorMemingo(message)
 
     def _meme_case(self, text):
         text = self._string_argument("meme_case", text)

@@ -163,7 +163,7 @@ class MemingoLanguageTests(unittest.TestCase):
     def test_text_helpers_repeat_lines_and_unique(self):
         source = (
             'spill repeat("ab", 3)\n'
-            'spill lines("uno\\ndos\\ntres")\n'
+            'spill lines("uno\ndos\ntres")\n'
             'spill unique([1, 2, 2, 3, 1])'
         )
         self.assertEqual(
@@ -178,6 +178,37 @@ class MemingoLanguageTests(unittest.TestCase):
             execute('spill repeat(1, 2)')
         with self.assertRaises(RuntimeErrorMemingo):
             execute('spill unique("nope")')
+
+    def test_meme_native_builtins(self):
+        source = (
+            'momento("we are so back")\n'
+            'spill cuanto_es(["a", "b", "c"])\n'
+            'spill memeate("hello memingo")\n'
+            'spill cope(ghost, "fallback")\n'
+            'spill cope(cringe, "also fallback")\n'
+            'spill cope(0, 99)\n'
+            'vibe cards = ["first", "ratio"]\n'
+            'spill yeet(cards)\n'
+            'spill cards\n'
+            'spill cuanto_es("memingo")'
+        )
+        output = execute(source)
+        self.assertEqual(output[0], "we are so back")
+        self.assertEqual(output[1], "3")
+        self.assertEqual(output[2], "HeLlO MeMiNgO")
+        self.assertEqual(output[3:6], ["fallback", "also fallback", "0"])
+        self.assertEqual(output[6:], ["ratio", '["first"]', "7"])
+
+    def test_meme_native_random_and_intentional_error(self):
+        output = execute('spill azar() >= 0 && azar() < 1\nspill dado(20) >= 1 && dado(20) <= 20')
+        self.assertEqual(output, ["based", "based"])
+        with self.assertRaises(RuntimeErrorMemingo) as context:
+            execute('skill_issue("the build is cursed")')
+        self.assertIn("the build is cursed", str(context.exception))
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute("yeet([])")
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute("dado(0)")
 
     def test_file_builtins_stay_inside_project(self):
         with tempfile.TemporaryDirectory() as temporary:
