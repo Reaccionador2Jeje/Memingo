@@ -360,13 +360,13 @@ def repl() -> int:
             return 0
 
 
-def run_project(directory=".") -> int:
+def run_project(directory=".", error_mode="meme") -> int:
     try:
         _, _, entry = resolve_entry(directory)
     except (FileNotFoundError, OSError, ValueError) as error:
         print(f"Memingo error: {error}", file=sys.stderr)
         return 1
-    return run_file(str(entry))
+    return run_file(str(entry), error_mode)
 
 
 def run_dev(directory=".", interval=0.5) -> int:
@@ -723,9 +723,9 @@ def _main(argv=None) -> int:
         if args.path:
             target = Path(args.path)
             if target.is_dir():
-                return run_project(target)
+                return run_project(target, args.errors)
             return run_file(args.path, args.errors)
-        return run_project(".")
+        return run_project(".", args.errors)
     if args.command == "debug":
         try:
             breakpoints = [int(value) for value in args.breakpoints.split(",") if value.strip()]
