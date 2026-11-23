@@ -25,6 +25,7 @@ from .cli import (
 )
 from .completion import memingo_completion
 from .lsp import run_language_server
+from .diagnostics import format_diagnostic
 
 
 def run_ide_web(host="127.0.0.1", port=3000) -> int:
@@ -74,17 +75,17 @@ def serve_api(path="app.py", host="127.0.0.1", port=8000) -> int:
     return 0
 
 
-def run_file(path: str) -> int:
+def run_file(path: str, error_mode="meme") -> int:
+    source_path = Path(path).resolve()
     try:
-        source_path = Path(path).resolve()
-        project_directory = source_path.parent
-        with open(source_path, "r", encoding="utf-8") as source_file:
-            for line in execute(source_file.read(), project_directory=project_directory):
+        source = source_path.read_text(encoding="utf-8")
+        try:
+            for line in execute(source, project_directory=source_path.parent):
                 print(line)
-        return 0
-    except (LexerError, ParseError, RuntimeErrorMemingo) as error:
-        print(f"Memingo error: {error}", file=sys.stderr)
-        return 1
+            return 0
+        except (LexerError, ParseError, RuntimeErrorMemingo) as exception:
+            print(format_diagnostic(exception, source, str(source_path), error_mode), file=sys.stderr)
+            return 1
     except UnicodeError:
         print(f"Memingo error: {path} is not valid UTF-8", file=sys.stderr)
         return 1
@@ -93,18 +94,17 @@ def run_file(path: str) -> int:
         return 1
     except BrokenPipeError:
         return 0
-    except OSError as error:
-        print(f"Memingo error: {error}", file=sys.stderr)
+    except OSError as exception:
+        print(f"Memingo error: {exception}", file=sys.stderr)
         return 1
 
-
-def run_source(source: str, project_directory=".") -> int:
+def run_source(source: str, project_directory=".", error_mode="meme") -> int:
     try:
         for line in execute(source, project_directory=project_directory):
             print(line)
         return 0
-    except (LexerError, ParseError, RuntimeErrorMemingo) as error:
-        print(f"Memingo error: {error}", file=sys.stderr)
+    except (LexerError, ParseError, RuntimeErrorMemingo) as exception:
+        print(format_diagnostic(exception, source, "<eval>", error_mode), file=sys.stderr)
         return 1
     except RecursionError:
         print("Memingo error: Maximum recursion depth exceeded", file=sys.stderr)
@@ -148,7 +148,7 @@ def project_stats(directory=".") -> int:
         return 1
 
 
-def check_sources(paths) -> int:
+def check_sources(paths, error_mode="meme") -> int:
     files = []
     for input_path in paths:
         path = Path(input_path)
@@ -165,9 +165,13 @@ def check_sources(paths) -> int:
     checked = 0
     for source_file in files:
         try:
-            parse(source_file.read_text(encoding="utf-8"))
-        except (LexerError, ParseError, UnicodeError, OSError) as error:
-            print(f"Memingo error: {source_file}: {error}", file=sys.stderr)
+            source = source_file.read_text(encoding="utf-8")
+            parse(source)
+        except (LexerError, ParseError) as exception:
+            print(format_diagnostic(exception, source, str(source_file), error_mode), file=sys.stderr)
+            return 1
+        except (UnicodeError, OSError) as exception:
+            print(f"Memingo error: {source_file}: {exception}", file=sys.stderr)
             return 1
         checked += 1
     success(f"{checked} file(s) checked")
@@ -328,7 +332,7 @@ def project_status(directory=".") -> int:
         return 1
 
 
-def repl() -> int:
+def repl(error_mode="meme") -> int:
     banner(__version__, "INTERACTIVE MEMINGO REPL")
     status_bar([
         ("Language", "Memingo", CYAN),
@@ -351,8 +355,8 @@ def repl() -> int:
                 print(line)
             if result is not None and len(interpreter.output) == previous_output_count:
                 print(result)
-        except (LexerError, ParseError, RuntimeErrorMemingo) as error:
-            print(f"Memingo error: {error}", file=sys.stderr)
+        except (LexerError, ParseError, RuntimeErrorMemingo) as exception:
+            print(format_diagnostic(exception, source, "<repl>", error_mode), file=sys.stderr)
         except (RecursionError, UnicodeError) as error:
             print(f"Memingo error: {error}", file=sys.stderr)
         except KeyboardInterrupt:
@@ -360,13 +364,13 @@ def repl() -> int:
             return 0
 
 
-def run_project(directory=".") -> int:
+def run_project(directory=".", error_mode="meme") -> int:
     try:
         _, _, entry = resolve_entry(directory)
     except (FileNotFoundError, OSError, ValueError) as error:
         print(f"Memingo error: {error}", file=sys.stderr)
         return 1
-    return run_file(str(entry))
+    return run_file(str(entry), error_mode)
 
 
 def run_dev(directory=".", interval=0.5) -> int:
@@ -588,7 +592,8 @@ def _main(argv=None) -> int:
     parser.add_argument("--version", action="version", version=f"Memingo {__version__}")
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("repl", help="Open the interactive REPL")
+    repl_parser = subparsers.add_parser("repl", help="Open the interactive REPL")
+    repl_parser.add_argument("--errors", choices=("meme", "serious"), default="meme", help="Diagnostic style")
     subparsers.add_parser("doctor", help="Check the Memingo installation")
     subparsers.add_parser("update-self", help="Update Memingo from the official installer")
     status_parser = subparsers.add_parser("status", help="Show a complete project and runtime dashboard")
@@ -604,6 +609,7 @@ def _main(argv=None) -> int:
 
     run_parser = subparsers.add_parser("run", help="Run a project or .mgo file")
     run_parser.add_argument("path", nargs="?", default=None)
+    run_parser.add_argument("--errors", choices=("meme", "serious"), default="meme", help="Diagnostic style")
 
     debug_parser = subparsers.add_parser("debug", help="Run a file and collect a statement-by-statement debug trace")
     debug_parser.add_argument("path", help="Memingo .mgo source file")
@@ -612,9 +618,11 @@ def _main(argv=None) -> int:
     eval_parser = subparsers.add_parser("eval", help="Run Memingo code from the command line")
     eval_parser.add_argument("code", nargs="+", help="Memingo source code")
     eval_parser.add_argument("--project", default=".", help="Project directory used for borrow and .env")
+    eval_parser.add_argument("--errors", choices=("meme", "serious"), default="meme", help="Diagnostic style")
 
     check_parser = subparsers.add_parser("check", help="Parse Memingo files without running them")
     check_parser.add_argument("paths", nargs="*", default=["."], help="Files or directories to check")
+    check_parser.add_argument("--errors", choices=("meme", "serious"), default="meme", help="Diagnostic style")
 
     stats_parser = subparsers.add_parser("stats", help="Summarize Memingo source files in a project")
     stats_parser.add_argument("directory", nargs="?", default=".")
@@ -687,7 +695,7 @@ def _main(argv=None) -> int:
     if args.command is None:
         return repl()
     if args.command == "repl":
-        return repl()
+        return repl(args.errors)
     if args.command == "doctor":
         return doctor()
     if args.command == "update-self":
@@ -721,9 +729,9 @@ def _main(argv=None) -> int:
         if args.path:
             target = Path(args.path)
             if target.is_dir():
-                return run_project(target)
-            return run_file(args.path)
-        return run_project(".")
+                return run_project(target, args.errors)
+            return run_file(args.path, args.errors)
+        return run_project(".", args.errors)
     if args.command == "debug":
         try:
             breakpoints = [int(value) for value in args.breakpoints.split(",") if value.strip()]
@@ -734,9 +742,9 @@ def _main(argv=None) -> int:
             print(f"Memingo debug error: {exception}", file=sys.stderr)
             return 2
     if args.command == "eval":
-        return run_source(" ".join(args.code), args.project)
+        return run_source(" ".join(args.code), args.project, args.errors)
     if args.command == "check":
-        return check_sources(args.paths)
+        return check_sources(args.paths, args.errors)
     if args.command == "lsp":
         return run_language_server()
     if args.command == "ide":

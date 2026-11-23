@@ -204,6 +204,23 @@ spill list_files("notes")
 
 Errors raised inside a built-in are reported as Memingo runtime errors with the function name.
 
+## MemeError Engine
+
+The CLI uses meme-native diagnostics by default. Errors are grouped into recognizable categories,
+show source locations and a caret when the lexer/parser provides a position, and suggest a close
+variable name when an undefined identifier resembles one already declared.
+
+- `SKILL ISSUE 💀`: undefined names and attempts to call non-functions.
+- `BRUH 🤨`: lexer and parser errors.
+- `RATIO 📉`: incompatible numeric operations and division by zero.
+- `GHOSTED 👻`: missing values or inaccessible members.
+- `OVERCOOKED 🔥`: execution and recursion limits.
+- `SUS 🧐`: other invalid operations.
+
+Use `memingo run main.mgo --errors serious` or
+`memingo eval 'spill 1 / 0' --errors serious` for plain diagnostics suitable for logs
+and automation. The default is `--errors meme`.
+
 ## Packages
 
 ```mgo
