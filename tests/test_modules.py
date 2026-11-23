@@ -53,6 +53,15 @@ class ModuleImportTests(unittest.TestCase):
             finally:
                 outside.unlink(missing_ok=True)
 
+
+    def test_detects_circular_imports(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "first.mgo").write_text('import "second.mgo" as second\\n', encoding="utf-8")
+            (root / "second.mgo").write_text('import "first.mgo" as first\\n', encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeErrorMemingo, "Circular module import"):
+                self.run_source(root, 'import "first.mgo" as first')
+
     def test_reports_missing_module(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaisesRegex(RuntimeErrorMemingo, "Module not found"):
