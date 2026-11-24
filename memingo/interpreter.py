@@ -263,6 +263,7 @@ class Interpreter:
         if isinstance(node, Assign):
             self._check_reference_variable(node.name, writing=True)
             value = self.evaluate(node.value)
+            self._check_reference_escape(value)
             self.environment.assign(node.name, value)
             return value
         if isinstance(node, Say):
@@ -271,7 +272,9 @@ class Interpreter:
             self.output.append(text)
             return value
         if isinstance(node, Return):
-            raise ReturnSignal(self.evaluate(node.value))
+            value = self.evaluate(node.value)
+            self._check_reference_escape(value)
+            raise ReturnSignal(value)
         if isinstance(node, ReferenceBorrow):
             self._check_reference_variable(node.source)
             source_value = self.environment.get(node.source)
@@ -375,6 +378,14 @@ class Interpreter:
                     and name not in (active["alias"], active["source"])):
                 raise RuntimeErrorMemingo(
                     f"collection is exclusively borrowed as '{active['alias']}'"
+                )
+
+    def _check_reference_escape(self, value):
+        identity = id(value)
+        for active in self._active_reference_borrows:
+            if identity == active["identity"]:
+                raise RuntimeErrorMemingo(
+                    f"borrowed value '{active['alias']}' cannot escape its reference lifetime"
                 )
 
     def _check_reference_mutation(self, value):
