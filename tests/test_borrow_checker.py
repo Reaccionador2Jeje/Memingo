@@ -67,6 +67,26 @@ class BorrowCheckerTests(unittest.TestCase):
         )
         self.assertTrue(any(item.code == "M2204" for item in result.diagnostics))
 
+    def test_immutable_reference_rejects_source_rebinding(self):
+        result = compile_source(
+            'vibe items = [1, 2]\n'
+            'borrow items as view {\n'
+            '  items = [3]\n'
+            '}'
+        )
+        self.assertTrue(any(item.code == "M2202" for item in result.diagnostics))
+
+    def test_nested_mutable_borrow_through_alias_is_rejected(self):
+        result = compile_source(
+            'vibe items = [1, 2]\n'
+            'borrow items as view {\n'
+            '  borrow mut view as edit {\n'
+            '    push(edit, 3)\n'
+            '  }\n'
+            '}'
+        )
+        self.assertTrue(any(item.code == "M2205" for item in result.diagnostics))
+
     def test_runtime_executes_immutable_reference_scope(self):
         interpreter = Interpreter()
         interpreter.run(parse(
