@@ -66,3 +66,19 @@ system. Memingo does not yet have explicit shared/mutable reference syntax or
 lifetime inference. Sequential calls are separate borrow scopes; aliases hidden
 inside dynamic values or external Python/native extensions cannot always be
 proven statically.
+
+## Runtime memory accounting
+
+Each interpreter execution now has a configurable `max_memory_bytes` budget
+(default: 64 MiB). After each executed statement, the shield estimates the
+reachable size of values stored in the active environment chain. The estimator
+walks Python dictionaries and common container types, tracks object identities
+to avoid double-counting shared references and cycles, and raises a Shield
+violation when the configured budget is exceeded. Byte strings are also subject
+to the existing string-size boundary.
+
+This is an approximate accounting guard for interpreter-managed values. It is
+not process-RSS accounting, does not include all allocator overhead, native
+extension allocations, thread stacks, or external process memory, and cannot
+guarantee a hard operating-system memory ceiling. The Python runtime remains
+responsible for physical allocation and reclamation.
