@@ -19,7 +19,7 @@
 - [ ] Versioned language specification and conformance suite
 - [ ] Source spans (file, start/end line and column) across lexer and AST
 - [ ] Unified source diagnostics with snippets and stable error codes
-- [ ] Semantic analysis for duplicate declarations, unresolved names, return placement and function arity
+- [x] Conservative semantic checks for duplicate ritual parameters and known function arity\n- [ ] Full semantic analysis for unresolved names, declaration rules, return placement and cross-file symbols
 - [ ] Optional static type annotations and inference
 - [ ] Verified bytecode format and stack-based virtual machine
 - [ ] VM resource limits, cancellation and documented memory model
@@ -40,7 +40,7 @@ See [the Rust-competitiveness engineering roadmap](docs/ROADMAP_RUST_COMPETITIVE
 - [x] Environment configuration and `.env` support
 - [x] `memingo fmt` source formatter
 - [x] `memingo eval` inline code execution
-- [x] `memingo check` syntax validation
+- [x] `memingo check` syntax and conservative semantic validation
 - [x] `memingo info`, `deps` and `clean` project tools
 - [x] `memingo manifest` standalone manifest creation
 - [x] Shell completion
