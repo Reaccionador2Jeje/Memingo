@@ -17,6 +17,17 @@
 - [ ] Bytecode format and virtual machine
 - [ ] Native backend prototype and benchmarks
 
+## Hybrid Shield
+- [x] Runtime execution-step budget and loop guard
+- [x] Ritual call-depth limit
+- [x] Collection, string and integer size limits
+- [x] Reject non-finite floating-point values at runtime boundaries
+- [ ] Static ownership and borrowing analysis
+- [ ] Borrow checker integrated into typed HIR
+- [ ] Explicit audited unsafe capabilities and scoped escape hatches
+- [ ] Runtime memory accounting with allocation tracking
+- [ ] Hardware and OS fault reporting through host-specific adapters
+
 ## Language
 - [x] Lexer with keywords, literals, operators and comments
 - [x] Parser for variables, functions, blocks, conditions and loops
