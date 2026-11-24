@@ -51,3 +51,18 @@ hardware infallible.
 python3 -m unittest discover -s tests -v
 python3 -m memingo analyze examples
 ```
+
+## Call-scoped borrow checking
+
+The compiler now recognizes exclusive mutable access performed by the standard
+collection mutators `push`, `append`, `set_value`, and `delete_key`.
+Diagnostic `M2101` is emitted when another argument in the same call refers
+to the same root collection as the mutating argument. This catches direct and
+property/index-based aliases such as passing a collection as both the target
+and the value being inserted.
+
+This is deliberately a call-scoped alias check, not a complete reference
+system. Memingo does not yet have explicit shared/mutable reference syntax or
+lifetime inference. Sequential calls are separate borrow scopes; aliases hidden
+inside dynamic values or external Python/native extensions cannot always be
+proven statically.
