@@ -108,6 +108,36 @@ class BorrowCheckerTests(unittest.TestCase):
         )
         self.assertTrue(any(item.code == "M2205" for item in result.diagnostics))
 
+    def test_runtime_rejects_mutation_through_immutable_reference(self):
+        interpreter = Interpreter()
+        with self.assertRaisesRegex(Exception, "immutable reference"):
+            interpreter.run(parse(
+                'vibe items = [1, 2]\\n'
+                'borrow items as view {\\n'
+                '  push(view, 3)\\n'
+                '}'
+            ))
+
+    def test_runtime_rejects_source_access_during_mutable_reference(self):
+        interpreter = Interpreter()
+        with self.assertRaisesRegex(Exception, "borrowed source"):
+            interpreter.run(parse(
+                'vibe items = [1, 2]\\n'
+                'borrow mut items as edit {\\n'
+                '  spill headcount(items)\\n'
+                '}'
+            ))
+
+    def test_runtime_rejects_reassigning_borrowed_source(self):
+        interpreter = Interpreter()
+        with self.assertRaisesRegex(Exception, "borrowed source"):
+            interpreter.run(parse(
+                'vibe items = [1, 2]\\n'
+                'borrow items as view {\\n'
+                '  items = [3]\\n'
+                '}'
+            ))
+
     def test_mutation_without_alias_is_allowed(self):
         result = compile_source(
             'vibe items = [1, 2]\n'
