@@ -46,8 +46,8 @@ class CliCommandTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary) / "arity.mgo"
             source.write_text(
-                "ritual greet(name) { spill name }\\n"
-                "greet()\\n",
+                "ritual greet(name) { spill name }\n"
+                "greet()\n",
                 encoding="utf-8",
             )
             code, output = self.run_cli(["check", str(source)])
