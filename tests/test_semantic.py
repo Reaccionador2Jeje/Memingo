@@ -32,10 +32,10 @@ class SemanticAnalysisTests(unittest.TestCase):
     def test_nested_function_call_uses_visible_scope(self):
         program = parse(
             "ritual outer(value) {\n"
+            "  ritual inner() { drop value }\n"
             "  when based {\n"
             "    inner()\n"
             "  }\n"
-            "  ritual inner() { drop value }\n"
             "}\n"
         )
         self.assertEqual(analyze(program), [])
