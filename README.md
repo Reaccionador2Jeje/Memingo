@@ -80,6 +80,10 @@ Memingo scripts can create, train, evaluate, save and reload small dense neural 
 
 Read the [bilingual Memingo user guide](docs/GUIA_DE_USO.md) for installation, first programs, syntax, projects, packages, HTTP APIs, IDE, LSP and troubleshooting. The guide is available in Spanish and English.
 
+## Launch and community kit
+
+Help introduce Memingo with the [bilingual launch kit](docs/LAUNCH_KIT.md), including social posts, short-video scripts, a seven-day campaign, community guidelines and growth metrics.
+
 ## Language reference
 
 See the complete syntax and standard library in [LANGUAGE.md](LANGUAGE.md).
