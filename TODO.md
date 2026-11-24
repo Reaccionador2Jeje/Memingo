@@ -15,6 +15,20 @@
 - [ ] Standard library for games and apps
 - [ ] Native compiler or bytecode VM
 
+## Rust-competitiveness engineering
+- [ ] Versioned language specification and conformance suite
+- [ ] Source spans (file, start/end line and column) across lexer and AST
+- [ ] Unified source diagnostics with snippets and stable error codes
+- [ ] Semantic analysis for duplicate declarations, unresolved names, return placement and function arity
+- [ ] Optional static type annotations and inference
+- [ ] Verified bytecode format and stack-based virtual machine
+- [ ] VM resource limits, cancellation and documented memory model
+- [ ] Reproducible interpreter/VM/native benchmarks
+- [ ] Native compilation prototype after language semantics and VM stabilize
+- [ ] MGOA package signing, verification and release provenance
+
+See [the Rust-competitiveness engineering roadmap](docs/ROADMAP_RUST_COMPETITIVENESS.md) for stages and exit criteria.
+
 ## CLI
 - [x] `memingo init` project scaffolding
 - [x] `memingo run` project and file execution
