@@ -33,7 +33,7 @@ class AllocationTracker:
     Counts are observations between interpreter statements, not allocator hooks.
     """
 
-    _TRACKED_TYPES = (list, dict, set, tuple, str, bytes, bytearray)
+    _TRACKED_TYPES = (list, dict, set, tuple, frozenset, str, bytes, bytearray)
 
     def __init__(self):
         self._active = {}
