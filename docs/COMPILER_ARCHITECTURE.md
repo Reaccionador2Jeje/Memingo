@@ -45,11 +45,27 @@ The first implementation reuses the existing lexer and parser. The public Python
 
 - memingo.compiler.source: immutable source documents, spans, locations, and source maps.
 - memingo.compiler.diagnostics: structured errors, warnings, labels, and terminal rendering.
-- memingo.compiler.types (planned): primitive, collection, function, and inference types.
-- memingo.compiler.hir (planned): typed high-level intermediate representation.
+- memingo.compiler.types: primitive, collection, function, and gradual inference types.
+- memingo.compiler.hir: typed high-level intermediate representation and AST lowering.
+- memingo.compiler.checker: local name resolution, expression typing, and static diagnostics.
+- memingo.compiler.ownership / borrow: collection transfer, alias, and lexical reference checks.
 - memingo.compiler.mir (planned): lowered control-flow representation.
-- memingo.compiler.analysis (planned): name resolution, type checking, ownership, and effect analysis.
-- memingo.compiler.backends (planned): bytecode and native code generation.
+- memingo.compiler.backends (planned): verified bytecode and native code generation.
+
+## Current type inference
+
+The current checker infers primitive and collection expression types, validates assignments and conditions, and checks known ritual call arity. Ritual parameters remain dynamic (`any`) until parameter annotations or call-site inference are designed.
+
+Ritual return types are inferred conservatively:
+
+- A ritual with no `drop` statement returns `ghost`.
+- A ritual whose every control-flow path returns can infer a common return type.
+- An `if` contributes a guaranteed return only when both branches return.
+- A possible fallthrough path keeps the return type as `any`; the checker does not promise a type the runtime cannot guarantee.
+- Incompatible return types widen to `any`.
+- Dynamic built-ins and imported package calls remain `any` unless their signatures are declared.
+
+This is an inference foundation, not yet complete function-signature inference or a replacement for runtime checks.
 
 ## Source coordinate contract
 
@@ -69,10 +85,10 @@ Safe Memingo code must not require raw pointer operations. Ownership and borrowi
 ## Milestones
 
 1. **Foundation:** source maps and structured diagnostics.
-2. **Semantic model:** initial scopes, primitive/collection types, inference, and type diagnostics (in progress).
-3. **Typed HIR:** initial typed HIR and AST lowering are implemented; continue filling semantic metadata and invariants.
-4. **Analysis:** type checking and safe ownership rules.
-5. **Execution:** bytecode format and virtual machine.
-6. **Native:** measured backend prototype and optimization pipeline.
+2. **Semantic model:** initial scopes, primitive/collection types, expression inference, and structured diagnostics implemented; ritual return inference is now conservative and path-aware.
+3. **Typed HIR:** initial typed HIR and AST lowering implemented; continue filling semantic metadata and invariants.
+4. **Analysis:** initial type, ownership, and lexical borrow checks implemented; parameter inference and complete lifetime analysis remain open.
+5. **Execution:** verified bytecode format and virtual machine planned.
+6. **Native:** measured backend prototype and optimization pipeline planned.
 
 No performance or safety superiority over Rust is claimed until reproducible benchmarks, conformance tests, and independent review support those claims.
