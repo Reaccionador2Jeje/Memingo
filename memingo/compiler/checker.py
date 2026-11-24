@@ -104,6 +104,20 @@ class TypeChecker:
             self._expression(node.value)
         elif name == "Borrow":
             self._expression(node.package)
+        elif name == "ReferenceBorrow":
+            source_type = self.scope.lookup(node.source)
+            if source_type is None:
+                self._error("M1002", f"unknown variable '{node.source}'", node)
+                source_type = ANY
+            elif source_type.kind not in (TypeKind.LIST, TypeKind.MAP, TypeKind.ANY):
+                self._error("M1020", "references currently require a list or object value", node)
+            previous = self.scope
+            local = Scope(previous)
+            if not local.define(node.alias, source_type):
+                self._error("M1001", f"'{node.alias}' is already declared in this scope", node)
+            self.scope = local
+            self._check_block(node.body, nested=False)
+            self.scope = previous
         elif name == "Return":
             self._expression(node.value)
         elif name == "If":
