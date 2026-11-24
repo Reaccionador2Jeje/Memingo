@@ -76,6 +76,7 @@ class MemingoFunction:
             )
         environment = Environment(self.closure)
         active_records = []
+        pending_records = []
         call_arguments = call_node.arguments if call_node is not None else []
         for index, (parameter, value) in enumerate(zip(self.declaration.params, arguments)):
             environment.define(parameter.name, value)
@@ -97,14 +98,14 @@ class MemingoFunction:
                         raise RuntimeErrorMemingo(
                             "overlapping references cannot include a mutable borrow"
                         )
-                record = {
+                pending_records.append({
                     "source": source_name,
                     "alias": parameter.name,
                     "identity": identity,
                     "mutable": parameter.mutable,
-                }
-                interpreter._active_reference_borrows.append(record)
-                active_records.append(record)
+                })
+        interpreter._active_reference_borrows.extend(pending_records)
+        active_records.extend(pending_records)
         try:
             interpreter.execute_block(self.declaration.body, environment)
         except ReturnSignal as signal:
@@ -361,10 +362,19 @@ class Interpreter:
         for active in self._active_reference_borrows:
             if name == active["alias"] and writing:
                 raise RuntimeErrorMemingo("a borrowed reference binding cannot be reassigned")
-            if name == active["source"] and (writing or active["mutable"]):
+            if name == active["source"] and name != active["alias"] and (writing or active["mutable"]):
                 action = "reassigned" if writing else "accessed"
                 raise RuntimeErrorMemingo(
                     f"borrowed source '{name}' cannot be {action} while reference '{active['alias']}' is active"
+                )
+
+    def _check_reference_value(self, name, value):
+        identity = id(value)
+        for active in self._active_reference_borrows:
+            if (active["mutable"] and identity == active["identity"]
+                    and name not in (active["alias"], active["source"])):
+                raise RuntimeErrorMemingo(
+                    f"collection is exclusively borrowed as '{active['alias']}'"
                 )
 
     def _check_reference_mutation(self, value):
@@ -413,7 +423,9 @@ class Interpreter:
             return self.shield.validate(node.value)
         if isinstance(node, Variable):
             self._check_reference_variable(node.name)
-            return self.environment.get(node.name)
+            value = self.environment.get(node.name)
+            self._check_reference_value(node.name, value)
+            return value
         if isinstance(node, ListExpression):
             self.shield.check_collection_size(len(node.items))
             return self.shield.validate([self.evaluate(item) for item in node.items])
