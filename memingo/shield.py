@@ -27,6 +27,60 @@ class ShieldLimits:
                 raise ValueError(f"{name} must be a positive integer")
 
 
+class AllocationTracker:
+    """Snapshot-based tracker for reachable interpreter-managed objects.
+
+    Counts are observations between interpreter statements, not allocator hooks.
+    """
+
+    _TRACKED_TYPES = (list, dict, set, tuple, str, bytes, bytearray)
+
+    def __init__(self):
+        self._active = {}
+        self.total_allocations = 0
+        self.total_releases = 0
+        self.active_bytes = 0
+        self.peak_bytes = 0
+        self.snapshots = 0
+
+    def _collect(self, value, found):
+        identity = id(value)
+        if identity in found:
+            return
+        if isinstance(value, self._TRACKED_TYPES):
+            found[identity] = sys.getsizeof(value)
+        if isinstance(value, dict):
+            for key, item in value.items():
+                self._collect(key, found)
+                self._collect(item, found)
+        elif isinstance(value, (list, tuple, set, frozenset)):
+            for item in value:
+                self._collect(item, found)
+
+    def snapshot(self, roots):
+        current = {}
+        self._collect(roots, current)
+        previous_ids = set(self._active)
+        current_ids = set(current)
+        self.total_allocations += len(current_ids - previous_ids)
+        self.total_releases += len(previous_ids - current_ids)
+        self._active = current
+        self.active_bytes = sum(current.values())
+        self.peak_bytes = max(self.peak_bytes, self.active_bytes)
+        self.snapshots += 1
+        return self.stats()
+
+    def stats(self):
+        return {
+            "total_allocations": self.total_allocations,
+            "total_releases": self.total_releases,
+            "active_objects": len(self._active),
+            "active_bytes": self.active_bytes,
+            "peak_bytes": self.peak_bytes,
+            "snapshots": self.snapshots,
+        }
+
+
 class MemingoShield:
     """Per-execution guard for steps, call depth, and runtime values."""
 
@@ -35,6 +89,7 @@ class MemingoShield:
         self.steps = 0
         self.call_depth = 0
         self.memory_bytes = 0
+        self.allocations = AllocationTracker()
 
     def tick(self, amount=1):
         if amount < 0:
