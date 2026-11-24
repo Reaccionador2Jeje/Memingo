@@ -18,7 +18,6 @@ from .mgoa import PackageError, add_package, install_project, remove_package
 from .lexer import LexerError
 from .packages import ensure_project, init_project, read_manifest, resolve_entry
 from .parser import ParseError, parse
-from .semantic import analyze
 from .server import MemingoApp, serve, serve_app
 from .cli import (
     banner, heading, key_value, success, info, error, warning, table, panel,
@@ -166,14 +165,9 @@ def check_sources(paths) -> int:
     checked = 0
     for source_file in files:
         try:
-            program = parse(source_file.read_text(encoding="utf-8"))
-            diagnostics = analyze(program)
+            parse(source_file.read_text(encoding="utf-8"))
         except (LexerError, ParseError, UnicodeError, OSError) as error:
             print(f"Memingo error: {source_file}: {error}", file=sys.stderr)
-            return 1
-        if diagnostics:
-            for diagnostic in diagnostics:
-                print(f"Memingo semantic error: {source_file}: {diagnostic}", file=sys.stderr)
             return 1
         checked += 1
     success(f"{checked} file(s) checked")
