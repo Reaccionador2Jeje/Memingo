@@ -19,6 +19,11 @@ class ShieldLimits:
     max_string_chars: int = 4_000_000
     max_integer_bits: int = 1_000_000
 
+    def __post_init__(self):
+        for name, value in self.__dict__.items():
+            if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+                raise ValueError(f"{name} must be a positive integer")
+
 
 class MemingoShield:
     """Per-execution guard for steps, call depth, and runtime values."""
