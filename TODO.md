@@ -9,13 +9,32 @@
 - [x] Primitive and collection type representations
 - [x] Basic expression type inference and numeric widening
 - [x] Initial static checks for names, assignments, conditions, and calls
-- [ ] Full function signature and return-type inference
+- [x] Conservative ritual return-type inference for guaranteed-return paths
+- [x] Optional primitive parameter annotations and call-site/body type checking
+- [ ] Call-site parameter inference and interprocedural return analysis
 - [x] Initial typed HIR and lowering from the existing AST
 - [x] Public parse → type-check → HIR compilation API
 - [x] Type model invariants and reusable checker state
-- [ ] Type checker and ownership analysis
+- [x] Initial type checker, ownership analysis and lexical borrow checks
 - [ ] Bytecode format and virtual machine
 - [ ] Native backend prototype and benchmarks
+
+## Hybrid Shield
+- [x] Runtime execution-step budget and loop guard
+- [x] Ritual call-depth limit
+- [x] Collection, string and integer size limits
+- [x] Reject non-finite floating-point values at runtime boundaries
+- [x] Initial static ownership analysis for collection transfers
+- [x] Call-scoped exclusive-borrow alias checks for collection mutators
+- [x] Explicit shared and mutable reference syntax
+- [x] Initial lexical lifetime and scope-based borrow analysis (collection references)
+- [ ] Mutation alias analysis and closure capture rules
+- [ ] Borrow checker integrated into typed HIR
+- [ ] Explicit audited unsafe capabilities and scoped escape hatches
+- [x] Approximate runtime memory accounting for reachable interpreter values
+- [x] Snapshot-based allocation tracking for reachable interpreter values
+- [ ] Allocator-level hooks and hard process memory ceilings
+- [ ] Hardware and OS fault reporting through host-specific adapters
 
 ## Language
 - [x] Lexer with keywords, literals, operators and comments

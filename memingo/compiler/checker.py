@@ -59,18 +59,25 @@ class TypeChecker:
         self.expression_types: dict[int, Type] = {}
         self.scope = Scope()
         self._functions: dict[str, Type] = {}
+        self._return_types: list[list[Type]] = []
+        self._parameter_types: dict[int, Type] = {}
 
     def check(self, program) -> TypeCheckResult:
         # A checker instance can safely be reused for independent programs.
         self.expression_types.clear()
         self._functions.clear()
+        self._return_types.clear()
+        self._parameter_types.clear()
         self.scope = Scope()
         self.diagnostics.clear()
 
         # Predeclare rituals so calls can resolve regardless of declaration order.
         for statement in program.statements:
             if statement.__class__.__name__ == "Function":
-                signature = function_of(tuple(ANY for _ in statement.params), ANY)
+                parameter_types = tuple(
+                    self._parameter_type(parameter) for parameter in statement.params
+                )
+                signature = function_of(parameter_types, ANY)
                 if not self.scope.define(statement.name, signature):
                     self._error("M1001", f"'{statement.name}' is already declared in this scope", statement)
                 else:
@@ -104,8 +111,24 @@ class TypeChecker:
             self._expression(node.value)
         elif name == "Borrow":
             self._expression(node.package)
+        elif name == "ReferenceBorrow":
+            source_type = self.scope.lookup(node.source)
+            if source_type is None:
+                self._error("M1002", f"unknown variable '{node.source}'", node)
+                source_type = ANY
+            elif source_type.kind not in (TypeKind.LIST, TypeKind.MAP, TypeKind.ANY):
+                self._error("M1020", "references currently require a list or object value", node)
+            previous = self.scope
+            local = Scope(previous)
+            if not local.define(node.alias, source_type):
+                self._error("M1001", f"'{node.alias}' is already declared in this scope", node)
+            self.scope = local
+            self._check_block(node.body, nested=False)
+            self.scope = previous
         elif name == "Return":
-            self._expression(node.value)
+            return_type = self._expression(node.value)
+            if self._return_types:
+                self._return_types[-1].append(return_type)
         elif name == "If":
             condition = self._expression(node.condition)
             self._require_boolean(condition, node.condition, "when")
@@ -118,12 +141,34 @@ class TypeChecker:
         elif name == "Function":
             previous = self.scope
             local = Scope(previous)
+            parameter_types = []
             for parameter in node.params:
-                if not local.define(parameter, ANY):
-                    self._error("M1014", f"duplicate parameter '{parameter}'", node)
+                parameter_type = self._parameter_type(parameter)
+                parameter_types.append(parameter_type)
+                if not local.define(parameter.name, parameter_type):
+                    self._error("M1014", f"duplicate parameter '{parameter.name}'", node)
+            self._return_types.append([])
             self.scope = local
             self._check_block(node.body, nested=False)
+            returns = self._return_types.pop()
             self.scope = previous
+
+            # Infer only when every control-flow path returns a value.
+            # Otherwise keep ANY so the checker never promises a false guarantee.
+            if not returns:
+                return_type = GHOST
+            elif _block_guarantees_return(node.body):
+                return_type = returns[0]
+                for candidate in returns[1:]:
+                    return_type = common_type(return_type, candidate)
+            else:
+                return_type = ANY
+
+            signature = function_of(tuple(parameter_types), return_type)
+            declared = previous.symbols.get(node.name)
+            if declared is not None and declared.kind is TypeKind.FUNCTION:
+                previous.symbols[node.name] = signature
+                self._functions[node.name] = signature
         else:
             self._expression(node)
 
@@ -135,6 +180,31 @@ class TypeChecker:
             self._statement(statement)
         if nested:
             self.scope = previous
+
+    def _parameter_type(self, parameter) -> Type:
+        """Resolve and cache an optional primitive parameter annotation."""
+        key = id(parameter)
+        if key in self._parameter_types:
+            return self._parameter_types[key]
+        names = {
+            "any": ANY,
+            "ghost": GHOST,
+            "based": BASED,
+            "cringe": BASED,
+            "whole": WHOLE,
+            "decimal": DECIMAL,
+            "caption": CAPTION,
+        }
+        annotation = getattr(parameter, "annotation", None)
+        if annotation is None:
+            result = ANY
+        else:
+            result = names.get(annotation)
+            if result is None:
+                self._error("M1015", f"unknown parameter type '{annotation}'", parameter)
+                result = ANY
+        self._parameter_types[key] = result
+        return result
 
     def _require_boolean(self, value_type: Type, node, construct: str) -> None:
         if value_type != ANY and value_type != BASED:
@@ -249,6 +319,25 @@ class TypeChecker:
             self._require_boolean(right, node.right, operator)
             return BASED
         return ANY
+
+
+
+def _block_guarantees_return(statements) -> bool:
+    """Whether execution of this block must hit a return on every path."""
+    for statement in statements:
+        name = statement.__class__.__name__
+        if name == "Return":
+            return True
+        if name == "If":
+            if (statement.else_branch
+                    and _block_guarantees_return(statement.then_branch)
+                    and _block_guarantees_return(statement.else_branch)):
+                return True
+        elif name == "ReferenceBorrow":
+            if _block_guarantees_return(statement.body):
+                return True
+        # A loop may execute zero times; a nested ritual returns only from itself.
+    return False
 
 
 def check(program, diagnostics: DiagnosticBag | None = None) -> TypeCheckResult:

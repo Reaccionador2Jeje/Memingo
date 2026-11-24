@@ -15,6 +15,14 @@ class Borrow:
 
 
 @dataclass
+class ReferenceBorrow:
+    source: str
+    alias: str
+    mutable: bool
+    body: list
+
+
+@dataclass
 class Let:
     name: str
     value: object
@@ -47,6 +55,14 @@ class If:
 class While:
     condition: object
     body: list
+
+
+@dataclass
+class Parameter:
+    name: str
+    borrow: bool = False
+    mutable: bool = False
+    annotation: str | None = None
 
 
 @dataclass
@@ -143,6 +159,23 @@ class Parser:
         if self._match("SPILL"):
             return Say(self._expression())
         if self._match("BORROW"):
+            # Explicit lexical reference: borrow [mut] source as alias { ... }
+            start = self.index
+            mutable = self._check("IDENTIFIER") and self._peek().value == "mut"
+            offset = 1 if mutable else 0
+            if (self.index + offset + 3 < len(self.tokens)
+                    and self.tokens[self.index + offset].kind == "IDENTIFIER"
+                    and self.tokens[self.index + offset + 1].kind == "IDENTIFIER"
+                    and self.tokens[self.index + offset + 1].value == "as"
+                    and self.tokens[self.index + offset + 2].kind == "IDENTIFIER"
+                    and self.tokens[self.index + offset + 3].kind == "LBRACE"):
+                if mutable:
+                    self._advance()
+                source = self._consume("IDENTIFIER", "Expected source variable").value
+                self._advance()  # as
+                alias = self._consume("IDENTIFIER", "Expected reference name").value
+                return ReferenceBorrow(source, alias, mutable, self._block())
+            self.index = start
             return Borrow(self._expression())
         if self._check("IDENTIFIER"):
             name = self._advance().value
@@ -162,7 +195,7 @@ class Parser:
         self._skip_separators()
         params = []
         if not self._check("RPAREN"):
-            params.append(self._consume("IDENTIFIER", "Expected parameter name").value)
+            params.append(self._parameter())
             while True:
                 self._skip_separators()
                 if not self._match("COMMA"):
@@ -170,10 +203,24 @@ class Parser:
                 self._skip_separators()
                 if self._check("RPAREN"):
                     break
-                params.append(self._consume("IDENTIFIER", "Expected parameter name").value)
+                params.append(self._parameter())
         self._skip_separators()
         self._consume("RPAREN", "Expected ')' after parameters")
         return Function(name, params, self._block())
+
+    def _parameter(self):
+        borrowed = self._match("BORROW")
+        mutable = False
+        if borrowed and self._check("IDENTIFIER") and self._peek().value == "mut":
+            self._advance()
+            mutable = True
+        name = self._consume("IDENTIFIER", "Expected parameter name").value
+        annotation = None
+        if self._match("COLON"):
+            annotation = self._consume(
+                "IDENTIFIER", "Expected a type name after ':'"
+            ).value
+        return Parameter(name, borrowed, mutable, annotation)
 
     def _if_statement(self):
         condition = self._expression()

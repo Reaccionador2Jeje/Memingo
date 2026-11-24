@@ -70,6 +70,67 @@ greet()
 '''))
         self.assertTrue(any(item.code == "M1009" for item in result.diagnostics))
 
+    def test_annotated_parameters_are_checked_at_call_sites(self):
+        result = check(parse(
+            'ritual add(a: whole, b: whole) { drop a + b }\n'
+            'vibe total = add(2, 3)\n'
+            'total = "wrong"\n'
+            'add("two", 3)'
+        ))
+        self.assertTrue(any(item.code == "M1010" for item in result.diagnostics))
+        self.assertTrue(any(item.code == "M1003" for item in result.diagnostics))
+
+    def test_annotated_parameters_are_checked_inside_rituals(self):
+        result = check(parse(
+            'ritual shout(message: caption) {\n'
+            '    vibe count = message - 1\n'
+            '}'
+        ))
+        self.assertTrue(any(item.code == "M1011" for item in result.diagnostics))
+
+    def test_unknown_parameter_annotation_is_reported(self):
+        result = check(parse('ritual f(value: mystery) { spill value }'))
+        self.assertTrue(any(item.code == "M1015" for item in result.diagnostics))
+
+    def test_unannotated_parameters_remain_dynamic(self):
+        result = check(parse(
+            'ritual identity(value) { drop value }\n'
+            'identity("still compatible")'
+        ))
+        self.assertFalse(result.has_errors)
+
+    def test_function_return_type_is_inferred_from_guaranteed_return(self):
+        result = check(parse(
+            'ritual answer() { drop 42 }\n'
+            'vibe result = answer()\n'
+            'result = "wrong"'
+        ))
+        self.assertTrue(any(item.code == "M1003" for item in result.diagnostics))
+
+    def test_both_if_branches_can_infer_a_function_return_type(self):
+        result = check(parse(
+            'ritual choose(flag) { when flag { drop 1 } nah { drop 2 } }\n'
+            'vibe result = choose(based)\n'
+            'result = "wrong"'
+        ))
+        self.assertTrue(any(item.code == "M1003" for item in result.diagnostics))
+
+    def test_function_with_possible_fallthrough_keeps_dynamic_return_type(self):
+        result = check(parse(
+            'ritual maybe(flag) { when flag { drop 1 } }\n'
+            'vibe result = maybe(based)\n'
+            'result = "still dynamic"'
+        ))
+        self.assertFalse(any(item.code == "M1003" for item in result.diagnostics))
+
+    def test_function_without_return_infers_ghost(self):
+        result = check(parse(
+            'ritual announce() { spill "hello" }\n'
+            'vibe result = announce()\n'
+            'result = 1'
+        ))
+        self.assertTrue(any(item.code == "M1003" for item in result.diagnostics))
+
     def test_scopes_do_not_leak_from_blocks(self):
         result = check(parse('''
 when based { vibe hidden = 1 }

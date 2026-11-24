@@ -11,10 +11,11 @@ from pathlib import Path
 
 from .server import MAX_UPLOAD_FILE_SIZE, MemingoApp, Response, serve_app
 from .parser import (
-    Assign, Binary, Borrow, Call, Function, Get, If, Let, ListExpression,
+    Assign, Binary, Borrow, ReferenceBorrow, Call, Function, Get, If, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
 )
 from . import ai as memingo_ai
+from .shield import MemingoShield, ShieldLimits
 
 
 class RuntimeErrorMemingo(Exception):
@@ -59,26 +60,70 @@ class MemingoFunction:
         self.declaration = declaration
         self.closure = closure
 
-    def call(self, interpreter, arguments):
+    def call(self, interpreter, arguments, call_node=None):
+        interpreter.shield.enter_call()
+        try:
+            result = self._call_guarded(interpreter, arguments, call_node)
+            interpreter.shield.validate(arguments)
+            return interpreter.shield.validate(result)
+        finally:
+            interpreter.shield.leave_call()
+
+    def _call_guarded(self, interpreter, arguments, call_node=None):
         if len(arguments) != len(self.declaration.params):
             raise RuntimeErrorMemingo(
                 f"Function '{self.declaration.name}' expects {len(self.declaration.params)} arguments, got {len(arguments)}"
             )
         environment = Environment(self.closure)
-        for name, value in zip(self.declaration.params, arguments):
-            environment.define(name, value)
+        active_records = []
+        pending_records = []
+        call_arguments = call_node.arguments if call_node is not None else []
+        for index, (parameter, value) in enumerate(zip(self.declaration.params, arguments)):
+            environment.define(parameter.name, value)
+            if parameter.borrow:
+                if not isinstance(value, (list, dict)):
+                    raise RuntimeErrorMemingo(
+                        f"borrowed parameter '{parameter.name}' requires a list or object"
+                    )
+                argument_node = call_arguments[index] if index < len(call_arguments) else None
+                if not isinstance(argument_node, Variable):
+                    raise RuntimeErrorMemingo(
+                        f"borrowed parameter '{parameter.name}' requires a variable argument"
+                    )
+                source_name = argument_node.name
+                interpreter._check_reference_variable(source_name)
+                identity = id(value)
+                for active in (*interpreter._active_reference_borrows, *pending_records):
+                    if active["identity"] == identity and (active["mutable"] or parameter.mutable):
+                        raise RuntimeErrorMemingo(
+                            "overlapping references cannot include a mutable borrow"
+                        )
+                pending_records.append({
+                    "source": source_name,
+                    "alias": parameter.name,
+                    "identity": identity,
+                    "mutable": parameter.mutable,
+                })
+        interpreter._active_reference_borrows.extend(pending_records)
+        active_records.extend(pending_records)
         try:
             interpreter.execute_block(self.declaration.body, environment)
         except ReturnSignal as signal:
             return signal.value
+        finally:
+            for record in reversed(active_records):
+                if record in interpreter._active_reference_borrows:
+                    interpreter._active_reference_borrows.remove(record)
         return None
 
 
 class Interpreter:
-    def __init__(self, project_directory="."):
+    def __init__(self, project_directory=".", shield_limits=None):
         self.project_directory = Path(project_directory).resolve()
+        self.shield = MemingoShield(shield_limits or ShieldLimits())
         self.output = []
         self.debug_trace = None
+        self._active_reference_borrows = []
         env_path = self.project_directory / ".env"
         if env_path.exists():
             for line in env_path.read_text(encoding="utf-8").splitlines():
@@ -181,6 +226,11 @@ class Interpreter:
             return self.execute_block(program.statements, self.global_environment)
         except ReturnSignal as signal:
             return signal.value
+        except Exception as exception:
+            from .shield import ShieldViolation
+            if isinstance(exception, ShieldViolation):
+                raise RuntimeErrorMemingo(f"Shield blocked execution: {exception}") from exception
+            raise
 
     def execute_block(self, statements, environment):
         previous = getattr(self, "environment", None)
@@ -189,11 +239,15 @@ class Interpreter:
             result = None
             for statement in statements:
                 result = self.execute(statement)
+                self._check_memory_usage()
             return result
         finally:
             self.environment = previous
+            if previous is not None:
+                self._check_memory_usage()
 
     def execute(self, node):
+        self.shield.tick()
         if self.debug_trace is not None:
             if len(self.debug_trace) >= 10000:
                 raise RuntimeErrorMemingo("Debug trace limit reached (10,000 steps). Check for an endless loop.")
@@ -207,7 +261,9 @@ class Interpreter:
             self.environment.define(node.name, value)
             return value
         if isinstance(node, Assign):
+            self._check_reference_variable(node.name, writing=True)
             value = self.evaluate(node.value)
+            self._check_reference_escape(value)
             self.environment.assign(node.name, value)
             return value
         if isinstance(node, Say):
@@ -216,7 +272,29 @@ class Interpreter:
             self.output.append(text)
             return value
         if isinstance(node, Return):
-            raise ReturnSignal(self.evaluate(node.value))
+            value = self.evaluate(node.value)
+            self._check_reference_escape(value)
+            raise ReturnSignal(value)
+        if isinstance(node, ReferenceBorrow):
+            self._check_reference_variable(node.source)
+            source_value = self.environment.get(node.source)
+            if not isinstance(source_value, (list, dict)):
+                raise RuntimeErrorMemingo("borrow requires a list or object value")
+            if node.alias == node.source:
+                raise RuntimeErrorMemingo("reference name must differ from its source")
+            identity = id(source_value)
+            for active in self._active_reference_borrows:
+                if active["identity"] == identity and (active["mutable"] or node.mutable):
+                    raise RuntimeErrorMemingo("overlapping references cannot include a mutable borrow")
+            reference_environment = Environment(self.environment)
+            reference_environment.define(node.alias, source_value)
+            record = {"source": node.source, "alias": node.alias,
+                      "identity": identity, "mutable": node.mutable}
+            self._active_reference_borrows.append(record)
+            try:
+                return self.execute_block(node.body, reference_environment)
+            finally:
+                self._active_reference_borrows.pop()
         if isinstance(node, Borrow):
             package_name = self.evaluate(node.package)
             if not isinstance(package_name, str):
@@ -275,12 +353,63 @@ class Interpreter:
             result = None
             iterations = 0
             while self.evaluate(node.condition):
+                self.shield.tick()
                 iterations += 1
                 if self.debug_trace is not None and iterations > 10000:
                     raise RuntimeErrorMemingo("Debug loop limit reached (10,000 iterations). Check the loop condition.")
                 result = self.execute_block(node.body, Environment(self.environment))
             return result
         return self.evaluate(node)
+
+    def _check_reference_variable(self, name, writing=False):
+        for active in self._active_reference_borrows:
+            if name == active["alias"] and writing:
+                raise RuntimeErrorMemingo("a borrowed reference binding cannot be reassigned")
+            if name == active["source"] and name != active["alias"] and (writing or active["mutable"]):
+                action = "reassigned" if writing else "accessed"
+                raise RuntimeErrorMemingo(
+                    f"borrowed source '{name}' cannot be {action} while reference '{active['alias']}' is active"
+                )
+
+    def _check_reference_value(self, name, value):
+        identity = id(value)
+        for active in self._active_reference_borrows:
+            if (active["mutable"] and identity == active["identity"]
+                    and name not in (active["alias"], active["source"])):
+                raise RuntimeErrorMemingo(
+                    f"collection is exclusively borrowed as '{active['alias']}'"
+                )
+
+    def _check_reference_escape(self, value):
+        identity = id(value)
+        for active in self._active_reference_borrows:
+            if identity == active["identity"]:
+                raise RuntimeErrorMemingo(
+                    f"borrowed value '{active['alias']}' cannot escape its reference lifetime"
+                )
+
+    def _check_reference_mutation(self, value):
+        identity = id(value)
+        for active in self._active_reference_borrows:
+            if active["identity"] == identity and not active["mutable"]:
+                raise RuntimeErrorMemingo(
+                    f"cannot mutate '{active['alias']}' inside an immutable reference scope"
+                )
+
+    def _check_memory_usage(self):
+        """Account for reachable values in the active environment chain."""
+        roots = []
+        environment = getattr(self, "environment", None)
+        while environment is not None:
+            roots.append(environment.values)
+            environment = environment.parent
+        self.shield.allocations.snapshot(roots)
+        self.shield.check_memory(roots)
+
+    @property
+    def memory_stats(self):
+        """Return the latest approximate allocation and memory statistics."""
+        return self.shield.allocations.stats()
 
     def _debug_variables(self):
         visible = {}
@@ -302,13 +431,18 @@ class Interpreter:
 
     def evaluate(self, node):
         if isinstance(node, Literal):
-            return node.value
+            return self.shield.validate(node.value)
         if isinstance(node, Variable):
-            return self.environment.get(node.name)
+            self._check_reference_variable(node.name)
+            value = self.environment.get(node.name)
+            self._check_reference_value(node.name, value)
+            return value
         if isinstance(node, ListExpression):
-            return [self.evaluate(item) for item in node.items]
+            self.shield.check_collection_size(len(node.items))
+            return self.shield.validate([self.evaluate(item) for item in node.items])
         if isinstance(node, MapExpression):
-            return {key: self.evaluate(value) for key, value in node.entries}
+            self.shield.check_collection_size(len(node.entries))
+            return self.shield.validate({key: self.evaluate(value) for key, value in node.entries})
         if isinstance(node, Get):
             target = self.evaluate(node.target)
             key = self.evaluate(node.key)
@@ -331,15 +465,21 @@ class Interpreter:
             if node.operator == "||":
                 return left if bool(left) else self.evaluate(node.right)
             right = self.evaluate(node.right)
-            return self._binary(node.operator, left, right)
+            return self.shield.validate(self._binary(node.operator, left, right))
         if isinstance(node, Call):
             callee = self.evaluate(node.callee)
             arguments = [self.evaluate(argument) for argument in node.arguments]
             if isinstance(callee, MemingoFunction):
-                return callee.call(self, arguments)
+                return callee.call(self, arguments, node)
             if callable(callee):
                 try:
-                    return callee(*arguments)
+                    function_name = node.callee.name if isinstance(node.callee, Variable) else None
+                    if function_name in ("push", "append", "set_value", "delete_key") and arguments:
+                        self._check_reference_mutation(arguments[0])
+                    self.shield.validate(arguments)
+                    result = callee(*arguments)
+                    self.shield.validate(arguments)
+                    return self.shield.validate(result)
                 except RuntimeErrorMemingo:
                     raise
                 except Exception as exception:
