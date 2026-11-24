@@ -60,12 +60,14 @@ class TypeChecker:
         self.scope = Scope()
         self._functions: dict[str, Type] = {}
         self._return_types: list[list[Type]] = []
+        self._parameter_types: dict[int, Type] = {}
 
     def check(self, program) -> TypeCheckResult:
         # A checker instance can safely be reused for independent programs.
         self.expression_types.clear()
         self._functions.clear()
         self._return_types.clear()
+        self._parameter_types.clear()
         self.scope = Scope()
         self.diagnostics.clear()
 
@@ -180,7 +182,10 @@ class TypeChecker:
             self.scope = previous
 
     def _parameter_type(self, parameter) -> Type:
-        """Resolve an optional primitive parameter annotation."""
+        """Resolve and cache an optional primitive parameter annotation."""
+        key = id(parameter)
+        if key in self._parameter_types:
+            return self._parameter_types[key]
         names = {
             "any": ANY,
             "ghost": GHOST,
@@ -192,11 +197,13 @@ class TypeChecker:
         }
         annotation = getattr(parameter, "annotation", None)
         if annotation is None:
-            return ANY
-        result = names.get(annotation)
-        if result is None:
-            self._error("M1015", f"unknown parameter type '{annotation}'", parameter)
-            return ANY
+            result = ANY
+        else:
+            result = names.get(annotation)
+            if result is None:
+                self._error("M1015", f"unknown parameter type '{annotation}'", parameter)
+                result = ANY
+        self._parameter_types[key] = result
         return result
 
     def _require_boolean(self, value_type: Type, node, construct: str) -> None:
