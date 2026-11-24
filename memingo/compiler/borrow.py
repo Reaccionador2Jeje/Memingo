@@ -86,11 +86,72 @@ class BorrowChecker:
             *labels,
         )
 
+    def _walk(self, node):
+        if node is None:
+            return
+        yield node
+        if not hasattr(node, "__dict__"):
+            return
+        for value in vars(node).values():
+            if isinstance(value, (list, tuple)):
+                for item in value:
+                    yield from self._walk(item)
+            elif hasattr(value, "__dict__"):
+                yield from self._walk(value)
+
+    def _lifetime_error(self, code, node, message):
+        key = (code, id(node))
+        if key in self._reported:
+            return
+        self._reported.add(key)
+        span = getattr(node, "span", None)
+        labels = (Label(span, primary=True),) if span is not None else ()
+        self.diagnostics.error(code, message, *labels)
+
+    def _check_reference_scope(self, node):
+        source, alias = node.source, node.alias
+        if source == alias:
+            self._lifetime_error("M2201", node, "reference name must differ from its source")
+            return
+        if node.mutable:
+            for item in node.body:
+                for part in self._walk(item):
+                    if part.__class__.__name__ == "Variable" and part.name == source:
+                        self._lifetime_error(
+                            "M2203", part,
+                            f"source '{source}' cannot be accessed while its mutable reference '{alias}' is active",
+                        )
+                        break
+        else:
+            for item in node.body:
+                for part in self._walk(item):
+                    if part.__class__.__name__ == "Call":
+                        callee = part.callee
+                        name = callee.name if callee.__class__.__name__ == "Variable" else None
+                        for position in _MUTATING_ARGUMENTS.get(name, ()):
+                            if position < len(part.arguments) and alias in self._roots(part.arguments[position]):
+                                self._lifetime_error(
+                                    "M2202", part,
+                                    f"cannot mutably access '{alias}' inside an immutable reference scope",
+                                )
+        # References are lexical and cannot escape through return or assignment.
+        for item in node.body:
+            for part in self._walk(item):
+                kind = part.__class__.__name__
+                if kind == "Return" and alias in self._roots(part.value):
+                    self._lifetime_error("M2204", part, f"reference '{alias}' cannot escape its borrow scope")
+                elif kind in ("Let", "Assign") and alias in self._roots(part.value):
+                    self._lifetime_error("M2204", part, f"reference '{alias}' cannot be stored outside its borrow scope")
+
     def _visit(self, node):
         if node is None:
             return
         kind = node.__class__.__name__
-        if kind == "Call":
+        if kind == "ReferenceBorrow":
+            self._check_reference_scope(node)
+            for item in node.body:
+                self._visit(item)
+        elif kind == "Call":
             callee = node.callee
             function_name = callee.name if callee.__class__.__name__ == "Variable" else None
             mutable_positions = _MUTATING_ARGUMENTS.get(function_name, ())
