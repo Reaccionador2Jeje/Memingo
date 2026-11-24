@@ -30,7 +30,8 @@
 - [ ] Borrow checker integrated into typed HIR
 - [ ] Explicit audited unsafe capabilities and scoped escape hatches
 - [x] Approximate runtime memory accounting for reachable interpreter values
-- [ ] Allocation-level tracking and hard process memory ceilings
+- [x] Snapshot-based allocation tracking for reachable interpreter values
+- [ ] Allocator-level hooks and hard process memory ceilings
 - [ ] Hardware and OS fault reporting through host-specific adapters
 
 ## Language
