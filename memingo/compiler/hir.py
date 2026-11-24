@@ -76,6 +76,7 @@ def lower(program, expression_types: Mapping[int, Type] | None = None) -> HIRPro
                     "name": parameter.name,
                     "borrow": parameter.borrow,
                     "mutable": parameter.mutable,
+                    "annotation": parameter.annotation,
                 } for parameter in node.params),
             }
         elif name == "ListExpression":
