@@ -152,14 +152,23 @@ class BorrowChecker:
                             "M2205", part,
                             f"overlapping references to '{source}' include a mutable borrow",
                         )
-        # References are lexical and cannot escape through return or assignment.
+        # Track local aliases so returning an alias cannot outlive the block.
+        aliases = {alias}
         for item in node.body:
             for part in self._walk(item):
                 kind = part.__class__.__name__
-                if kind == "Return" and alias in self._roots(part.value):
-                    self._lifetime_error("M2204", part, f"reference '{alias}' cannot escape its borrow scope")
-                elif kind == "Assign" and alias in self._roots(part.value):
-                    self._lifetime_error("M2204", part, f"reference '{alias}' cannot be assigned outside its borrow scope")
+                if kind == "Let" and self._roots(part.value) & aliases:
+                    aliases.add(part.name)
+                elif kind == "Assign" and self._roots(part.value) & aliases:
+                    self._lifetime_error(
+                        "M2204", part,
+                        f"reference derived from '{alias}' cannot be assigned outside its borrow scope",
+                    )
+                elif kind == "Return" and self._roots(part.value) & aliases:
+                    self._lifetime_error(
+                        "M2204", part,
+                        f"reference derived from '{alias}' cannot escape its borrow scope",
+                    )
 
     def _visit(self, node):
         if node is None:
@@ -226,6 +235,7 @@ class BorrowChecker:
             for parameter in node.params:
                 if not parameter.borrow:
                     continue
+                aliases = {parameter.name}
                 for item in node.body:
                     for part in self._walk(item):
                         part_kind = part.__class__.__name__
@@ -233,23 +243,25 @@ class BorrowChecker:
                             callee = part.callee
                             name = callee.name if callee.__class__.__name__ == "Variable" else None
                             for position in _MUTATING_ARGUMENTS.get(name, ()):
-                                if position < len(part.arguments) and parameter.name in self._roots(part.arguments[position]):
+                                if position < len(part.arguments) and self._roots(part.arguments[position]) & aliases:
                                     self._lifetime_error(
                                         "M2202", part,
                                         f"cannot mutate immutable borrowed parameter '{parameter.name}'",
                                     )
-                        if part_kind == "Assign":
+                        if part_kind == "Let" and self._roots(part.value) & aliases:
+                            aliases.add(part.name)
+                        elif part_kind == "Assign":
                             if part.name == parameter.name:
                                 self._lifetime_error(
                                     "M2207", part,
                                     f"borrowed parameter '{parameter.name}' cannot be reassigned",
                                 )
-                            elif parameter.name in self._roots(part.value):
+                            elif self._roots(part.value) & aliases:
                                 self._lifetime_error(
                                     "M2204", part,
                                     f"borrowed parameter '{parameter.name}' cannot escape through assignment",
                                 )
-                        if part_kind == "Return" and parameter.name in self._roots(part.value):
+                        elif part_kind == "Return" and self._roots(part.value) & aliases:
                             self._lifetime_error(
                                 "M2204", part,
                                 f"borrowed parameter '{parameter.name}' cannot escape through return",
