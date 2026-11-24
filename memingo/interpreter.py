@@ -90,6 +90,7 @@ class Interpreter:
         self.shield = MemingoShield(shield_limits or ShieldLimits())
         self.output = []
         self.debug_trace = None
+        self._active_reference_borrows = []
         env_path = self.project_directory / ".env"
         if env_path.exists():
             for line in env_path.read_text(encoding="utf-8").splitlines():
@@ -227,6 +228,7 @@ class Interpreter:
             self.environment.define(node.name, value)
             return value
         if isinstance(node, Assign):
+            self._check_reference_variable(node.name, writing=True)
             value = self.evaluate(node.value)
             self.environment.assign(node.name, value)
             return value
@@ -238,14 +240,25 @@ class Interpreter:
         if isinstance(node, Return):
             raise ReturnSignal(self.evaluate(node.value))
         if isinstance(node, ReferenceBorrow):
+            self._check_reference_variable(node.source)
             source_value = self.environment.get(node.source)
             if not isinstance(source_value, (list, dict)):
                 raise RuntimeErrorMemingo("borrow requires a list or object value")
             if node.alias == node.source:
                 raise RuntimeErrorMemingo("reference name must differ from its source")
+            identity = id(source_value)
+            for active in self._active_reference_borrows:
+                if active["identity"] == identity and (active["mutable"] or node.mutable):
+                    raise RuntimeErrorMemingo("overlapping references cannot include a mutable borrow")
             reference_environment = Environment(self.environment)
             reference_environment.define(node.alias, source_value)
-            return self.execute_block(node.body, reference_environment)
+            record = {"source": node.source, "alias": node.alias,
+                      "identity": identity, "mutable": node.mutable}
+            self._active_reference_borrows.append(record)
+            try:
+                return self.execute_block(node.body, reference_environment)
+            finally:
+                self._active_reference_borrows.pop()
         if isinstance(node, Borrow):
             package_name = self.evaluate(node.package)
             if not isinstance(package_name, str):
@@ -312,6 +325,24 @@ class Interpreter:
             return result
         return self.evaluate(node)
 
+    def _check_reference_variable(self, name, writing=False):
+        for active in self._active_reference_borrows:
+            if name == active["alias"] and writing:
+                raise RuntimeErrorMemingo("a borrowed reference binding cannot be reassigned")
+            if name == active["source"] and (writing or active["mutable"]):
+                action = "reassigned" if writing else "accessed"
+                raise RuntimeErrorMemingo(
+                    f"borrowed source '{name}' cannot be {action} while reference '{active['alias']}' is active"
+                )
+
+    def _check_reference_mutation(self, value):
+        identity = id(value)
+        for active in self._active_reference_borrows:
+            if active["identity"] == identity and not active["mutable"]:
+                raise RuntimeErrorMemingo(
+                    f"cannot mutate '{active['alias']}' inside an immutable reference scope"
+                )
+
     def _check_memory_usage(self):
         """Account for reachable values in the active environment chain."""
         roots = []
@@ -349,6 +380,7 @@ class Interpreter:
         if isinstance(node, Literal):
             return self.shield.validate(node.value)
         if isinstance(node, Variable):
+            self._check_reference_variable(node.name)
             return self.environment.get(node.name)
         if isinstance(node, ListExpression):
             self.shield.check_collection_size(len(node.items))
@@ -386,6 +418,9 @@ class Interpreter:
                 return callee.call(self, arguments)
             if callable(callee):
                 try:
+                    function_name = node.callee.name if isinstance(node.callee, Variable) else None
+                    if function_name in ("push", "append", "set_value", "delete_key") and arguments:
+                        self._check_reference_mutation(arguments[0])
                     self.shield.validate(arguments)
                     result = callee(*arguments)
                     self.shield.validate(arguments)
