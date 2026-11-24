@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .checker import TypeCheckResult, check
+from .borrow import BorrowResult, check_borrows
 from .diagnostics import Diagnostic, DiagnosticBag, Severity
 from .hir import HIRProgram, lower
 from .ownership import OwnershipResult, check_ownership
@@ -19,6 +20,7 @@ class CompilationResult:
     diagnostics: tuple[Diagnostic, ...]
     type_check: TypeCheckResult | None
     ownership: OwnershipResult | None = None
+    borrowing: BorrowResult | None = None
 
     @property
     def succeeded(self) -> bool:
@@ -40,9 +42,10 @@ def compile_source(text: str, source_id: str = "<memory>") -> CompilationResult:
         program = parse(text, source_id=source_id)
     except (LexerError, ParseError) as exc:
         diagnostics.error("M0001", str(exc))
-        return CompilationResult(source, sources, None, diagnostics.items, None, None)
+        return CompilationResult(source, sources, None, diagnostics.items, None, None, None)
 
     checked = check(program, diagnostics)
     ownership = check_ownership(program, checked.expression_types, diagnostics)
+    borrowing = check_borrows(program, diagnostics)
     hir = lower(program, checked.expression_types)
-    return CompilationResult(source, sources, hir, diagnostics.items, checked, ownership)
+    return CompilationResult(source, sources, hir, diagnostics.items, checked, ownership, borrowing)
