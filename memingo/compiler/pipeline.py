@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from .checker import TypeCheckResult, check
 from .diagnostics import Diagnostic, DiagnosticBag, Severity
 from .hir import HIRProgram, lower
+from .ownership import OwnershipResult, check_ownership
 from .source import SourceFile, SourceMap
 
 
@@ -17,6 +18,7 @@ class CompilationResult:
     hir: HIRProgram | None
     diagnostics: tuple[Diagnostic, ...]
     type_check: TypeCheckResult | None
+    ownership: OwnershipResult | None = None
 
     @property
     def succeeded(self) -> bool:
@@ -38,8 +40,9 @@ def compile_source(text: str, source_id: str = "<memory>") -> CompilationResult:
         program = parse(text, source_id=source_id)
     except (LexerError, ParseError) as exc:
         diagnostics.error("M0001", str(exc))
-        return CompilationResult(source, sources, None, diagnostics.items, None)
+        return CompilationResult(source, sources, None, diagnostics.items, None, None)
 
     checked = check(program, diagnostics)
+    ownership = check_ownership(program, checked.expression_types, diagnostics)
     hir = lower(program, checked.expression_types)
-    return CompilationResult(source, sources, hir, diagnostics.items, checked)
+    return CompilationResult(source, sources, hir, diagnostics.items, checked, ownership)
