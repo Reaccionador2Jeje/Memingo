@@ -88,3 +88,32 @@ responsible for physical allocation and reclamation.
 The runtime now maintains allocation statistics for reachable lists, dictionaries, sets, tuples, strings and byte buffers. At each statement boundary and after nested scope exit, the tracker snapshots reachable interpreter values and reports newly observed object identities, objects no longer reachable at the next snapshot, current active object count, estimated active bytes and peak estimated bytes. The interpreter exposes the latest report through `Interpreter.memory_stats`.
 
 These are snapshot observations, not hooks into Python's allocator. Short-lived objects created and discarded between snapshots may never be observed, object identity reuse can affect lifetime attribution, and object sizes are shallow `sys.getsizeof` estimates. The tracker does not free objects itself; normal Python reference counting and garbage collection remain responsible for reclamation. The existing memory budget remains the enforcement mechanism.
+
+## Explicit reference scopes and lifetimes
+
+Memingo now supports lexical reference scopes for list and object values:
+
+```mgo
+vibe items = [1, 2, 3]
+
+borrow items as view {
+    spill headcount(view)
+}
+
+borrow mut items as edit {
+    push(edit, 4)
+}
+```
+
+- `borrow source as alias { ... }` creates an immutable reference for the block.
+- `borrow mut source as alias { ... }` creates an exclusive mutable reference for the block.
+- The alias exists only in the nested block environment; the source remains the owner.
+- Immutable references cannot be mutated through the alias or through the original source.
+- While a mutable reference is active, the original source cannot be read or reassigned; mutation goes through the alias.
+- Reassigning a borrowed alias is rejected.
+- Nested overlapping references are allowed only when all overlapping references are immutable.
+- References cannot escape through assignment to an outer binding or through return.
+
+The compiler reports `M2201` for identical source/alias names, `M2202` for mutation during an immutable borrow, `M2203` for source access during a mutable borrow, `M2204` for a reference escape, and `M2205` for overlapping borrows that include a mutable reference. Runtime checks enforce the core access and mutation rules when executing parsed programs directly.
+
+This is a first lexical lifetime model for lists and objects, not full Rust-style lifetime inference. It does not yet model references to scalar values, function-signature lifetimes, closure captures, reference-returning functions, or interprocedural lifetime constraints.
