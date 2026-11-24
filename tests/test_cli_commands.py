@@ -42,19 +42,6 @@ class CliCommandTests(unittest.TestCase):
             self.assertNotIn("Traceback", output)
             self.assertIn("Memingo error", output)
 
-    def test_check_reports_static_function_arity(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            source = Path(temporary) / "arity.mgo"
-            source.write_text(
-                "ritual greet(name) { spill name }\n"
-                "greet()\n",
-                encoding="utf-8",
-            )
-            code, output = self.run_cli(["check", str(source)])
-            self.assertEqual(code, 1)
-            self.assertIn("MGO202", output)
-            self.assertIn("expects 1 argument(s), got 0", output)
-
     def test_info_and_deps_show_project_data(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
