@@ -60,27 +60,59 @@ class MemingoFunction:
         self.declaration = declaration
         self.closure = closure
 
-    def call(self, interpreter, arguments):
+    def call(self, interpreter, arguments, call_node=None):
         interpreter.shield.enter_call()
         try:
-            result = self._call_guarded(interpreter, arguments)
+            result = self._call_guarded(interpreter, arguments, call_node)
             interpreter.shield.validate(arguments)
             return interpreter.shield.validate(result)
         finally:
             interpreter.shield.leave_call()
 
-    def _call_guarded(self, interpreter, arguments):
+    def _call_guarded(self, interpreter, arguments, call_node=None):
         if len(arguments) != len(self.declaration.params):
             raise RuntimeErrorMemingo(
                 f"Function '{self.declaration.name}' expects {len(self.declaration.params)} arguments, got {len(arguments)}"
             )
         environment = Environment(self.closure)
-        for name, value in zip(self.declaration.params, arguments):
-            environment.define(name, value)
+        active_records = []
+        call_arguments = call_node.arguments if call_node is not None else []
+        for index, (parameter, value) in enumerate(zip(self.declaration.params, arguments)):
+            environment.define(parameter.name, value)
+            if parameter.borrow:
+                if not isinstance(value, (list, dict)):
+                    raise RuntimeErrorMemingo(
+                        f"borrowed parameter '{parameter.name}' requires a list or object"
+                    )
+                argument_node = call_arguments[index] if index < len(call_arguments) else None
+                if not isinstance(argument_node, Variable):
+                    raise RuntimeErrorMemingo(
+                        f"borrowed parameter '{parameter.name}' requires a variable argument"
+                    )
+                source_name = argument_node.name
+                interpreter._check_reference_variable(source_name)
+                identity = id(value)
+                for active in interpreter._active_reference_borrows:
+                    if active["identity"] == identity and (active["mutable"] or parameter.mutable):
+                        raise RuntimeErrorMemingo(
+                            "overlapping references cannot include a mutable borrow"
+                        )
+                record = {
+                    "source": source_name,
+                    "alias": parameter.name,
+                    "identity": identity,
+                    "mutable": parameter.mutable,
+                }
+                interpreter._active_reference_borrows.append(record)
+                active_records.append(record)
         try:
             interpreter.execute_block(self.declaration.body, environment)
         except ReturnSignal as signal:
             return signal.value
+        finally:
+            for record in reversed(active_records):
+                if record in interpreter._active_reference_borrows:
+                    interpreter._active_reference_borrows.remove(record)
         return None
 
 
@@ -415,7 +447,7 @@ class Interpreter:
             callee = self.evaluate(node.callee)
             arguments = [self.evaluate(argument) for argument in node.arguments]
             if isinstance(callee, MemingoFunction):
-                return callee.call(self, arguments)
+                return callee.call(self, arguments, node)
             if callable(callee):
                 try:
                     function_name = node.callee.name if isinstance(node.callee, Variable) else None
