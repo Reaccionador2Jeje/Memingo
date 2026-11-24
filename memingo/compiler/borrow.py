@@ -1,8 +1,8 @@
-"""Call-scoped exclusive-borrow checks for mutating collection built-ins.
+"""Static alias and lexical lifetime checks for Memingo collection references.
 
-Memingo does not yet expose explicit reference syntax. This pass therefore
-models the exclusive mutable borrow performed by known mutating built-ins and
-rejects a second argument that aliases the same collection during that call.
+The checker covers known mutating built-ins, explicit block borrows, and
+borrowed ritual parameters. It is a conservative first lifetime model rather
+than a complete interprocedural borrow checker.
 """
 from __future__ import annotations
 
@@ -238,11 +238,17 @@ class BorrowChecker:
                                         "M2202", part,
                                         f"cannot mutate immutable borrowed parameter '{parameter.name}'",
                                     )
-                        if part_kind == "Assign" and part.name == parameter.name:
-                            self._lifetime_error(
-                                "M2207", part,
-                                f"borrowed parameter '{parameter.name}' cannot be reassigned",
-                            )
+                        if part_kind == "Assign":
+                            if part.name == parameter.name:
+                                self._lifetime_error(
+                                    "M2207", part,
+                                    f"borrowed parameter '{parameter.name}' cannot be reassigned",
+                                )
+                            elif parameter.name in self._roots(part.value):
+                                self._lifetime_error(
+                                    "M2204", part,
+                                    f"borrowed parameter '{parameter.name}' cannot escape through assignment",
+                                )
                         if part_kind == "Return" and parameter.name in self._roots(part.value):
                             self._lifetime_error(
                                 "M2204", part,
