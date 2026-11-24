@@ -74,6 +74,7 @@ greet()
         result = check(parse(
             'ritual add(a: whole, b: whole) { drop a + b }\n'
             'vibe total = add(2, 3)\n'
+            'total = "wrong"\n'
             'add("two", 3)'
         ))
         self.assertTrue(any(item.code == "M1010" for item in result.diagnostics))
