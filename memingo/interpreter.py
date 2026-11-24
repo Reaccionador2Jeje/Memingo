@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .server import MAX_UPLOAD_FILE_SIZE, MemingoApp, Response, serve_app
 from .parser import (
-    Assign, Binary, Borrow, Call, Function, Get, If, Let, ListExpression,
+    Assign, Binary, Borrow, ReferenceBorrow, Call, Function, Get, If, Let, ListExpression,
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
 )
 from . import ai as memingo_ai
@@ -237,6 +237,15 @@ class Interpreter:
             return value
         if isinstance(node, Return):
             raise ReturnSignal(self.evaluate(node.value))
+        if isinstance(node, ReferenceBorrow):
+            source_value = self.environment.get(node.source)
+            if not isinstance(source_value, (list, dict)):
+                raise RuntimeErrorMemingo("borrow requires a list or object value")
+            if node.alias == node.source:
+                raise RuntimeErrorMemingo("reference name must differ from its source")
+            reference_environment = Environment(self.environment)
+            reference_environment.define(node.alias, source_value)
+            return self.execute_block(node.body, reference_environment)
         if isinstance(node, Borrow):
             package_name = self.evaluate(node.package)
             if not isinstance(package_name, str):
