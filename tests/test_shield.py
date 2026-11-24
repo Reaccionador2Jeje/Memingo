@@ -1,6 +1,6 @@
 import unittest
 
-from memingo.shield import MemingoShield, ShieldLimits, ShieldViolation
+from memingo.shield import AllocationTracker, MemingoShield, ShieldLimits, ShieldViolation
 from memingo.interpreter import Interpreter, RuntimeErrorMemingo
 from memingo.parser import parse
 
@@ -45,14 +45,14 @@ class HybridShieldTests(unittest.TestCase):
         with self.assertRaisesRegex(ShieldViolation, "memory budget exceeded"):
             shield.check_memory({"payload": ["memingo"] * 20})
 
-    def test_memory_estimate_counts_shared_objects_once(self):
-        shield = MemingoShield()
+    def test_allocation_tracker_counts_shared_objects_once(self):
+        tracker = AllocationTracker()
         shared = ["same"]
-        combined = [shared, shared]
-        self.assertEqual(
-            shield.estimate_size(combined),
-            shield.estimate_size([shared]),
-        )
+        tracker.snapshot([[shared, shared]])
+        first = tracker.stats()
+        tracker.snapshot([[shared]])
+        second = tracker.stats()
+        self.assertEqual(first["active_objects"], second["active_objects"])
 
     def test_interpreter_enforces_memory_budget(self):
         interpreter = Interpreter(
@@ -61,6 +61,24 @@ class HybridShieldTests(unittest.TestCase):
         program = parse("vibe data = [" + ", ".join(str(i) for i in range(100)) + "]")
         with self.assertRaisesRegex(RuntimeErrorMemingo, "memory budget exceeded"):
             interpreter.run(program)
+
+    def test_allocation_tracker_observes_new_and_released_objects(self):
+        tracker = AllocationTracker()
+        values = {"items": ["first"]}
+        initial = tracker.snapshot([values])
+        values["items"].append("second")
+        grown = tracker.snapshot([values])
+        self.assertGreater(grown["total_allocations"], initial["total_allocations"])
+        values.clear()
+        released = tracker.snapshot([values])
+        self.assertGreater(released["total_releases"], grown["total_releases"])
+        self.assertGreaterEqual(grown["peak_bytes"], grown["active_bytes"])
+
+    def test_interpreter_exposes_memory_statistics(self):
+        interpreter = Interpreter()
+        interpreter.run(parse('vibe items = ["one", "two"]'))
+        self.assertGreater(interpreter.memory_stats["active_objects"], 0)
+        self.assertGreater(interpreter.memory_stats["snapshots"], 0)
 
     def test_normal_program_still_runs(self):
         interpreter = Interpreter()
