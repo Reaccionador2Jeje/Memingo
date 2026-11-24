@@ -59,11 +59,13 @@ class TypeChecker:
         self.expression_types: dict[int, Type] = {}
         self.scope = Scope()
         self._functions: dict[str, Type] = {}
+        self._return_types: list[list[Type]] = []
 
     def check(self, program) -> TypeCheckResult:
         # A checker instance can safely be reused for independent programs.
         self.expression_types.clear()
         self._functions.clear()
+        self._return_types.clear()
         self.scope = Scope()
         self.diagnostics.clear()
 
@@ -119,7 +121,9 @@ class TypeChecker:
             self._check_block(node.body, nested=False)
             self.scope = previous
         elif name == "Return":
-            self._expression(node.value)
+            return_type = self._expression(node.value)
+            if self._return_types:
+                self._return_types[-1].append(return_type)
         elif name == "If":
             condition = self._expression(node.condition)
             self._require_boolean(condition, node.condition, "when")
@@ -135,9 +139,28 @@ class TypeChecker:
             for parameter in node.params:
                 if not local.define(parameter.name, ANY):
                     self._error("M1014", f"duplicate parameter '{parameter.name}'", node)
+            self._return_types.append([])
             self.scope = local
             self._check_block(node.body, nested=False)
+            returns = self._return_types.pop()
             self.scope = previous
+
+            # Infer only when every control-flow path returns a value.
+            # Otherwise keep ANY so the checker never promises a false guarantee.
+            if not returns:
+                return_type = GHOST
+            elif _block_guarantees_return(node.body):
+                return_type = returns[0]
+                for candidate in returns[1:]:
+                    return_type = common_type(return_type, candidate)
+            else:
+                return_type = ANY
+
+            signature = function_of(tuple(ANY for _ in node.params), return_type)
+            declared = previous.symbols.get(node.name)
+            if declared is not None and declared.kind is TypeKind.FUNCTION:
+                previous.symbols[node.name] = signature
+                self._functions[node.name] = signature
         else:
             self._expression(node)
 
@@ -263,6 +286,25 @@ class TypeChecker:
             self._require_boolean(right, node.right, operator)
             return BASED
         return ANY
+
+
+
+def _block_guarantees_return(statements) -> bool:
+    """Whether execution of this block must hit a return on every path."""
+    for statement in statements:
+        name = statement.__class__.__name__
+        if name == "Return":
+            return True
+        if name == "If":
+            if (statement.else_branch
+                    and _block_guarantees_return(statement.then_branch)
+                    and _block_guarantees_return(statement.else_branch)):
+                return True
+        elif name == "ReferenceBorrow":
+            if _block_guarantees_return(statement.body):
+                return True
+        # A loop may execute zero times; a nested ritual returns only from itself.
+    return False
 
 
 def check(program, diagnostics: DiagnosticBag | None = None) -> TypeCheckResult:
