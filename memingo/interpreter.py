@@ -205,6 +205,7 @@ class Interpreter:
             result = None
             for statement in statements:
                 result = self.execute(statement)
+                self._check_memory_usage()
             return result
         finally:
             self.environment = previous
@@ -299,6 +300,15 @@ class Interpreter:
                 result = self.execute_block(node.body, Environment(self.environment))
             return result
         return self.evaluate(node)
+
+    def _check_memory_usage(self):
+        """Account for reachable values in the active environment chain."""
+        roots = []
+        environment = getattr(self, "environment", None)
+        while environment is not None:
+            roots.append(environment.values)
+            environment = environment.parent
+        self.shield.check_memory(roots)
 
     def _debug_variables(self):
         visible = {}
