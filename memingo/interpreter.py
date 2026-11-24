@@ -15,6 +15,7 @@ from .parser import (
     Literal, MapExpression, Program, Return, Say, Unary, Variable, While, parse,
 )
 from . import ai as memingo_ai
+from .shield import MemingoShield, ShieldLimits
 
 
 class RuntimeErrorMemingo(Exception):
@@ -60,6 +61,13 @@ class MemingoFunction:
         self.closure = closure
 
     def call(self, interpreter, arguments):
+        interpreter.shield.enter_call()
+        try:
+            return self._call_guarded(interpreter, arguments)
+        finally:
+            interpreter.shield.leave_call()
+
+    def _call_guarded(self, interpreter, arguments):
         if len(arguments) != len(self.declaration.params):
             raise RuntimeErrorMemingo(
                 f"Function '{self.declaration.name}' expects {len(self.declaration.params)} arguments, got {len(arguments)}"
@@ -75,8 +83,9 @@ class MemingoFunction:
 
 
 class Interpreter:
-    def __init__(self, project_directory="."):
+    def __init__(self, project_directory=".", shield_limits=None):
         self.project_directory = Path(project_directory).resolve()
+        self.shield = MemingoShield(shield_limits or ShieldLimits())
         self.output = []
         self.debug_trace = None
         env_path = self.project_directory / ".env"
@@ -194,6 +203,7 @@ class Interpreter:
             self.environment = previous
 
     def execute(self, node):
+        self.shield.tick()
         if self.debug_trace is not None:
             if len(self.debug_trace) >= 10000:
                 raise RuntimeErrorMemingo("Debug trace limit reached (10,000 steps). Check for an endless loop.")
@@ -275,6 +285,7 @@ class Interpreter:
             result = None
             iterations = 0
             while self.evaluate(node.condition):
+                self.shield.tick()
                 iterations += 1
                 if self.debug_trace is not None and iterations > 10000:
                     raise RuntimeErrorMemingo("Debug loop limit reached (10,000 iterations). Check the loop condition.")
@@ -302,13 +313,15 @@ class Interpreter:
 
     def evaluate(self, node):
         if isinstance(node, Literal):
-            return node.value
+            return self.shield.validate(node.value)
         if isinstance(node, Variable):
             return self.environment.get(node.name)
         if isinstance(node, ListExpression):
-            return [self.evaluate(item) for item in node.items]
+            self.shield.check_collection_size(len(node.items))
+            return self.shield.validate([self.evaluate(item) for item in node.items])
         if isinstance(node, MapExpression):
-            return {key: self.evaluate(value) for key, value in node.entries}
+            self.shield.check_collection_size(len(node.entries))
+            return self.shield.validate({key: self.evaluate(value) for key, value in node.entries})
         if isinstance(node, Get):
             target = self.evaluate(node.target)
             key = self.evaluate(node.key)
@@ -331,7 +344,7 @@ class Interpreter:
             if node.operator == "||":
                 return left if bool(left) else self.evaluate(node.right)
             right = self.evaluate(node.right)
-            return self._binary(node.operator, left, right)
+            return self.shield.validate(self._binary(node.operator, left, right))
         if isinstance(node, Call):
             callee = self.evaluate(node.callee)
             arguments = [self.evaluate(argument) for argument in node.arguments]
@@ -339,7 +352,8 @@ class Interpreter:
                 return callee.call(self, arguments)
             if callable(callee):
                 try:
-                    return callee(*arguments)
+                    self.shield.validate(arguments)
+                    return self.shield.validate(callee(*arguments))
                 except RuntimeErrorMemingo:
                     raise
                 except Exception as exception:
