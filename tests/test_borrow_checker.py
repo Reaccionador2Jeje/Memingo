@@ -242,6 +242,29 @@ class BorrowCheckerTests(unittest.TestCase):
                 'modify(values)'
             ))
 
+    def test_runtime_rejects_source_alias_during_mutable_ritual_borrow(self):
+        interpreter = Interpreter()
+        with self.assertRaisesRegex(Exception, "borrowed source"):
+            interpreter.run(parse(
+                'vibe values = [1, 2]\n'
+                'ritual inspect(borrow mut items) {\n'
+                '  spill headcount(values)\n'
+                '}\n'
+                'inspect(values)'
+            ))
+
+    def test_runtime_rejects_other_alias_during_mutable_ritual_borrow(self):
+        interpreter = Interpreter()
+        with self.assertRaisesRegex(Exception, "exclusively borrowed"):
+            interpreter.run(parse(
+                'vibe values = [1, 2]\n'
+                'vibe alias = values\n'
+                'ritual inspect(borrow mut items) {\n'
+                '  spill headcount(alias)\n'
+                '}\n'
+                'inspect(values)'
+            ))
+
     def test_mutation_without_alias_is_allowed(self):
         result = compile_source(
             'vibe items = [1, 2]\n'
