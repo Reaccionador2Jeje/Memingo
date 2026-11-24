@@ -22,7 +22,9 @@
 - [x] Ritual call-depth limit
 - [x] Collection, string and integer size limits
 - [x] Reject non-finite floating-point values at runtime boundaries
-- [ ] Static ownership and borrowing analysis
+- [x] Initial static ownership analysis for collection transfers
+- [ ] Complete shared and mutable borrowing analysis with lifetime checks
+- [ ] Mutation alias analysis and closure capture rules
 - [ ] Borrow checker integrated into typed HIR
 - [ ] Explicit audited unsafe capabilities and scoped escape hatches
 - [ ] Runtime memory accounting with allocation tracking
