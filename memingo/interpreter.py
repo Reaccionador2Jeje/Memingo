@@ -209,6 +209,8 @@ class Interpreter:
             return result
         finally:
             self.environment = previous
+            if previous is not None:
+                self._check_memory_usage()
 
     def execute(self, node):
         self.shield.tick()
