@@ -29,7 +29,7 @@ class BorrowCheckerTests(unittest.TestCase):
             '  spill headcount(view)\n'
             '}'
         )
-        self.assertFalse(any(item.code.startswith("M22") for item in result.diagnostics))
+        self.assertTrue(result.succeeded, result.diagnostics)
 
     def test_immutable_reference_rejects_mutation(self):
         result = compile_source(
@@ -56,7 +56,7 @@ class BorrowCheckerTests(unittest.TestCase):
             '  push(edit, 3)\n'
             '}'
         )
-        self.assertFalse(any(item.code.startswith("M22") for item in result.diagnostics))
+        self.assertTrue(result.succeeded, result.diagnostics)
 
     def test_reference_cannot_escape_its_scope(self):
         result = compile_source(
