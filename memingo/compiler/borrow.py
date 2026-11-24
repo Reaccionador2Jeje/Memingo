@@ -116,7 +116,8 @@ class BorrowChecker:
         if node.mutable:
             for item in node.body:
                 for part in self._walk(item):
-                    if part.__class__.__name__ == "Variable" and part.name == source:
+                    if ((part.__class__.__name__ == "Variable" and part.name == source)
+                            or (part.__class__.__name__ == "Assign" and part.name == source)):
                         self._lifetime_error(
                             "M2203", part,
                             f"source '{source}' cannot be accessed while its mutable reference '{alias}' is active",
@@ -129,7 +130,8 @@ class BorrowChecker:
                         callee = part.callee
                         name = callee.name if callee.__class__.__name__ == "Variable" else None
                         for position in _MUTATING_ARGUMENTS.get(name, ()):
-                            if position < len(part.arguments) and alias in self._roots(part.arguments[position]):
+                            if (position < len(part.arguments)
+                                    and ({alias, source} & self._roots(part.arguments[position]))):
                                 self._lifetime_error(
                                     "M2202", part,
                                     f"cannot mutably access '{alias}' inside an immutable reference scope",
@@ -148,8 +150,8 @@ class BorrowChecker:
                 kind = part.__class__.__name__
                 if kind == "Return" and alias in self._roots(part.value):
                     self._lifetime_error("M2204", part, f"reference '{alias}' cannot escape its borrow scope")
-                elif kind in ("Let", "Assign") and alias in self._roots(part.value):
-                    self._lifetime_error("M2204", part, f"reference '{alias}' cannot be stored outside its borrow scope")
+                elif kind == "Assign" and alias in self._roots(part.value):
+                    self._lifetime_error("M2204", part, f"reference '{alias}' cannot be assigned outside its borrow scope")
 
     def _visit(self, node):
         if node is None:
