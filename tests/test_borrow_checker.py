@@ -214,6 +214,15 @@ class BorrowCheckerTests(unittest.TestCase):
         )
         self.assertTrue(any(item.code == "M2205" for item in result.diagnostics))
 
+    def test_borrowed_parameter_cannot_escape_through_assignment(self):
+        result = compile_source(
+            'ritual leak(borrow items) {\n'
+            '  vibe saved = items\n'
+            '  drop saved\n'
+            '}'
+        )
+        self.assertTrue(any(item.code == "M2204" for item in result.diagnostics))
+
     def test_borrowed_parameter_cannot_be_reassigned(self):
         result = compile_source(
             'ritual replace(borrow items) {\n'
