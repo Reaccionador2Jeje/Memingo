@@ -29,7 +29,8 @@
 - [ ] Mutation alias analysis and closure capture rules
 - [ ] Borrow checker integrated into typed HIR
 - [ ] Explicit audited unsafe capabilities and scoped escape hatches
-- [ ] Runtime memory accounting with allocation tracking
+- [x] Approximate runtime memory accounting for reachable interpreter values
+- [ ] Allocation-level tracking and hard process memory ceilings
 - [ ] Hardware and OS fault reporting through host-specific adapters
 
 ## Language
