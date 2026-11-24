@@ -62,7 +62,7 @@ class BorrowCheckerTests(unittest.TestCase):
         result = compile_source(
             'vibe items = [1, 2]\\n'
             'borrow items as view {\\n'
-            '  vibe escaped = view\\n'
+            '  items = view\\n'
             '}'
         )
         self.assertTrue(any(item.code == "M2204" for item in result.diagnostics))
@@ -87,6 +87,26 @@ class BorrowCheckerTests(unittest.TestCase):
             'spill headcount(items)'
         ))
         self.assertEqual(interpreter.output, ["3"])
+
+    def test_immutable_reference_rejects_mutating_original_source(self):
+        result = compile_source(
+            'vibe items = [1, 2]\\n'
+            'borrow items as view {\\n'
+            '  push(items, 3)\\n'
+            '}'
+        )
+        self.assertTrue(any(item.code == "M2202" for item in result.diagnostics))
+
+    def test_nested_overlapping_mutable_borrows_are_rejected(self):
+        result = compile_source(
+            'vibe items = [1, 2]\\n'
+            'borrow items as first {\\n'
+            '  borrow mut items as second {\\n'
+            '    push(second, 3)\\n'
+            '  }\\n'
+            '}'
+        )
+        self.assertTrue(any(item.code == "M2205" for item in result.diagnostics))
 
     def test_mutation_without_alias_is_allowed(self):
         result = compile_source(
