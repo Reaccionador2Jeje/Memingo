@@ -23,7 +23,9 @@
 - [x] Collection, string and integer size limits
 - [x] Reject non-finite floating-point values at runtime boundaries
 - [x] Initial static ownership analysis for collection transfers
-- [ ] Complete shared and mutable borrowing analysis with lifetime checks
+- [x] Call-scoped exclusive-borrow alias checks for collection mutators
+- [ ] Explicit shared and mutable reference syntax
+- [ ] Lifetime and scope-based borrow analysis
 - [ ] Mutation alias analysis and closure capture rules
 - [ ] Borrow checker integrated into typed HIR
 - [ ] Explicit audited unsafe capabilities and scoped escape hatches
