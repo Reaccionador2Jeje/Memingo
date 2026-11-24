@@ -190,6 +190,11 @@ class Interpreter:
             return self.execute_block(program.statements, self.global_environment)
         except ReturnSignal as signal:
             return signal.value
+        except Exception as exception:
+            from .shield import ShieldViolation
+            if isinstance(exception, ShieldViolation):
+                raise RuntimeErrorMemingo(f"Shield blocked execution: {exception}") from exception
+            raise
 
     def execute_block(self, statements, environment):
         previous = getattr(self, "environment", None)
