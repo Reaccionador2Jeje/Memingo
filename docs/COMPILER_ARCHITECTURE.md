@@ -54,7 +54,7 @@ The first implementation reuses the existing lexer and parser. The public Python
 
 ## Current type inference
 
-The current checker infers primitive and collection expression types, validates assignments and conditions, and checks known ritual call arity. Ritual parameters remain dynamic (`any`) until parameter annotations or call-site inference are designed.
+The current checker infers primitive and collection expression types, validates assignments and conditions, and checks known ritual call arity. Ritual parameters remain dynamic (`any`) unless explicitly annotated. Primitive parameter annotations (`whole`, `decimal`, `caption`, `based`, `ghost`, and `any`) are checked both inside the ritual and at known call sites. Unannotated parameters preserve gradual-typing compatibility.
 
 Ritual return types are inferred conservatively:
 
