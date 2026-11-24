@@ -133,8 +133,8 @@ class TypeChecker:
             previous = self.scope
             local = Scope(previous)
             for parameter in node.params:
-                if not local.define(parameter, ANY):
-                    self._error("M1014", f"duplicate parameter '{parameter}'", node)
+                if not local.define(parameter.name, ANY):
+                    self._error("M1014", f"duplicate parameter '{parameter.name}'", node)
             self.scope = local
             self._check_block(node.body, nested=False)
             self.scope = previous
