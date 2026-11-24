@@ -9,7 +9,7 @@
 - [x] Primitive and collection type representations
 - [x] Basic expression type inference and numeric widening
 - [x] Initial static checks for names, assignments, conditions, and calls
-- [ ] Full function signature and return-type inference
+- [x] Conservative ritual return-type inference for guaranteed-return paths\n- [ ] Parameter-type inference and interprocedural return analysis
 - [x] Initial typed HIR and lowering from the existing AST
 - [x] Public parse → type-check → HIR compilation API
 - [x] Type model invariants and reusable checker state
