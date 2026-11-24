@@ -62,6 +62,7 @@ class Parameter:
     name: str
     borrow: bool = False
     mutable: bool = False
+    annotation: str | None = None
 
 
 @dataclass
@@ -214,7 +215,12 @@ class Parser:
             self._advance()
             mutable = True
         name = self._consume("IDENTIFIER", "Expected parameter name").value
-        return Parameter(name, borrowed, mutable)
+        annotation = None
+        if self._match("COLON"):
+            annotation = self._consume(
+                "IDENTIFIER", "Expected a type name after ':'"
+            ).value
+        return Parameter(name, borrowed, mutable, annotation)
 
     def _if_statement(self):
         condition = self._expression()
