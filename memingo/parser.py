@@ -15,6 +15,14 @@ class Borrow:
 
 
 @dataclass
+class ReferenceBorrow:
+    source: str
+    alias: str
+    mutable: bool
+    body: list
+
+
+@dataclass
 class Let:
     name: str
     value: object
@@ -143,6 +151,23 @@ class Parser:
         if self._match("SPILL"):
             return Say(self._expression())
         if self._match("BORROW"):
+            # Explicit lexical reference: borrow [mut] source as alias { ... }
+            start = self.index
+            mutable = self._check("IDENTIFIER") and self._peek().value == "mut"
+            offset = 1 if mutable else 0
+            if (self.index + offset + 3 < len(self.tokens)
+                    and self.tokens[self.index + offset].kind == "IDENTIFIER"
+                    and self.tokens[self.index + offset + 1].kind == "IDENTIFIER"
+                    and self.tokens[self.index + offset + 1].value == "as"
+                    and self.tokens[self.index + offset + 2].kind == "IDENTIFIER"
+                    and self.tokens[self.index + offset + 3].kind == "LBRACE"):
+                if mutable:
+                    self._advance()
+                source = self._consume("IDENTIFIER", "Expected source variable").value
+                self._advance()  # as
+                alias = self._consume("IDENTIFIER", "Expected reference name").value
+                return ReferenceBorrow(source, alias, mutable, self._block())
+            self.index = start
             return Borrow(self._expression())
         if self._check("IDENTIFIER"):
             name = self._advance().value
