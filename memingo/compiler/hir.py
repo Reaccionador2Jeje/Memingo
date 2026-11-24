@@ -51,6 +51,14 @@ def lower(program, expression_types: Mapping[int, Type] | None = None) -> HIRPro
             children.append(visit(node.value))
         elif name == "Borrow":
             children.append(visit(node.package))
+        elif name == "ReferenceBorrow":
+            children.extend(visit(item) for item in node.body)
+            value = {
+                "source": node.source,
+                "alias": node.alias,
+                "mutable": node.mutable,
+                "body_count": len(node.body),
+            }
         elif name == "If":
             children.append(visit(node.condition))
             children.extend(visit(item) for item in node.then_branch)
@@ -62,7 +70,14 @@ def lower(program, expression_types: Mapping[int, Type] | None = None) -> HIRPro
             value = {"body_count": len(node.body)}
         elif name == "Function":
             children.extend(visit(item) for item in node.body)
-            value = {"name": node.name, "parameters": tuple(node.params)}
+            value = {
+                "name": node.name,
+                "parameters": tuple({
+                    "name": parameter.name,
+                    "borrow": parameter.borrow,
+                    "mutable": parameter.mutable,
+                } for parameter in node.params),
+            }
         elif name == "ListExpression":
             children.extend(visit(item) for item in node.items)
         elif name == "MapExpression":
