@@ -242,6 +242,17 @@ class BorrowCheckerTests(unittest.TestCase):
                 'modify(values)'
             ))
 
+    def test_runtime_rejects_overlapping_borrowed_ritual_arguments(self):
+        interpreter = Interpreter()
+        with self.assertRaisesRegex(Exception, "overlapping references"):
+            interpreter.run(parse(
+                'ritual compare(borrow mut first, borrow second) {\n'
+                '  spill headcount(first)\n'
+                '}\n'
+                'vibe values = [1, 2]\n'
+                'compare(values, values)'
+            ))
+
     def test_runtime_rejects_source_alias_during_mutable_ritual_borrow(self):
         interpreter = Interpreter()
         with self.assertRaisesRegex(Exception, "borrowed source"):
