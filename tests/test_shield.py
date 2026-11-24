@@ -10,7 +10,7 @@ class HybridShieldTests(unittest.TestCase):
         interpreter = Interpreter(
             shield_limits=ShieldLimits(max_steps=12, max_call_depth=20)
         )
-        with self.assertRaises(ShieldViolation):
+        with self.assertRaisesRegex(RuntimeErrorMemingo, "Shield blocked execution"):
             interpreter.run(parse("grind based { }"))
 
     def test_call_depth_is_bounded(self):
@@ -21,7 +21,7 @@ class HybridShieldTests(unittest.TestCase):
             "ritual recurse() { drop recurse() }\n"
             "recurse()"
         )
-        with self.assertRaises((ShieldViolation, RuntimeErrorMemingo, RecursionError)):
+        with self.assertRaisesRegex(RuntimeErrorMemingo, "Shield blocked execution"):
             interpreter.run(program)
 
     def test_large_collection_is_rejected(self):
