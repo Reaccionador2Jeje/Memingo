@@ -59,7 +59,8 @@ class AllocationTracker:
 
     def snapshot(self, roots):
         current = {}
-        self._collect(roots, current)
+        for root in roots:
+            self._collect(root, current)
         previous_ids = set(self._active)
         current_ids = set(current)
         self.total_allocations += len(current_ids - previous_ids)
