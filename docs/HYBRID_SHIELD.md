@@ -117,3 +117,33 @@ borrow mut items as edit {
 The compiler reports `M2201` for identical source/alias names, `M2202` for mutation during an immutable borrow, `M2203` for source access during a mutable borrow, `M2204` for a reference escape, and `M2205` for overlapping borrows that include a mutable reference. Runtime checks enforce the core access and mutation rules when executing parsed programs directly.
 
 This is a first lexical lifetime model for lists and objects, not full Rust-style lifetime inference. It does not yet model references to scalar values, function-signature lifetimes, closure captures, reference-returning functions, or interprocedural lifetime constraints.
+
+## Borrowed ritual parameters
+
+Rituals can now declare collection parameters as borrowed references:
+
+```mgo
+ritual inspect(borrow items) {
+    spill headcount(items)
+}
+
+ritual append_item(borrow mut items) {
+    push(items, 4)
+}
+
+vibe values = [1, 2, 3]
+inspect(values)
+append_item(values)
+```
+
+- `borrow name` creates an immutable parameter borrow for the duration of the ritual call.
+- `borrow mut name` creates an exclusive mutable parameter borrow.
+- Borrowed arguments must be named variables; temporary expressions are rejected.
+- The same collection cannot be passed to overlapping ritual borrows when either borrow is mutable.
+- Immutable borrowed parameters cannot be mutated or reassigned.
+- Borrowed parameters cannot be returned or assigned to an outer binding while the lifetime is active.
+- Runtime checks enforce the borrow while the ritual executes, even when programs are interpreted without compilation.
+
+New diagnostics: `M2206` requires a variable argument for a borrowed parameter, and `M2207` prevents reassignment of a borrowed parameter. Existing `M2202`, `M2204`, and `M2205` cover immutable mutation, lifetime escape, and overlapping mutable borrows.
+
+This feature currently supports list and object values only. It does not yet implement general lifetime parameters, lifetime elision, references to scalar values, or full interprocedural inference.
