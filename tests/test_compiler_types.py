@@ -70,6 +70,34 @@ greet()
 '''))
         self.assertTrue(any(item.code == "M1009" for item in result.diagnostics))
 
+    def test_annotated_parameters_are_checked_at_call_sites(self):
+        result = check(parse(
+            'ritual add(a: whole, b: whole) { drop a + b }\n'
+            'vibe total = add(2, 3)\n'
+            'add("two", 3)'
+        ))
+        self.assertTrue(any(item.code == "M1010" for item in result.diagnostics))
+        self.assertTrue(any(item.code == "M1003" for item in result.diagnostics))
+
+    def test_annotated_parameters_are_checked_inside_rituals(self):
+        result = check(parse(
+            'ritual shout(message: caption) {\n'
+            '    vibe count = message - 1\n'
+            '}'
+        ))
+        self.assertTrue(any(item.code == "M1011" for item in result.diagnostics))
+
+    def test_unknown_parameter_annotation_is_reported(self):
+        result = check(parse('ritual f(value: mystery) { spill value }'))
+        self.assertTrue(any(item.code == "M1015" for item in result.diagnostics))
+
+    def test_unannotated_parameters_remain_dynamic(self):
+        result = check(parse(
+            'ritual identity(value) { drop value }\n'
+            'identity("still compatible")'
+        ))
+        self.assertFalse(result.has_errors)
+
     def test_function_return_type_is_inferred_from_guaranteed_return(self):
         result = check(parse(
             'ritual answer() { drop 42 }\n'
