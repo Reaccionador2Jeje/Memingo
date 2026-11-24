@@ -58,6 +58,13 @@ class While:
 
 
 @dataclass
+class Parameter:
+    name: str
+    borrow: bool = False
+    mutable: bool = False
+
+
+@dataclass
 class Function:
     name: str
     params: list
@@ -187,7 +194,7 @@ class Parser:
         self._skip_separators()
         params = []
         if not self._check("RPAREN"):
-            params.append(self._consume("IDENTIFIER", "Expected parameter name").value)
+            params.append(self._parameter())
             while True:
                 self._skip_separators()
                 if not self._match("COMMA"):
@@ -195,10 +202,19 @@ class Parser:
                 self._skip_separators()
                 if self._check("RPAREN"):
                     break
-                params.append(self._consume("IDENTIFIER", "Expected parameter name").value)
+                params.append(self._parameter())
         self._skip_separators()
         self._consume("RPAREN", "Expected ')' after parameters")
         return Function(name, params, self._block())
+
+    def _parameter(self):
+        borrowed = self._match("BORROW")
+        mutable = False
+        if borrowed and self._check("IDENTIFIER") and self._peek().value == "mut":
+            self._advance()
+            mutable = True
+        name = self._consume("IDENTIFIER", "Expected parameter name").value
+        return Parameter(name, borrowed, mutable)
 
     def _if_statement(self):
         condition = self._expression()
