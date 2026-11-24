@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from .parser import (
     Binary, Call, Function, Get, If, ListExpression, Literal, MapExpression,
-    Program, Return, Say, Unary, Variable, While, Let, Assign, Borrow,
+    Return, Say, Unary, Variable, While, Let, Assign, Borrow,
 )
 
 
@@ -34,7 +34,12 @@ def _check_scope(statements, parent_functions, diagnostics):
     functions = dict(parent_functions)
     for statement in statements:
         if isinstance(statement, Function):
-            functions[statement.name] = len(statement.params)
+            functions[statement.name] = (len(statement.params), getattr(statement, "line", 1))
+    # A variable declaration or assignment can replace a ritual at runtime.
+    # In that case, avoid making a potentially incorrect arity claim.
+    for statement in statements:
+        if isinstance(statement, (Let, Assign)):
+            functions.pop(statement.name, None)
 
     for statement in statements:
         line = getattr(statement, "line", 1)
@@ -73,9 +78,9 @@ def _check_expression(node, functions, line, diagnostics):
         if isinstance(node.callee, Variable):
             name = node.callee.name
             if name in functions:
-                expected = functions[name]
+                expected, declaration_line = functions[name]
                 actual = len(node.arguments)
-                if actual != expected:
+                if declaration_line <= line and actual != expected:
                     diagnostics.append(Diagnostic(
                         "MGO202",
                         f"Ritual '{name}' expects {expected} argument(s), got {actual}",
