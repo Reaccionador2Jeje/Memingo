@@ -134,6 +134,14 @@ class BorrowChecker:
                                     "M2202", part,
                                     f"cannot mutably access '{alias}' inside an immutable reference scope",
                                 )
+        for item in node.body:
+            for part in self._walk(item):
+                if part.__class__.__name__ == "ReferenceBorrow" and part.source == source:
+                    if node.mutable or part.mutable:
+                        self._lifetime_error(
+                            "M2205", part,
+                            f"overlapping references to '{source}' include a mutable borrow",
+                        )
         # References are lexical and cannot escape through return or assignment.
         for item in node.body:
             for part in self._walk(item):
