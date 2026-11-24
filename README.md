@@ -76,9 +76,9 @@ Memingo includes a native `.mgo` HTTP API and a Python application API. Define r
 
 Memingo scripts can create, train, evaluate, save and reload small dense neural networks through the built-in `ai` API. The first CPU training engine uses pure Python with no mandatory ML dependencies. See [LANGUAGE.md](LANGUAGE.md#built-in-ai-training) and [examples/ai/xor.mgo](examples/ai/xor.mgo) for a complete example. Python and external ML frameworks remain optional integrations; GPU and large language model training are not part of this initial engine.
 
-## User guide (Spanish)
+## User guide (Spanish / English)
 
-Read the [official Memingo usage guide](docs/GUIA_DE_USO.md) for installation, first programs, syntax, projects, packages, HTTP APIs, IDE, LSP and troubleshooting.
+Read the [bilingual Memingo user guide](docs/GUIA_DE_USO.md) for installation, first programs, syntax, projects, packages, HTTP APIs, IDE, LSP and troubleshooting. The guide is available in Spanish and English.
 
 ## Language reference
 
