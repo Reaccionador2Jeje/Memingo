@@ -308,7 +308,13 @@ class Interpreter:
         while environment is not None:
             roots.append(environment.values)
             environment = environment.parent
+        self.shield.allocations.snapshot(roots)
         self.shield.check_memory(roots)
+
+    @property
+    def memory_stats(self):
+        """Return the latest approximate allocation and memory statistics."""
+        return self.shield.allocations.stats()
 
     def _debug_variables(self):
         visible = {}
