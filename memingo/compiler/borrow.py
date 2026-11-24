@@ -126,6 +126,11 @@ class BorrowChecker:
         else:
             for item in node.body:
                 for part in self._walk(item):
+                    if part.__class__.__name__ == "Assign" and part.name == source:
+                        self._lifetime_error(
+                            "M2202", part,
+                            f"cannot reassign '{source}' inside an immutable reference scope",
+                        )
                     if part.__class__.__name__ == "Call":
                         callee = part.callee
                         name = callee.name if callee.__class__.__name__ == "Variable" else None
@@ -134,11 +139,12 @@ class BorrowChecker:
                                     and ({alias, source} & self._roots(part.arguments[position]))):
                                 self._lifetime_error(
                                     "M2202", part,
-                                    f"cannot mutably access '{alias}' inside an immutable reference scope",
+                                    f"cannot mutate the borrowed collection inside an immutable reference scope",
                                 )
         for item in node.body:
             for part in self._walk(item):
-                if part.__class__.__name__ == "ReferenceBorrow" and part.source == source:
+                if (part.__class__.__name__ == "ReferenceBorrow"
+                        and part.source in (source, alias)):
                     if node.mutable or part.mutable:
                         self._lifetime_error(
                             "M2205", part,
