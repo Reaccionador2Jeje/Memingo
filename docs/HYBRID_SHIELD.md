@@ -82,3 +82,9 @@ not process-RSS accounting, does not include all allocator overhead, native
 extension allocations, thread stacks, or external process memory, and cannot
 guarantee a hard operating-system memory ceiling. The Python runtime remains
 responsible for physical allocation and reclamation.
+
+## Snapshot-based allocation tracker
+
+The runtime now maintains allocation statistics for reachable lists, dictionaries, sets, tuples, strings and byte buffers. At each statement boundary and after nested scope exit, the tracker snapshots reachable interpreter values and reports newly observed object identities, objects no longer reachable at the next snapshot, current active object count, estimated active bytes and peak estimated bytes. The interpreter exposes the latest report through `Interpreter.memory_stats`.
+
+These are snapshot observations, not hooks into Python's allocator. Short-lived objects created and discarded between snapshots may never be observed, object identity reuse can affect lifetime attribution, and object sizes are shallow `sys.getsizeof` estimates. The tracker does not free objects itself; normal Python reference counting and garbage collection remain responsible for reclamation. The existing memory budget remains the enforcement mechanism.
