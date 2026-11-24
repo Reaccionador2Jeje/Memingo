@@ -158,6 +158,81 @@ class BorrowCheckerTests(unittest.TestCase):
                 '}'
             ))
 
+    def test_ritual_accepts_immutable_borrowed_parameter(self):
+        source = (
+            'ritual inspect(borrow items) {\n'
+            '  spill headcount(items)\n'
+            '}\n'
+            'vibe values = [1, 2]\n'
+            'inspect(values)'
+        )
+        result = compile_source(source)
+        self.assertTrue(result.succeeded, result.diagnostics)
+        interpreter = Interpreter()
+        interpreter.run(parse(source))
+        self.assertEqual(interpreter.output, ["2"])
+
+    def test_ritual_accepts_mutable_borrowed_parameter(self):
+        source = (
+            'ritual append_item(borrow mut items) {\n'
+            '  push(items, 3)\n'
+            '}\n'
+            'vibe values = [1, 2]\n'
+            'append_item(values)\n'
+            'spill headcount(values)'
+        )
+        result = compile_source(source)
+        self.assertTrue(result.succeeded, result.diagnostics)
+        interpreter = Interpreter()
+        interpreter.run(parse(source))
+        self.assertEqual(interpreter.output, ["3"])
+
+    def test_immutable_borrowed_parameter_rejects_mutation(self):
+        result = compile_source(
+            'ritual inspect(borrow items) {\n'
+            '  push(items, 3)\n'
+            '}'
+        )
+        self.assertTrue(any(item.code == "M2202" for item in result.diagnostics))
+
+    def test_borrowed_parameter_requires_variable_argument(self):
+        result = compile_source(
+            'ritual inspect(borrow items) {\n'
+            '  spill headcount(items)\n'
+            '}\n'
+            'inspect([1, 2])'
+        )
+        self.assertTrue(any(item.code == "M2206" for item in result.diagnostics))
+
+    def test_overlapping_borrowed_ritual_arguments_are_rejected(self):
+        result = compile_source(
+            'ritual compare(borrow mut first, borrow second) {\n'
+            '  spill headcount(first)\n'
+            '}\n'
+            'vibe values = [1, 2]\n'
+            'compare(values, values)'
+        )
+        self.assertTrue(any(item.code == "M2205" for item in result.diagnostics))
+
+    def test_borrowed_parameter_cannot_be_reassigned(self):
+        result = compile_source(
+            'ritual replace(borrow items) {\n'
+            '  items = [9]\n'
+            '}'
+        )
+        self.assertTrue(any(item.code == "M2207" for item in result.diagnostics))
+
+    def test_runtime_rejects_mutation_through_immutable_borrowed_parameter(self):
+        interpreter = Interpreter()
+        with self.assertRaisesRegex(Exception, "immutable reference"):
+            interpreter.run(parse(
+                'ritual modify(borrow items) {\n'
+                '  push(items, 3)\n'
+                '}\n'
+                'vibe values = [1, 2]\n'
+                'modify(values)'
+            ))
+
     def test_mutation_without_alias_is_allowed(self):
         result = compile_source(
             'vibe items = [1, 2]\n'
