@@ -5,6 +5,7 @@ It is not a hardware fault barrier or a substitute for static ownership analysis
 """
 from dataclasses import dataclass
 import math
+import sys
 
 
 class ShieldViolation(Exception):
@@ -18,6 +19,7 @@ class ShieldLimits:
     max_collection_items: int = 100_000
     max_string_chars: int = 4_000_000
     max_integer_bits: int = 1_000_000
+    max_memory_bytes: int = 64 * 1024 * 1024
 
     def __post_init__(self):
         for name, value in self.__dict__.items():
@@ -32,6 +34,7 @@ class MemingoShield:
         self.limits = limits or ShieldLimits()
         self.steps = 0
         self.call_depth = 0
+        self.memory_bytes = 0
 
     def tick(self, amount=1):
         if amount < 0:
@@ -61,8 +64,43 @@ class MemingoShield:
                 f"collection limit exceeded ({self.limits.max_collection_items:,} items)"
             )
 
+    def estimate_size(self, value, seen=None):
+        """Estimate reachable Python container memory without double-counting aliases.
+
+        This is an accounting estimate, not a measurement of process RSS or a
+        guarantee about allocator/native-extension memory.
+        """
+        if seen is None:
+            seen = set()
+        identity = id(value)
+        if identity in seen:
+            return 0
+        seen.add(identity)
+        size = sys.getsizeof(value)
+        if isinstance(value, dict):
+            size += sum(self.estimate_size(key, seen) + self.estimate_size(item, seen)
+                        for key, item in value.items())
+        elif isinstance(value, (list, tuple, set, frozenset)):
+            size += sum(self.estimate_size(item, seen) for item in value)
+        return size
+
+    def check_memory(self, value):
+        self.memory_bytes = self.estimate_size(value)
+        if self.memory_bytes > self.limits.max_memory_bytes:
+            raise ShieldViolation(
+                f"memory budget exceeded ({self.limits.max_memory_bytes:,} bytes; "
+                f"estimated {self.memory_bytes:,} bytes)"
+            )
+        return self.memory_bytes
+
     def validate(self, value, seen=None):
         """Validate values crossing interpreter boundaries without traversing cycles."""
+        if isinstance(value, (bytes, bytearray)):
+            if len(value) > self.limits.max_string_chars:
+                raise ShieldViolation(
+                    f"binary value limit exceeded ({self.limits.max_string_chars:,} bytes)"
+                )
+            return value
         if isinstance(value, str):
             if len(value) > self.limits.max_string_chars:
                 raise ShieldViolation(
