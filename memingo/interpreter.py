@@ -63,7 +63,9 @@ class MemingoFunction:
     def call(self, interpreter, arguments):
         interpreter.shield.enter_call()
         try:
-            return self._call_guarded(interpreter, arguments)
+            result = self._call_guarded(interpreter, arguments)
+            interpreter.shield.validate(arguments)
+            return interpreter.shield.validate(result)
         finally:
             interpreter.shield.leave_call()
 
@@ -358,7 +360,9 @@ class Interpreter:
             if callable(callee):
                 try:
                     self.shield.validate(arguments)
-                    return self.shield.validate(callee(*arguments))
+                    result = callee(*arguments)
+                    self.shield.validate(arguments)
+                    return self.shield.validate(result)
                 except RuntimeErrorMemingo:
                     raise
                 except Exception as exception:
