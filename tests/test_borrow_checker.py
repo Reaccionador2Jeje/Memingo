@@ -1,6 +1,8 @@
 import unittest
 
 from memingo.compiler import compile_source
+from memingo.interpreter import Interpreter
+from memingo.parser import parse
 
 
 class BorrowCheckerTests(unittest.TestCase):
@@ -64,6 +66,27 @@ class BorrowCheckerTests(unittest.TestCase):
             '}'
         )
         self.assertTrue(any(item.code == "M2204" for item in result.diagnostics))
+
+    def test_runtime_executes_immutable_reference_scope(self):
+        interpreter = Interpreter()
+        interpreter.run(parse(
+            'vibe items = [1, 2]\\n'
+            'borrow items as view {\\n'
+            '  spill headcount(view)\\n'
+            '}'
+        ))
+        self.assertEqual(interpreter.output, ["2"])
+
+    def test_runtime_executes_mutable_reference_scope(self):
+        interpreter = Interpreter()
+        interpreter.run(parse(
+            'vibe items = [1, 2]\\n'
+            'borrow mut items as edit {\\n'
+            '  push(edit, 3)\\n'
+            '}\\n'
+            'spill headcount(items)'
+        ))
+        self.assertEqual(interpreter.output, ["3"])
 
     def test_mutation_without_alias_is_allowed(self):
         result = compile_source(
