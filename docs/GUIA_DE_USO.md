@@ -396,3 +396,405 @@ La traza JSON se emite con el prefijo `MEMINGO_DEBUG:`. Puedes marcar líneas co
 ---
 
 **Memingo 0.2 — Programa con estilo. Construye en serio.**
+
+
+---
+
+# Memingo User Guide (English)
+
+**Manual for Memingo 0.2**  
+This guide covers the language and commands documented in the repository. If a command changes between versions, check `memingo --help` first.
+
+## 1. What is Memingo?
+
+Memingo is a meme-inspired programming ecosystem. Its source files use the `.mgo` extension. The project includes an interpreter, project tools, the `mgoa` package manager, an HTTP server, formatting and diagnostics tools, an LSP server, and a web IDE.
+
+The official runtime requires **Python 3.10 or newer**. You do not need to install dependencies with `pip` when using the official installer.
+
+## 2. Installation
+
+### Linux and macOS
+
+From a repository checkout:
+
+```bash
+chmod +x scripts/install.sh scripts/uninstall.sh
+./scripts/install.sh
+export PATH="$HOME/.local/bin:$PATH"
+memingo --version
+mgoa --version
+```
+
+If you downloaded the published installer, enter the directory containing `install.sh` and run:
+
+```bash
+chmod +x install.sh
+sh ./install.sh
+export PATH="$HOME/.local/bin:$PATH"
+memingo --version
+mgoa --version
+```
+
+The default command location is `~/.local/bin`. If your shell cannot find `memingo`, make sure that directory is included in your `PATH`.
+
+### Windows
+
+Open PowerShell in the repository directory and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1
+```
+
+Open a new terminal and verify the installation:
+
+```powershell
+memingo --version
+mgoa --version
+```
+
+The installer places Memingo in `%LOCALAPPDATA%\Memingo` and adds its `bin` directory to the user's PATH.
+
+## 3. Your first program
+
+Create a file named `main.mgo`:
+
+```mgo
+# My first Memingo program
+vibe name = "Memingo"
+spill "Hello from " + name + "!"
+
+vibe number = 6
+when number > 3 {
+    spill "That's based"
+} nah {
+    spill "That's cringe"
+}
+```
+
+Run it from the directory containing the file:
+
+```bash
+memingo run main.mgo
+```
+
+If you have not installed the native command yet, run this from the repository root:
+
+```bash
+python3 -m memingo run main.mgo
+```
+
+Expected output:
+
+```text
+Hello from Memingo!
+That's based
+```
+
+## 4. Essential syntax
+
+### Variables and values
+
+Use the `vibe` keyword to declare a variable:
+
+```mgo
+vibe age = 12
+vibe name = "Cris"
+vibe active = based
+vibe inactive = cringe
+vibe missing = ghost
+vibe numbers = [1, 2, 3]
+vibe profile = {name: "Ana", role: "builder"}
+```
+
+The main value types are numbers (`whole`), text (`caption`), lists (`party`), booleans (`based` and `cringe`), objects, and `ghost` (the absence of a value).
+
+### Printing output
+
+Use `spill`:
+
+```mgo
+spill "Hello"
+spill 2 + 2
+```
+
+### Conditions
+
+Use `when` and optionally `nah`:
+
+```mgo
+vibe points = 10
+when points >= 10 {
+    spill "Level unlocked"
+} nah {
+    spill "Keep trying"
+}
+```
+
+### Loops
+
+Use `grind` to repeat while a condition is true:
+
+```mgo
+vibe i = 1
+grind i <= 3 {
+    spill i
+    i = i + 1
+}
+```
+
+### Functions
+
+Declare a function with `ritual` and return a value with `drop`:
+
+```mgo
+ritual double(number) {
+    drop number * 2
+}
+
+spill double(8)
+```
+
+`drop` immediately exits the function containing it. At the top level, it can also stop the program and return a value.
+
+### Operators
+
+- Arithmetic: `+ - * / %`
+- Comparison: `< > <= >=`
+- Equality: `== !=`
+- Logical: `&& || !`
+
+The `+` operator also concatenates text.
+
+## 5. Lists, objects, and the standard library
+
+```mgo
+vibe profile = {name: "Ana", role: "builder"}
+vibe tasks = ["create", "test", "publish"]
+
+spill profile.name
+spill profile["role"]
+spill headcount(tasks)
+
+push(tasks, "document")
+set_value(profile, "status", "based")
+spill json_stringify(profile)
+```
+
+Useful functions:
+
+| Area | Functions |
+| --- | --- |
+| Collections | `headcount`, `keys`, `values`, `push`, `append`, `sort`, `reverse`, `unique`, `sum`, `min`, `max`, `slice` |
+| Text | `upper`, `lower`, `trim`, `split`, `join`, `replace`, `contains`, `repeat`, `lines`, `meme_case` |
+| Numbers | `abs`, `floor`, `ceil`, `round`, `clamp`, `parse_int`, `parse_float`, `random`, `random_int`, `range` |
+| Functions | `map`, `filter`, `reduce` |
+| Data and networking | `json_parse`, `json_stringify`, `env`, `now`, `sleep`, `http_get`, `http_post` |
+| Files | `read_file`, `write_file`, `file_exists`, `list_files` |
+
+Example: transform a list:
+
+```mgo
+ritual double(n) {
+    drop n * 2
+}
+
+spill map([1, 2, 3], double)
+spill sort([3, 1, 2])
+```
+
+File helpers are restricted to the project directory. They reject absolute paths and paths that attempt to escape the project using `..`.
+
+## 6. Creating and managing projects
+
+Create a project:
+
+```bash
+memingo init my-app --name my-app
+cd my-app
+memingo run
+```
+
+Project-aware commands can create starter files and the `memingo.toml` manifest when they are missing. An existing manifest is never overwritten. To create only the missing manifest:
+
+```bash
+memingo manifest
+```
+
+Main documented commands:
+
+| Command | Purpose |
+| --- | --- |
+| `memingo init NAME` | Create a project |
+| `memingo run [FILE]` | Run code |
+| `memingo eval 'CODE'` | Evaluate an expression or snippet |
+| `memingo check PATH` | Check code |
+| `memingo dev` | Start the development workflow |
+| `memingo test` | Run project tests |
+| `memingo build` | Run the project build workflow |
+| `memingo fmt PATH` | Format files |
+| `memingo serve [DIRECTORY]` | Serve static files |
+| `memingo info` | Show project information |
+| `memingo deps` | Inspect dependencies |
+| `memingo clean` | Clean project artifacts |
+| `memingo stats` | Show statistics |
+| `memingo doctor` | Diagnose the installation |
+| `memingo update-self` | Update the installation |
+| `memingo completion` | Generate shell completions |
+| `memingo lsp --stdio` | Start the LSP server |
+| `memingo ide` | Start the web IDE |
+
+For the exact options supported by your installed version:
+
+```bash
+memingo --help
+memingo run --help
+memingo --version
+```
+
+## 7. Packages with MGOA
+
+MGOA is Memingo's package manager. Common commands:
+
+```bash
+mgoa search
+mgoa info hello-memes
+mgoa list
+mgoa add hello-memes
+mgoa install
+mgoa update
+mgoa remove hello-memes
+```
+
+It also supports local directories, ZIP archives, and HTTP(S) package archive URLs:
+
+```bash
+mgoa add ./my-package
+mgoa add ./my-package.zip
+```
+
+Import an installed package in a program with `borrow`:
+
+```mgo
+borrow "hello-memes"
+greet("Team")
+```
+
+MGOA records package sources and checksums in `memingo.lock.json` to make installations reproducible. ZIP extraction protects against paths escaping the destination directory, and packages are verified with SHA-256.
+
+Publish a package with `mgoa publish .`. Publishing requires an `MGOA_PUBLISH_TOKEN` with Contents: write permission on the Memingo repository. **Never share this token or commit it to public source code.**
+
+## 8. Creating an HTTP API
+
+Here is a native server in a `.mgo` file:
+
+```mgo
+vibe app = api()
+
+ritual home(request) {
+    drop {name: "Memingo API", status: "based"}
+}
+
+ritual greet(request) {
+    drop {message: "Hello " + request.params.name}
+}
+
+api_get(app, "/", home)
+api_get(app, "/hello/<name>", greet)
+api_listen(app)
+```
+
+Start it from the project root:
+
+```bash
+memingo api server.mgo
+```
+
+By default, it listens on `127.0.0.1:8000`. Open `http://127.0.0.1:8000/` on the same device. The server also supports POST, PUT, PATCH, and DELETE routes, middleware, and JSON, text, HTML, and redirect responses. See [SERVER.md](SERVER.md) for routes, forms, file uploads, and security limits.
+
+## 9. Web IDE and editor
+
+Start the web IDE with:
+
+```bash
+memingo ide
+memingo ide --port 8080
+```
+
+Integration requires linking the [Memingo-IDE project](https://github.com/Reaccionador2Jeje/Memingo-IDE) once with `npm link`. The web server uses built-in Node.js modules and binds to localhost. See the [web IDE guide](https://github.com/Reaccionador2Jeje/Memingo-IDE/blob/main/docs/WEB.md).
+
+Start the LSP server with:
+
+```bash
+memingo lsp --stdio
+```
+
+It provides parser diagnostics, completions, hover documentation, go-to-definition, references, safe local symbol rename, and document symbols.
+
+## 10. Built-in AI
+
+Memingo includes a CPU training API for small dense neural networks:
+
+```mgo
+vibe model = ai.create({
+    name: "MyModel",
+    layers: [2, 4, 1],
+    activation: "sigmoid"
+})
+
+vibe data = ai.dataset(
+    [[0, 0], [0, 1], [1, 0], [1, 1]],
+    [[0], [1], [1], [0]]
+)
+
+vibe report = ai.train(model, data, {
+    epochs: 1000,
+    learning_rate: 0.3,
+    batch_size: 2,
+    shuffle: based
+})
+
+spill report.loss
+spill ai.predict(model, [0, 1])
+```
+
+The initial engine runs on the CPU and is intended for learning and small models. It currently does not provide GPU acceleration or large language model training.
+
+## 11. Troubleshooting and tests
+
+If something does not work, check:
+
+```bash
+memingo --version
+memingo doctor
+memingo --help
+```
+
+From a repository checkout, you can also run the test suite:
+
+```bash
+python3 -m unittest discover -s tests -v
+memingo test
+```
+
+Debug a file with a statement trace:
+
+```bash
+memingo debug main.mgo
+```
+
+The JSON trace is emitted with the `MEMINGO_DEBUG:` prefix. You can mark specific lines with `--breakpoints 3,8`.
+
+## 12. Examples and documentation
+
+- [Complete language reference](../LANGUAGE.md)
+- [Code examples](../examples/)
+- [HTTP server](SERVER.md)
+- [MGOA package publishing](MGOA_PUBLISHING.md)
+- [MGOA local modules](MGOA_LOCAL_MODULES.md)
+- [LSP server](LANGUAGE_SERVER.md)
+- [Memingo repository](https://github.com/Reaccionador2Jeje/Memingo)
+- [Official website](https://reaccionador2Jeje.github.io/Memingo)
+
+---
+
+**Memingo 0.2 — Code with style. Build for real.**
