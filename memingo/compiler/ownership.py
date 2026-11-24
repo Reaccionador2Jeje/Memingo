@@ -145,7 +145,7 @@ class OwnershipChecker:
             elif kind == "Function":
                 local = _Flow()
                 for parameter in node.params:
-                    local.types[parameter] = None
+                    local.types[parameter.name] = None
                 self._block(node.body, local)
             else:
                 self._read(node, flow)
