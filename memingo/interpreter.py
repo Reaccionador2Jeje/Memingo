@@ -93,7 +93,7 @@ class MemingoFunction:
                 source_name = argument_node.name
                 interpreter._check_reference_variable(source_name)
                 identity = id(value)
-                for active in interpreter._active_reference_borrows:
+                for active in (*interpreter._active_reference_borrows, *pending_records):
                     if active["identity"] == identity and (active["mutable"] or parameter.mutable):
                         raise RuntimeErrorMemingo(
                             "overlapping references cannot include a mutable borrow"
