@@ -121,6 +121,13 @@ class OwnershipChecker:
                 self._read(node.value, flow)
             elif kind == "Borrow":
                 self._read(node.package, flow)
+            elif kind == "ReferenceBorrow":
+                if node.source in flow.moved:
+                    self._error(node, node.source)
+                local = flow.clone()
+                local.types[node.alias] = flow.types.get(node.source)
+                local.moved.discard(node.alias)
+                self._block(node.body, local)
             elif kind == "If":
                 self._read(node.condition, flow)
                 then_flow, else_flow = flow.clone(), flow.clone()
