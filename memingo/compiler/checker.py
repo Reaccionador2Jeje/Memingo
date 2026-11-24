@@ -72,7 +72,10 @@ class TypeChecker:
         # Predeclare rituals so calls can resolve regardless of declaration order.
         for statement in program.statements:
             if statement.__class__.__name__ == "Function":
-                signature = function_of(tuple(ANY for _ in statement.params), ANY)
+                parameter_types = tuple(
+                    self._parameter_type(parameter) for parameter in statement.params
+                )
+                signature = function_of(parameter_types, ANY)
                 if not self.scope.define(statement.name, signature):
                     self._error("M1001", f"'{statement.name}' is already declared in this scope", statement)
                 else:
@@ -136,8 +139,11 @@ class TypeChecker:
         elif name == "Function":
             previous = self.scope
             local = Scope(previous)
+            parameter_types = []
             for parameter in node.params:
-                if not local.define(parameter.name, ANY):
+                parameter_type = self._parameter_type(parameter)
+                parameter_types.append(parameter_type)
+                if not local.define(parameter.name, parameter_type):
                     self._error("M1014", f"duplicate parameter '{parameter.name}'", node)
             self._return_types.append([])
             self.scope = local
@@ -156,7 +162,7 @@ class TypeChecker:
             else:
                 return_type = ANY
 
-            signature = function_of(tuple(ANY for _ in node.params), return_type)
+            signature = function_of(tuple(parameter_types), return_type)
             declared = previous.symbols.get(node.name)
             if declared is not None and declared.kind is TypeKind.FUNCTION:
                 previous.symbols[node.name] = signature
@@ -172,6 +178,26 @@ class TypeChecker:
             self._statement(statement)
         if nested:
             self.scope = previous
+
+    def _parameter_type(self, parameter) -> Type:
+        """Resolve an optional primitive parameter annotation."""
+        names = {
+            "any": ANY,
+            "ghost": GHOST,
+            "based": BASED,
+            "cringe": BASED,
+            "whole": WHOLE,
+            "decimal": DECIMAL,
+            "caption": CAPTION,
+        }
+        annotation = getattr(parameter, "annotation", None)
+        if annotation is None:
+            return ANY
+        result = names.get(annotation)
+        if result is None:
+            self._error("M1015", f"unknown parameter type '{annotation}'", parameter)
+            return ANY
+        return result
 
     def _require_boolean(self, value_type: Type, node, construct: str) -> None:
         if value_type != ANY and value_type != BASED:
