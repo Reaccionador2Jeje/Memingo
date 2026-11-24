@@ -32,9 +32,11 @@ class BorrowChecker:
     def __init__(self, diagnostics=None):
         self.diagnostics = diagnostics if diagnostics is not None else DiagnosticBag()
         self._reported = set()
+        self._functions = {}
 
     def check(self, program):
         self._reported.clear()
+        self._functions = {item.name: item for item in program.statements if item.__class__.__name__ == "Function"}
         for statement in program.statements:
             self._visit(statement)
         return BorrowResult(self.diagnostics.items)
@@ -170,6 +172,27 @@ class BorrowChecker:
         elif kind == "Call":
             callee = node.callee
             function_name = callee.name if callee.__class__.__name__ == "Variable" else None
+            declaration = self._functions.get(function_name)
+            if declaration is not None:
+                borrowed = []
+                for index, parameter in enumerate(declaration.params):
+                    if not parameter.borrow or index >= len(node.arguments):
+                        continue
+                    argument = node.arguments[index]
+                    if argument.__class__.__name__ != "Variable":
+                        self._lifetime_error(
+                            "M2206", argument,
+                            f"borrowed parameter '{parameter.name}' requires a variable argument",
+                        )
+                        continue
+                    borrowed.append((argument.name, parameter.mutable, parameter.name, argument))
+                for index, (source, mutable, alias, argument) in enumerate(borrowed):
+                    for other_source, other_mutable, other_alias, other_argument in borrowed[index + 1:]:
+                        if source == other_source and (mutable or other_mutable):
+                            self._lifetime_error(
+                                "M2205", other_argument,
+                                f"overlapping arguments '{alias}' and '{other_alias}' borrow '{source}' with a mutable reference",
+                            )
             mutable_positions = _MUTATING_ARGUMENTS.get(function_name, ())
             for position in mutable_positions:
                 if position >= len(node.arguments):
@@ -200,6 +223,31 @@ class BorrowChecker:
             for item in node.body:
                 self._visit(item)
         elif kind == "Function":
+            for parameter in node.params:
+                if not parameter.borrow:
+                    continue
+                for item in node.body:
+                    for part in self._walk(item):
+                        part_kind = part.__class__.__name__
+                        if not parameter.mutable and part_kind == "Call":
+                            callee = part.callee
+                            name = callee.name if callee.__class__.__name__ == "Variable" else None
+                            for position in _MUTATING_ARGUMENTS.get(name, ()):
+                                if position < len(part.arguments) and parameter.name in self._roots(part.arguments[position]):
+                                    self._lifetime_error(
+                                        "M2202", part,
+                                        f"cannot mutate immutable borrowed parameter '{parameter.name}'",
+                                    )
+                        if part_kind == "Assign" and part.name == parameter.name:
+                            self._lifetime_error(
+                                "M2207", part,
+                                f"borrowed parameter '{parameter.name}' cannot be reassigned",
+                            )
+                        if part_kind == "Return" and parameter.name in self._roots(part.value):
+                            self._lifetime_error(
+                                "M2204", part,
+                                f"borrowed parameter '{parameter.name}' cannot escape through return",
+                            )
             for item in node.body:
                 self._visit(item)
         elif kind == "ListExpression":
