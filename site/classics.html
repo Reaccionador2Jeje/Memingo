@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Memingo Classics: archivo vivo de memes clásicos, cultura de internet y The Great Meme Reset.">
+  <meta name="theme-color" content="#f4eddf">
+  <title>Memingo Classics — The Great Meme Reset</title>
+  <link rel="icon" href="assets/memingo-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="classics.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><img src="assets/memingo-mark.svg" alt=""><span>memingo</span></a>
+    <nav><a href="./">Inicio</a><a class="active" href="#archive">Archivo</a><a href="#about">Acerca de</a></nav>
+    <button id="language" class="lang" type="button" aria-label="Switch language">ES / EN</button>
+  </header>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">MEMINGO PRESENTA · INTERNET HERITAGE</p>
+      <h1>THE GREAT<br><span>MEME RESET.</span></h1>
+      <p class="intro" data-es="Los clásicos no desaparecen cuando llega una tendencia nueva. Este archivo celebra los memes que construyeron el humor de internet, desde los primeros virales hasta la era dank." data-en="Classics don't disappear when a new trend arrives. This archive celebrates the memes that shaped internet humor, from early viral hits to the dank era.">Los clásicos no desaparecen cuando llega una tendencia nueva. Este archivo celebra los memes que construyeron el humor de internet, desde los primeros virales hasta la era dank.</p>
+      <div class="hero-meta"><span>1996—2019</span><span>ARCHIVO 001</span><span>MEMES FOREVER</span></div>
+    </section>
+    <section class="archive" id="archive">
+      <div class="section-head"><div><p class="eyebrow">01 / THE ARCHIVE</p><h2 data-es="La memoria de internet." data-en="The memory of the internet.">La memoria de internet.</h2></div><p id="count" class="count" aria-live="polite">30 MEMES</p></div>
+      <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar un meme, año o palabra..." data-placeholder-es="Buscar un meme, año o palabra..." data-placeholder-en="Search a meme, year or keyword..." autocomplete="off"></label>
+      <div class="filters" role="group" aria-label="Filter memes">
+        <button class="filter active" data-filter="all" data-es="Todos" data-en="All">Todos</button>
+        <button class="filter" data-filter="vintage">Vintage</button>
+        <button class="filter" data-filter="rage">Rage comics</button>
+        <button class="filter" data-filter="reaction" data-es="Reacciones" data-en="Reactions">Reacciones</button>
+        <button class="filter" data-filter="viral">Viral classics</button>
+        <button class="filter" data-filter="dank">Dank era</button>
+      </div>
+      <div id="grid" class="meme-grid"></div>
+      <p id="empty" class="empty" hidden data-es="No encontramos ese meme. Prueba con otro nombre o categoría." data-en="No meme found. Try another name or category.">No encontramos ese meme. Prueba con otro nombre o categoría.</p>
+    </section>
+    <section class="manifesto" id="about">
+      <p class="eyebrow">02 / THE RESET RULE</p>
+      <h2 data-es="La cultura no se reinicia. Se recuerda." data-en="Culture doesn't reset. We remember.">La cultura no se reinicia. Se recuerda.</h2>
+      <p data-es="Memingo Classics es un archivo curado, no un ranking de popularidad. Las fechas son aproximadas y señalan la aparición o popularización del formato, no una autoría definitiva. Los memes modernos también tienen su espacio: esta colección existe para que los clásicos no queden enterrados." data-en="Memingo Classics is a curated archive, not a popularity ranking. Dates are approximate and refer to a format's emergence or popularization, not definitive authorship. Modern memes still have a place: this collection exists so classics aren't buried.">Memingo Classics es un archivo curado, no un ranking de popularidad. Las fechas son aproximadas y señalan la aparición o popularización del formato, no una autoría definitiva. Los memes modernos también tienen su espacio: esta colección existe para que los clásicos no queden enterrados.</p>
+      <div class="principles"><span>01 — CONTEXTO</span><span>02 — CRÉDITO</span><span>03 — MEMORIA</span><span>04 — HUMOR PARA TODOS</span></div>
+    </section>
+  </main>
+  <footer><a class="brand" href="./"><img src="assets/memingo-mark.svg" alt=""><span>memingo</span></a><span>CLASSICS ARCHIVE · ATDEV</span><a href="https://github.com/Reaccionador2Jeje/Memingo">GitHub ↗</a></footer>
+  <script src="classics.js"></script>
+</body>
+</html>
