@@ -133,6 +133,42 @@ class MemingoLanguageTests(unittest.TestCase):
         )
         self.assertEqual(execute(source), ["7", "2", "3", "3", "10", "42", "2.5", "[2, 4, 6]", "[1, 2]"])
 
+    def test_classic_meme_language_builtins(self):
+        source = (
+            'vibe doge = meme("doge")\\n'
+            'spill doge.name\\n'
+            'spill doge.year\\n'
+            'spill doge.era\\n'
+            'vibe nyan = meme_caption("Nyan Cat", "Rainbow deployment!")\\n'
+            'spill nyan.format\\n'
+            'spill nyan.alt\\n'
+            'vibe reaction = meme_react("this-is-fine", "CI is still red")\\n'
+            'spill reaction.kind\\n'
+            'spill reaction.alt\\n'
+            'spill headcount(meme_catalog())\\n'
+            'spill headcount(meme_catalog("rage"))\\n'
+            'spill headcount(meme_search("cat"))'
+        )
+        self.assertEqual(
+            execute(source),
+            [
+                "Doge", "2013", "2010s", "memingo.meme/v1",
+                "Nyan Cat: Rainbow deployment!", "reaction",
+                "This Is Fine reaction to: CI is still red", "30", "2", "3",
+            ],
+        )
+
+    def test_classic_meme_registry_is_defensive_and_validated(self):
+        self.assertEqual(execute('vibe entry = meme("trollface")\\nspill entry.id'), ["trollface"])
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill meme("not-a-real-meme")')
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill meme_catalog(42)')
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill meme_caption("doge", 42)')
+        with self.assertRaises(RuntimeErrorMemingo):
+            execute('spill meme_react("doge", based)')
+
     def test_playful_builtins(self):
         output = execute(
             'spill meme_case("hello memingo")\n'
