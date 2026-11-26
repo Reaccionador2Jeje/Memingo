@@ -213,6 +213,33 @@ greet("Team")
 
 `borrow` loads the installed package entry point from `.memingo/packages/<name>`. Package names may contain letters, digits, dots, dashes, and underscores.
 
+## Classic meme vocabulary
+
+Classic internet memes are built into the language runtime as structured, text-first values. The registry includes historical entries from Dancing Baby and Hampster Dance through Doge, rage comics, reaction formats and Coffin Dance. It stores names, dates, categories, descriptions and keywords; it does not bundle copyrighted image or video files.
+
+```mgo
+vibe doge = meme("doge")
+spill doge.name
+spill doge.year
+
+vibe caption = meme_caption("nyan-cat", "Deploying another rainbow!")
+spill caption.alt
+
+vibe reaction = meme_react("this-is-fine", "The build passed, but CI is still red.")
+spill reaction.alt
+
+spill headcount(meme_catalog())
+spill headcount(meme_search("cat"))
+```
+
+- `meme(name)`, `classic(name)`, and `meme_info(name)` return the same metadata object. Names accept a registry id or display name.
+- `meme_catalog(category?)` returns all entries or one category (`vintage`, `viral`, `rage`, `reaction`, `dank`).
+- `meme_search(query)` searches names, ids, descriptions, categories and keywords.
+- `meme_caption(name, caption)` creates a portable `memingo.meme/v1` caption object.
+- `meme_react(name, situation)` creates a structured reaction object.
+
+These APIs are native standard-library functions: no `borrow` statement or package installation is required. See [examples/classics.mgo](examples/classics.mgo).
+
 ## Built-in AI training
 
 Memingo includes a dependency-free CPU engine for small dense neural networks. It is called directly from `.mgo` scripts; Python is not required by the AI API.
