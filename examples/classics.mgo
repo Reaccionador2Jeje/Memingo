@@ -1,0 +1,18 @@
+# Memingo Classics are part of the language runtime.
+# The registry contains text metadata, not copied meme images.
+
+vibe doge = meme("doge")
+spill doge.name
+spill doge.year
+spill doge.category
+
+vibe caption = meme_caption("nyan-cat", "Deploying another rainbow!")
+spill caption.alt
+spill caption.format
+
+vibe reaction = meme_react("this-is-fine", "The build passed, but CI is still red.")
+spill reaction.alt
+
+spill headcount(meme_catalog())
+spill headcount(meme_catalog("rage"))
+spill headcount(meme_search("cat"))
